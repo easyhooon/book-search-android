@@ -144,7 +144,7 @@ Presenter 테스트는 의존성이 허용하면 Compose runtime/compiler 기반
 
 ## 8. 코드 경계와 확장
 
-경계는 `app` 조립, `feature:search` / `feature:favorites` / `feature:detail`, 공통 `core:model` / `core:data` / `core:ui`의 7개 Gradle 모듈입니다. 여러 개발자가 기능 단위로 나누어 작업한다는 과제 전제를 빌드 수준의 경계로 보여 주기 위한 결정입니다. 공통 빌드 설정은 `build-logic`의 작은 convention plugin으로 모읍니다. 모듈별 책임과 실패 시 후퇴 방법은 [SPEC](SPEC.md) 2절에 있습니다.
+경계는 `app` 조립, `feature:search` / `feature:favorites` / `feature:detail`, 공통 `core:model` / `core:network` / `core:database` / `core:data` / `core:ui`의 9개 Gradle 모듈입니다. feature는 `core:data`의 Soil key와 `Book`만 보고, Retrofit·Room 타입은 `core:data` 뒤에 숨깁니다. 여러 개발자가 기능 단위로 나누어 작업한다는 과제 전제를 빌드 수준의 경계로 보여 주기 위한 결정입니다. 공통 빌드 설정은 `build-logic`의 작은 convention plugin으로 모읍니다. 모듈별 책임과 실패 시 후퇴 방법은 [SPEC](SPEC.md) 2절에 있습니다.
 
 기능은 다른 기능의 구현을 직접 참조하지 않고 내비게이션 조립은 app에서 담당합니다. 탭과 백스택 규칙(재선택, 상세 중복 방지, 뒤로 가기)은 [SPEC](SPEC.md) 7절을 따르며, 참고 앱의 탭 전환 코드를 그대로 복사하지 않습니다. 데이터 key와 UI 모델의 계약을 공유해 검색·로컬 저장을 나누어 작업할 수 있게 합니다. 참조 프로젝트의 규모를 맞추기 위한 모듈이나 범용 플랫폼 계층은 추가하지 않습니다.
 

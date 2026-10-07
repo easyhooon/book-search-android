@@ -36,7 +36,7 @@ retain 학습은 사용자 선택입니다. 일정이 촉박하다는 이유로 
 | Metro | 사용자 선택 | 최소 DI 그래프. Kotlin 2.4.0과 컴파일러 플러그인 호환 먼저 검증 |
 | Coil | 사용자 선택 | Coil 3 + coil-compose/coil-network-okhttp 권장. API 인증 설정과 이미지 요청 분리 |
 | 가격 필터 | 현재 제품 정책 | 정가 최소·최대 금액, 양끝 포함, 적용 버튼. 누락·음수와 0원 구분 |
-| 모듈 구성 | 결정 | app, core:model/data/ui, feature:search/favorites/detail의 7개. 모듈 수 자체를 목표로 삼지 않음 |
+| 모듈 구성 | 결정 | app, core:model/network/database/data/ui, feature:search/favorites/detail의 9개. 모듈 수 자체를 목표로 삼지 않음 |
 | 검색 결과 디스크 캐시 | 후순위 | 필수 기능 완료 전에는 도입하지 않음 |
 | 사용자 retain PoC | 참고 정보 | 사용자가 공유한 경험. 코드는 확인하지 못했으므로 구현 근거로 쓰지 않음 |
 | 세부 동작 기본안 | 결정 | 원문의 재량 영역은 [SPEC](SPEC.md)에 기본안으로 확정. 구현 중 사실 확인이 필요한 항목은 SPEC 13절에 분리 |
@@ -115,7 +115,7 @@ feature 간 직접 구현 참조를 피합니다. 앱이 내비게이션을 조�
 - 목록 카드 모델, ID 규칙, 오류 타입을 먼저 합의합니다.
 - Soil provider/key 경계에서 Fake key 또는 Fake 데이터 소스로 의존성을 교체해 feature 상태 전이를 테스트할 수 있게 합니다. 구체적인 교체 API는 선택한 Soil 버전에서 확인합니다.
 - 새 기능을 위해 DB·네트워크·UI 전역 상태를 동시에 수정해야 한다면 경계를 다시 검토합니다.
-- 모듈은 위 7개로 시작합니다. 기능이 늘면 feature 모듈을 추가하고, core를 더 쪼개는 일은 실제 충돌이 생긴 뒤에 합니다.
+- 모듈은 위 9개로 시작합니다. 기능이 늘면 feature 모듈을 추가하고, core를 더 쪼개는 일은 실제 충돌이 생긴 뒤에 합니다.
 
 ## 4. retain, 내비게이션, 코루틴 수명
 
@@ -326,7 +326,7 @@ Paging 3는 로드 상태·취소·재시도 구조가 표준화되어 있다는
 
 ### 10월 7일(수) 저녁: 빌드 조합
 
-1. 지정 버전의 Wrapper·AGP·Kotlin·KSP·JDK 17 조합으로 빈 프로젝트와 7개 모듈 골격 빌드
+1. 지정 버전의 Wrapper·AGP·Kotlin·KSP·JDK 17 조합으로 빈 프로젝트와 9개 모듈 골격 빌드
 2. Metro·Compose·Navigation 3·retain·Soil·Room·Retrofit·Coil 후보 버전을 추가하며 `assembleDebug` 확인
 3. 최소 retain + Navigation 3 화면 전환과 retain decorator 연결
 
@@ -416,7 +416,7 @@ Paging 3는 로드 상태·취소·재시도 구조가 표준화되어 있다는
 | Soil InfiniteQuery | typed-key 기반 데이터 접근과 페이징을 함께 학습 | key·provider·취소·페이지 계약 검증 필요 | 커스텀 페이징 / Paging 3는 미채택 대안 |
 | 저장 성공 후 상태 반영 권장 | 실패 시 롤백 복잡도 감소 | 반응 지연, 처리 중 UI 필요 | 낙관적 UI는 직렬화·롤백 비용 |
 | 원격 결과 메모리 유지 | 오류에서도 현재 목록 유지 | 프로세스 종료 시 손실 | 영속 검색 캐시는 후순위 |
-| 7개 Gradle 모듈 | 기능별 협업·의존 방향을 빌드로 강제 | 초기 설정 비용, AGP 9 convention plugin 위험 | 단일 모듈 + 패키지 경계 |
+| 9개 Gradle 모듈 | 기능별 협업·의존 방향을 빌드로 강제 | 초기 설정 비용, AGP 9 convention plugin 위험 | 단일 모듈 + 패키지 경계 |
 | 기본 적응형 레이아웃 우선 | 넓이/회전 대응을 빨리 검증 | 풍부한 2-pane UX는 제한 | 시간 확보 시 list-detail 확장 |
 
 검토했으나 구현하지 않은 기능은 이유와 사용자 영향까지 적습니다. “시간 부족”만 적기보다 어떤 위험을 줄이기 위해 무엇을 우선했는지 설명합니다.

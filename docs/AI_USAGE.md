@@ -89,6 +89,13 @@ AI 활용이 허용된 조건에 맞춰 조사·구현·검증·문서화에 적
 - Soil 소스 확인 결과: Mutation scope가 keepAliveTime 뒤 취소된다는 점을 확인했습니다. 그래서 즐겨찾기 쓰기를 앱 scope와 Mutex로 옮기는 설계를 추가했습니다.
 - 현재 결과: 문서 반영만 했습니다. 코드와 테스트는 아직 없습니다.
 
+### ADR-006: 모듈 분리와 Soil·Retrofit 연결 확인
+
+- 개발자 질문: "`core:data` 하나로 묶을 것인가", "Soil이 Retrofit을 지원하는가(사용자는 지원하지 않는다고 알고 있었음)", "build-logic을 기존 저장소처럼 구성할 것인가".
+- AI 확인: Soil 소스에서 fetch 계약이 `suspend` 함수뿐이고 core 의존성에 HTTP 클라이언트가 없으며, Ktor는 선택 receiver 모듈(`soil-query-receivers/ktor`)에만 있음을 확인했습니다. KMP 공통 코드에서 Retrofit을 못 쓰는 것은 Retrofit의 플랫폼 제약이지 Soil의 제약이 아닙니다.
+- 결정: Retrofit 유지, key 생성자에 Retrofit 서비스를 Metro로 주입. 모듈은 `core:network`·`core:database`를 분리해 9개로 바꿨습니다(개발자 제안 반영). build-logic은 개발자의 기존 저장소 구성을 따르되 Circuit·Firebase·detekt 관련 플러그인은 제외합니다.
+- 버전 조회(2026-10-07, Maven Central·Google Maven): Metro 1.4.5, Compose BOM 2026.09.00(runtime-retain 1.12.1 포함), Navigation 3 1.2.0, Room 2.8.5, Retrofit 3.0.0, OkHttp 5.5.0, Coil 3.6.3, Robolectric 4.17을 후보로 정했습니다. 실제 빌드 결과로 확정합니다.
+
 ## 앞으로의 활용 흐름
 
 2026-10-07 사용자 요청으로 설계·조사·문서화·리뷰에 더해 앱 구현도 같은 AI 작업 세션(Claude Code, Claude Opus 5.5)이 담당합니다. 사용자는 결정과 검토, 실제 키 설정과 제출을 맡습니다. 아래 흐름을 적용할 때 실제 수행 주체와 검증 결과를 구분해 기록합니다.
@@ -112,6 +119,7 @@ AI가 추가로 구현·수정·테스트를 도왔다면 날짜와 범위를 �
 | 2026-10-07 | 요구사항·참고 코드 분석 및 문서 초안 | retain 학습 목표 유지, Room 사용 허용 | 문서와 참조 커밋. 앱 빌드·테스트 미실행 |
 | 2026-10-07 | ViewModel 대안과 retain 위험 비교 | 기존 PoC 경험과 학습 목표로 retain + Navigation 3 선택 | ADR-001. 기존 PoC 내부 검증 미완료 |
 | 2026-10-07 | 원문·API·Soil·DroidKaigi 2025/2026 대조로 재량 영역 기본안 작성 | 구현을 AI 세션에 맡김. 암묵지는 기본안과 확인할 사실로 분리 | ADR-005, SPEC.md. 앱 빌드·테스트 미실행 |
+| 2026-10-07 | Soil fetch 계약·의존성 확인, 모듈 분리 검토, 라이브러리 최신 버전 조회 | Retrofit 유지, 9개 모듈, 기존 저장소 build-logic 구성 채택 | ADR-006, SPEC 2·4절. 빌드 미실행 |
 
 추가 기록 템플릿:
 

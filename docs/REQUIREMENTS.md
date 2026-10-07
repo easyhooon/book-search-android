@@ -131,7 +131,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [ ] **R-050** **설계 검증**: query/sort별 key, size=20, 페이지 메타데이터·is_end 유지, 로딩·취소·재시도 동작을 테스트로 확인. 커스텀 페이지네이션과 Paging 3는 미채택 대안
 - [ ] **R-051** **로컬 연결 검증**: 선택한 Soil Subscription→Room Flow / Mutation→Room 쓰기에서 Room 단일 상태 기준, 반영 순서·지연, 구독 수명·재구독을 테스트. 과거 우려를 근거로 Repository를 재도입하지 않음
 - [ ] **R-052** **오류 정책 검증**: Retrofit 예외의 재시도 가능 여부를 명시적으로 분류하고 CancellationException을 보존
-- [ ] **R-053** **결정**: `app`, `core:model`, `core:data`, `core:ui`, `feature:search`, `feature:favorites`, `feature:detail`의 7개 모듈로 경계를 나누고, 그 이상의 모듈 증설은 피하기
+- [ ] **R-053** **결정**: `app`, `core:model`, `core:network`, `core:database`, `core:data`, `core:ui`, `feature:search`, `feature:favorites`, `feature:detail`의 9개 모듈로 경계를 나누고, 그 이상의 모듈 증설은 피하기 (2026-10-07 `core:data`에서 network·database 분리)
 - [ ] **R-054** **현재 제품 정책**: 시스템 프로세스 재생성 시 query/sort/filter/탭과 상세 도서 스냅샷을 복원하고 검색은 재조회. 결과 목록 전체를 saveable에 넣지 않음
 
 ### 제품 선택 5개의 현재 정책

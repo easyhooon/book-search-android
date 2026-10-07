@@ -36,11 +36,17 @@
 | --- | --- | --- |
 | `app` | Application, Metro 앱 그래프, NavDisplay·탭·백스택 조립 | 모든 feature, core |
 | `core:model` | 도서·검색 조건·정렬·가격 필터 모델, ID·가격·필터·정렬 순수 규칙 | 없음 |
-| `core:data` | Retrofit API·DTO, Room DB·DAO, Soil key 구현, 즐겨찾기 쓰기 | core:model |
-| `core:ui` | 공통 도서 카드, 표지, 가격·날짜 표시, 상태 UI, 테마 | core:model |
-| `feature:search` | 검색 탭 Root·Presenter·Screen | core:* |
-| `feature:favorites` | 즐겨찾기 탭 Root·Presenter·Screen | core:* |
-| `feature:detail` | 상세 Root·Presenter·Screen | core:* |
+| `core:network` | Retrofit 서비스·DTO, OkHttp(이미지 기본 클라이언트, 인증 interceptor를 더한 API 클라이언트) | core:model |
+| `core:database` | Room DB·Entity·DAO, 스키마 export(KSP는 이 모듈에서만 실행) | core:model |
+| `core:data` | Soil key(Query·InfiniteQuery·Subscription·Mutation), DTO·Entity→`Book` 변환, FavoriteWriter, 오류 분류 | core:model, core:network·core:database(`implementation`) |
+| `core:ui` | 공통 도서 카드, 표지(Coil), 가격·날짜 표시, 상태 UI, 테마 | core:model |
+| `feature:search` | 검색 탭 Root·Presenter·Screen | core:model, core:data, core:ui |
+| `feature:favorites` | 즐겨찾기 탭 Root·Presenter·Screen | core:model, core:data, core:ui |
+| `feature:detail` | 상세 Root·Presenter·Screen | core:model, core:data, core:ui |
+
+모두 9개입니다. 처음에는 `core:data` 하나에 원격·로컬을 함께 두려 했으나, Repository가 없는 구조에서는 feature가 Soil key만 보도록 Retrofit·Room 타입을 `core:data` 뒤로 숨기는 편이 경계가 선명하고, Room KSP 재실행 범위도 줄어들어 2026-10-07에 나눴습니다. `core:designsystem`, `core:common`은 만들지 않습니다(Material 3 기본 테마, 공용 코드 없음).
+
+convention plugin은 사용자 기존 저장소의 `build-logic` 구성(includeBuild, `kotlin-dsl`, version catalog 공유, `pluginRegister` 패턴)을 따르고, Circuit·Firebase·detekt 관련 플러그인은 두지 않습니다. 플러그인 ID 접두는 `booksearch.`입니다. Room은 `core:database` 한 곳에서만 쓰므로 해당 build 파일에 직접 적습니다.
 
 feature끼리는 서로 참조하지 않습니다. feature는 `onBookClick(book)` 같은 콜백만 노출하고, 어떤 NavKey로 이동할지는 `app`이 정합니다. AGP 9 환경에서 convention plugin 구성이 막히면 실패 로그를 기록한 뒤, 모듈 경계는 유지하고 각 모듈 build 파일에 설정을 직접 적는 방식으로 후퇴합니다.
 
@@ -52,11 +58,14 @@ feature끼리는 서로 참조하지 않습니다. feature는 `onBookClick(book)
 | --- | --- |
 | Kotlin | 2.4.0 (원문 지정) |
 | KSP | 2.3.10 (원문 지정. DroidKaigi는 2.3.9이며 KSP 2.3.x는 Kotlin 버전과 분리됨) |
-| Metro | 1.2.1 |
+| Metro | 1.4.5 (1.2.0부터 Kotlin 2.4.0 기준 빌드. DroidKaigi는 1.2.1) |
 | Soil | 1.0.0-alpha15 |
-| Compose runtime retain | 1.12.0-alpha03 계열 |
-| Navigation 3 | 1.1.1 |
-| Coil 3 | 3.2.0 이상 |
+| Compose BOM / runtime retain | 2026.09.00 / 1.12.1 (BOM에 포함된 정식판. DroidKaigi는 CMP 1.12.0-alpha03) |
+| Navigation 3 | 1.2.0 (DroidKaigi는 1.1.1) |
+| Coil 3 | 3.6.3 |
+| Retrofit / OkHttp | 3.0.0 / 5.5.0 |
+| Room | 2.8.5 |
+| Robolectric | 4.17 |
 | kotlinx.coroutines / serialization | 1.11.0 / 1.11.0 |
 | Molecule / Turbine | 2.2.0 / 1.2.1 |
 
@@ -102,6 +111,7 @@ DroidKaigi는 JetBrains Compose Multiplatform 아티팩트를 씁니다. 이 앱
 
 - DTO는 모든 필드에 기본값을 두고 `ignoreUnknownKeys = true`로 역직렬화합니다. 필드 누락 때문에 목록 전체가 실패하지 않게 하기 위해서입니다.
 - 종료 판정은 `meta.is_end == true`이거나 마지막으로 받은 page가 50인 경우입니다. 받은 문서 개수로 종료 여부를 추정하지 않습니다.
+- Soil core의 fetch 계약은 `suspend` 함수일 뿐이라 HTTP 클라이언트를 가리지 않습니다(`QueryKey.fetch: suspend QueryReceiver.() -> T`). 공식 receiver 모듈은 Ktor용만 있지만 필수가 아니며, 이 앱은 Metro로 주입한 Retrofit 서비스를 key 생성자로 받아 fetch에서 호출합니다. Retrofit의 `HttpException`·`IOException`은 그대로 Soil로 전파됩니다.
 - 단건 조회 API는 없습니다. 상세는 네트워크 재조회 없이 7절의 스냅샷으로 구성합니다.
 
 ## 5. 도서 모델과 ID
