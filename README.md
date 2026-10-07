@@ -13,8 +13,9 @@ Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하�
 ## 구현 방향
 
 - Kotlin, Coroutines, Flow, Jetpack Compose
+- Android 전용 구성. KMP 프로젝트 설정은 도입하지 않음
 - 검색 / 즐겨찾기 2개 탭과 도서 상세 화면
-- Navigation 3 + retain 기반 화면 상태 관리
+- Navigation 3 + retain 기반 화면 상태 관리 (Circuit 미사용)
 - Room + Flow를 통한 즐겨찾기 영속 저장과 화면 간 상태 동기화
 - 불안정한 네트워크, 화면 회전, 태블릿·폴더블 대응
 
