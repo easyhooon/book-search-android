@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 제출 ZIP을 만듭니다: 소스, .git, local.properties, debug APK, 시연 영상.
 # build/, .gradle/ 등 빌드 산출물과 IDE 설정은 넣지 않습니다.
+# local.properties의 sdk.dir은 이 기기의 경로라서 빼고 넣습니다. SDK는 Android Studio나 ANDROID_HOME으로 찾습니다.
 # 사용법: scripts/make-submission-zip.sh [출력 경로]  (기본값: 저장소 상위 폴더의 book-search-android.zip)
 set -euo pipefail
 
@@ -37,6 +38,7 @@ rsync -a \
   --exclude '*.apk' \
   --exclude '*.zip' \
   "$root/" "$stage/$name/"
+grep -v '^sdk\.dir=' "$root/local.properties" > "$stage/$name/local.properties"
 cp "$apk" "$stage/$name/app-debug.apk"
 
 rm -f "$out"
