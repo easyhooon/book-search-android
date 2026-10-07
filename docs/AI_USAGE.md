@@ -11,7 +11,7 @@
 - 3일 구현 일정과 검증 시나리오 초안 작성
 - README 및 전략 문서 초안 작성
 
-retain + Navigation 3를 학습하며 사용한다는 방향은 사용자의 선택입니다. Room은 사용 가능한 권장안이며 필수 요구 기술로 바꾸지 않았습니다. 가격 필터의 구체적 의미, 페이지네이션 라이브러리, 세부 의존성 버전 등은 확정되지 않은 부분을 문서에 표시했습니다.
+retain + Navigation 3를 학습하며 사용한다는 방향은 사용자의 선택입니다. 로컬 저장은 Room으로 선택했으며, 이를 원 과제에서 지정한 필수 기술로 바꾸지는 않았습니다. Soil typed-key와 InfiniteQuery도 선택했습니다. 가격 필터의 구체적 의미와 세부 의존성 버전 등은 확정되지 않은 부분을 문서에 표시했습니다.
 
 ## 아직 수행하지 않은 일
 
@@ -43,7 +43,43 @@ AI 활용이 허용된 조건에 맞춰 조사·구현·검증·문서화에 적
 
 이 사례는 AI 제안을 그대로 따르지 않고 개발자가 자신의 경험·학습 목표·위험 수용 범위로 최종 결정을 내린 기록입니다.
 
+### ADR-002: Retrofit 선택
+
+- 배경: 참고 도서 검색 프로젝트는 Ktor를 사용하므로 초기 계획에서 재사용 후보로 검토했습니다.
+- 개발자가 추가한 맥락: Ktor보다 Retrofit 사용 경험이 많다고 밝혔습니다.
+- 최종 선택: 원격 통신은 Retrofit + OkHttp + kotlinx.serialization, 로컬 저장은 Room으로 구성합니다.
+- AI의 보완 제안: MockWebServer API 계층 테스트와 Fake 의존성을 이용한 Presenter 테스트를 권장했습니다. 선택한 Soil 구성에서는 provider/key의 의존성을 Fake key 또는 Fake 데이터 소스로 교체하는 방향을 검토합니다. 테스트 의존성·버전은 아직 확정하지 않았습니다.
+- 판단 근거: 익숙한 도구로 제한된 일정에서 구현·검증하는 데 집중합니다. Retrofit이 항상 우월하거나 Ktor로 테스트할 수 없다는 판단은 아닙니다.
+- 현재 결과: 계획과 요구사항 문서에 반영했습니다. 앱 코드·네트워크 테스트는 아직 작성하거나 실행하지 않았습니다.
+
+### ADR-003: Soil typed-key와 InfiniteQuery 선택
+
+- 배경: 사용자는 기존 방식의 반복보다 학습 가치를 고려해 Soil과 DroidKaigi의 데이터 접근 사례를 질문했습니다.
+- AI 제안: Query/InfiniteQuery → Retrofit, Subscription → Room Flow, Mutation → Room 쓰기의 작은 typed-key 구성을 제안했습니다.
+- 사용자 결정: Soil과 InfiniteQuery 사용에 동의했으며, 단순 위임 Repository는 추가하지 않기로 했습니다.
+- 유지하는 기준: 즐겨찾기 상태는 Room을 단일 기준으로 삼습니다. query/sort key, size=20, 페이지 메타데이터·is_end를 보존합니다.
+- 검증할 점: provider 범위, 취소·늦은 응답, 로딩·재시도, 호스트 수명은 테스트로 확인합니다. Soil이 이를 모두 자동 보장하거나 디스크 캐시를 자동 제공한다고 가정하지 않습니다.
+- 대안과 현재 상태: 일반 Repository·커스텀 페이징·Paging 3는 미채택 대안입니다. 현재는 문서에 선택을 반영했으며 코드 구현·테스트 실행은 아직 하지 않았습니다.
+
+### ADR-003 후속 검토: 기존 경험과 로컬 연결
+
+이후 사용자 본인의 [Soil 적용 기록](https://velog.io/@mraz3068/Soil-Apply)을 확인해, 과거 Room Mutation/Subscription 적용 뒤 로컬 Repository로 되돌린 경험을 발견했습니다. AI는 로컬 연결 비교를 제안했지만, 사용자는 DroidKaigi 2026이 당시의 여러 의문을 해소한 참고 구조라고 설명했습니다. 이에 현재 계획은 선택한 Subscription/Mutation→Room을 유지하며, 과거 경험은 단일 상태 기준·구독 수명·반영 순서 테스트에 반영하도록 바로잡았습니다. 직접 Flow 비교나 Repository 재도입을 필수화하지 않습니다. 관찰한 지연을 Soil의 확정적 결함으로 단정하지 않습니다. Retrofit 연결도 전용 공식 통합 모듈이 아닌 범용 suspend fetch 활용이라는 경계와 재시도 정책 확인 필요성을 문서에 보완했습니다.
+
+### ADR-004: Metro와 Coil, 아키텍처 문서
+
+사용자는 Metro 의존성 주입과 Coil 이미지 로딩을 선택하고, 정리된 기술 구성에 맞는 별도 아키텍처 문서를 요청했습니다. AI는 최소 Metro 그래프와 Coil 3의 coil-compose + coil-network-okhttp 구성을 권장했습니다. Coil의 정확한 세대·버전 확정과 Metro/Kotlin 컴파일러 호환성 검증은 남아 있습니다. API 인증 interceptor를 이미지 요청에 전달하지 않는 경계도 설계에 포함했습니다. [ARCHITECTURE.md](ARCHITECTURE.md)는 이 선택과 테스트 경계를 정리한 구현 전 문서입니다.
+
+### 오류 처리 helper 검토
+
+사용자가 확인을 요청한 runSuspendCatching은 취소를 보존하더라도 Soil fetch/Mutation의 기본 래퍼로 사용하면 안 되는 경계를 확인했습니다. Soil은 T 반환·예외 전파를 통해 오류 상태를 구성하므로, Result.failure를 데이터로 반환하는 방식은 피합니다. Room Subscription의 Flow 취소 투명성도 함께 검토했습니다. 이는 조사·설계 기록이며 helper 구현이나 테스트 실행을 뜻하지 않습니다.
+
+### retain과 factory 검토
+
+사용자의 retain 글과 DroidKaigi 2026을 확인해 객체 유지·프로세스 복원, Metro가 생성하는 factory 구현·과거 KSP 편의 함수 생성기를 구분했습니다. 현재 계획은 기존 Metro factory와 retain/Nav3를 최소한으로 연결하며 자체 생성기는 추가하지 않습니다. 과거 preview 설명과 이전 문제의식을 현재 구현의 미해결 결함으로 단정하지 않았습니다.
+
 ## 앞으로의 활용 흐름
+
+현재 역할은 설계·조사·문서화·리뷰이며, 구현은 사용자의 Claude Opus 5.5가 담당합니다. 아래 흐름을 적용할 때 실제 수행 주체와 검증 결과를 구분해 기록합니다.
 
 1. 작업을 작게 나누어 AI에 맡깁니다. 예: “이 API의 페이지 종료 계약을 확인하고 경계 테스트를 제안해 줘.”
 2. 결과에 근거를 요구합니다. 공식 문서, 확인한 코드 위치, 실제 diff, 실행한 명령과 결과를 붙입니다.

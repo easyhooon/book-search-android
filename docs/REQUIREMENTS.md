@@ -22,7 +22,7 @@
 - [ ] 별도 설명 없이도 재현 가능한 `./gradlew assembleDebug` 성공
 - [ ] 요청 버전 조합의 호환성 확인. 충돌 시 임의 변경하지 않고 실패 로그·공식 근거·대안 기록
 
-위 버전은 제공된 요구값입니다. 현재 저장소에서 검증된 설치 버전이나 성공한 빌드 결과가 아닙니다. minSdk, targetSdk, Compose/Navigation/Room/Ktor 버전은 아직 확정하지 않았습니다.
+위 버전은 제공된 요구값입니다. 현재 저장소에서 검증된 설치 버전이나 성공한 빌드 결과가 아닙니다. minSdk, targetSdk, Compose/Navigation/Room/Retrofit 버전은 아직 확정하지 않았습니다.
 
 ## 2. 원격 도서 검색: 필수
 
@@ -81,9 +81,16 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 ## 6. 선택 결정과 권장 설계
 
 - [ ] **사용자 선택**: retain + Navigation 3로 진행. 학습 목표를 유지하며 검증
-- [ ] **허용된 권장안**: Room으로 영속 저장. Room 자체가 필수 기술인 것은 아님
+- [ ] **사용자 선택**: Room으로 영속 저장. 원 과제에서 Room 라이브러리를 지정한 것은 아님
 - [ ] **권장**: Room Flow를 즐겨찾기의 단일 상태 기준으로 사용
-- [ ] **검토 중**: Ktor 재사용 및 커스텀 페이지네이션 / Paging 3 비교
+- [ ] **사용자 선택**: 원격 통신은 Retrofit + OkHttp + kotlinx.serialization 사용
+- [ ] **권장**: MockWebServer API 계층 테스트. 구체적인 의존성 버전은 검증 후 확정
+- [ ] **사용자 선택**: Soil typed-key + InfiniteQuery로 데이터 접근·페이지네이션 구성, 단순 위임 Repository 생략
+- [ ] **사용자 선택**: Metro 의존성 주입, Coil 이미지 로딩. Coil 3는 현재 권장안
+- [ ] **설계 검증**: Metro/Kotlin 컴파일러 호환, API와 이미지 네트워크 인증 설정 분리. 구체적인 구조는 [아키텍처](ARCHITECTURE.md) 참고
+- [ ] **설계 검증**: query/sort별 key, size=20, 페이지 메타데이터·is_end 유지, 로딩·취소·재시도 동작을 테스트로 확인. 커스텀 페이지네이션과 Paging 3는 미채택 대안
+- [ ] **로컬 연결 검증**: 선택한 Soil Subscription→Room Flow / Mutation→Room 쓰기에서 Room 단일 상태 기준, 반영 순서·지연, 구독 수명·재구독을 테스트. 과거 우려를 근거로 Repository를 재도입하지 않음
+- [ ] **오류 정책 검증**: Retrofit 예외의 재시도 가능 여부를 명시적으로 분류하고 CancellationException을 보존
 - [ ] **권장**: 기능·데이터 경계를 작게 유지하고 불필요한 모듈 증설 피하기
 - [ ] **권장**: query/sort/filter/bookId 등 최소 복원 값만 saveable 상태로 보관
 
