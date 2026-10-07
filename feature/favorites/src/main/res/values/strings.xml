@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="favorites_hint">제목 또는 저자 검색</string>
+    <string name="favorites_empty">즐겨찾기한 도서가 없습니다</string>
+    <string name="favorites_no_match">조건에 맞는 도서가 없습니다</string>
+    <string name="sort_title_ascending">제목 오름차순</string>
+    <string name="sort_title_descending">제목 내림차순</string>
+    <string name="price_filter">가격 필터</string>
+    <string name="price_filter_at_least">%1$s 이상</string>
+    <string name="price_filter_at_most">%1$s 이하</string>
+    <string name="price_filter_range">%1$s ~ %2$s</string>
+    <string name="price_filter_description">정가 기준이며 입력한 금액을 포함합니다. 빈칸은 제한하지 않습니다.</string>
+    <string name="price_filter_min">최소 금액</string>
+    <string name="price_filter_max">최대 금액</string>
+    <string name="price_filter_unit">원</string>
+    <string name="price_filter_invalid">최소 금액이 최대 금액보다 클 수 없습니다</string>
+    <string name="price_filter_apply">적용</string>
+    <string name="price_filter_clear">초기화</string>
+</resources>
