@@ -2,183 +2,93 @@
 
 기준일: 2026-10-08
 
-## 단계별 역할
+## 역할 분담
 
-| 단계 | 도구 | 맡은 일 | 커밋 |
-| --- | --- | --- | --- |
-| 설계 | Codex | 개발자와 협의하며 요구사항 정리, 참고 코드 조사, 구현 전략·아키텍처·제품 정책 문서 초안. 코드 미작성 | `41ed653`~`adb290b` |
-| 사양 확정 | Claude Code (Claude Opus 5.5) | 설계 문서의 암묵지 검토, 원문 재량 영역의 기본안을 [SPEC](SPEC.md)으로 정리, 모듈 분리·Soil–Retrofit 연결 확인 | `977a558`, `ed3d514` |
-| 구현·검증 | Claude Code (Claude Opus 5.5) | 빌드 설정, 모든 모듈의 코드와 테스트, 실기기 QA, 검증 문서 | `c0f8117`~`71cdf67` |
+| 단계 | 도구 | AI가 맡은 일 |
+| --- | --- | --- |
+| 설계 | Codex | 개발자와 협의하며 요구사항을 기능·환경·제출 체크리스트로 정리, 참고 코드와 Kakao API·Android 문서 조사, 위험 식별(상태 수명, 검색 경합, 페이지 종료, 저장 실패, 오프라인), 아키텍처·제품 정책 문서 초안. 코드는 작성하지 않음 |
+| 사양 확정 | Claude Code (Claude Opus 5.5) | 설계 문서의 암묵지 검토, 원문 재량 영역의 기본안을 [SPEC](SPEC.md)으로 정리, 모듈 분리·Soil–Retrofit 연결 확인 |
+| 구현·검증 | Claude Code (Claude Opus 5.5) | 개발자의 명시적 요청으로 맡음. 지정 버전 호환성 확인과 멀티 모듈 Gradle 구성, 9개 모듈의 코드와 테스트, 요구사항 기반 실기기 QA(adb 조작), 시연 영상 녹화·편집, 제출 ZIP 스크립트, 검증 문서·README·이 문서 작성 |
 
-개발자는 기술 선택과 정책 결정, 결과 검토, 실제 키 설정과 제출을 맡았습니다.
+개발자는 기술 선택과 제품 정책 결정, AI 결과 검토와 수정 지시, 실제 키 설정과 최종 제출 패키지 확인을 맡았습니다. 실제 폴더블 기기 확인은 아직 하지 않았습니다.
 
-## 설계 단계에서 도움받은 범위
+작업 원칙은 다음과 같습니다.
 
-- 제공된 요구사항을 기능·환경·제출 체크리스트로 정리
-- 기존 도서/미디어 검색 프로젝트와 Navigation 3 + retain 사례의 코드 조사 결과 정리
-- 공식 Kakao 책 검색 API와 Android 문서를 참고한 설계 초안 작성
-- 상태 수명, 검색 경합, 페이지 종료, 즐겨찾기 저장 실패, 오프라인 범위의 위험 식별
-- 3일 구현 일정과 검증 시나리오 초안 작성
-- README 및 전략 문서 초안 작성
+- AI 결과에는 근거(공식 문서, 확인한 코드 위치, diff, 실행한 명령과 결과)를 붙이고, 개발자가 요구사항·동작·유지보수 관점에서 검토해 채택·수정·기각합니다.
+- 기능 단위로 구현하고 단위마다 빌드·테스트를 실행한 뒤 커밋합니다. SPEC의 기본안이 바뀌면 SPEC을 먼저 고칩니다.
+- 작성한 테스트, 실행해 통과한 테스트, 미실행 항목을 구분하고 오류 원인은 실제 로그와 대조합니다.
+- 실제 API 키나 비공개 메시지를 넣은 프롬프트, 원본 대화 기록은 제출 자료에 넣지 않습니다.
 
-retain + Navigation 3를 학습하며 사용한다는 방향은 사용자의 선택입니다. 로컬 저장은 Room으로 선택했으며, 이를 원 과제에서 지정한 필수 기술로 바꾸지는 않았습니다. Soil typed-key와 InfiniteQuery도 선택했습니다. 가격 필터 등 제품 정책은 이후 도서 서비스 사례를 참고하라는 방향에 맞춰 정리했으며, 의존성 버전 등 미검증 세부사항과 구분했습니다.
+## 의사결정 기록
 
-## 구현·검증 단계에서 도움받은 범위
+### ADR-001: retain + Navigation 3
 
-- 지정 버전 조합의 호환성 확인과 멀티 모듈 Gradle 구성(convention plugin)
-- 9개 모듈의 앱 코드와 테스트 작성. 기능 단위로 빌드·테스트를 실행한 뒤 커밋
-- 요구사항 기반 실기기 QA 시나리오 작성과 adb를 이용한 실행
-- QA에서 찾은 결함의 재현 테스트 작성과 수정
-- 요구사항별 검증 기록, QA 문서, README 작성
-- adb 조작 스크립트로 시연 영상 녹화와 편집
-- 제출 ZIP 생성 스크립트 작성, 압축을 푼 폴더에서 빌드·설치 확인
+- 결정: 화면 상태 수명은 retain + Navigation 3로 관리하고 ViewModel 중심 구조로 전환하지 않습니다.
+- 이유: AI는 일정과 익숙한 구현 경로를 들어 ViewModel을 제안했습니다. 개발자는 기존 retain PoC에서 Navigation 3와 오류 처리를 시험한 경험과 retain 학습 목표를 근거로 retain을 택했습니다. 대신 엔트리별 수명, 코루틴 취소, pop 정리, saveable 최소 상태, 프로세스 복원을 먼저 검증하도록 순서를 바꿨습니다.
+- 객체 유지와 프로세스 복원, Metro가 생성하는 factory와 자체 KSP 편의 함수 생성기를 구분했습니다. Metro factory와 retain/Nav3는 최소한으로 연결하고 자체 생성기는 추가하지 않습니다.
+- 검증: retain 값을 Navigation 3 엔트리에 묶는 decorator를 구현했습니다. 엔트리 제거 시 정리와 구성 변경 시 유지는 `BookSearchNavHostTest`로, 프로세스 재생성 복원은 실기기 QA(TC-54, TC-70b)로 확인했습니다.
 
-아직 하지 않은 일은 실제 폴더블 기기 확인입니다. 실제 키 설정과 최종 제출 패키지 확인은 개발자가 합니다.
+### ADR-002: Retrofit
 
-## AI 활용 목표
+- 결정: 원격 통신은 Retrofit + OkHttp + kotlinx.serialization, 로컬 저장은 Room으로 구성합니다.
+- 이유: 참고 도서 검색 프로젝트는 Ktor를 쓰지만, 개발자는 Retrofit 경험이 더 많아 제한된 일정에서 구현·검증에 집중하기로 했습니다. Retrofit이 항상 낫다거나 Ktor로 테스트할 수 없다는 판단은 아닙니다.
+- 대안: Ktor.
+- 검증: AI가 권장한 MockWebServer 테스트(`KakaoBookServiceTest`)로 인증 헤더·검색 파라미터, 알 수 없는 필드 무시, HTTP 오류 전파, 키 누락 시 요청 차단을 확인했습니다. Presenter 테스트는 key factory에 Fake API를 연결합니다.
 
-AI 활용이 허용된 조건에 맞춰 조사·구현·검증·문서화에 적극 활용하고, 어떤 판단을 맡겼으며 어떤 근거로 결과를 채택하거나 수정했는지 보여줍니다. 사용량이나 생성한 코드 줄 수보다 **문제 정의 → AI 작업 → 증거 확인 → 개발자 판단 → 수정 결과**가 이어지는 기록을 남깁니다.
+### ADR-003: Soil typed-key와 InfiniteQuery
 
-실제 API 키나 비공개 메시지를 넣은 프롬프트, 긴 원본 대화 기록은 제출 자료에 포함하지 않습니다. 검토 가능한 작업 요약·커밋·테스트 결과만 남깁니다.
+- 결정: Query/InfiniteQuery → Retrofit, Subscription → Room Flow, Mutation → Room 쓰기의 typed-key 구성을 씁니다. 단순 위임 Repository는 두지 않고, 즐겨찾기 상태는 Room을 단일 기준으로 삼습니다.
+- 이유: 개발자가 학습 가치를 고려해 선택했습니다. 개발자의 과거 Soil 적용에서 로컬을 Repository로 되돌린 경험이 있어 AI가 로컬 연결 비교를 제안했지만, 개발자는 DroidKaigi 2026이 당시의 의문을 해소한 참고 구조라고 판단해 현재 구성을 유지했습니다. 과거 경험은 단일 상태 기준·구독 수명·반영 순서 테스트에 반영했습니다([ARCHITECTURE](ARCHITECTURE.md) 9절).
+- 오류 처리: fetch와 Mutation은 T 반환·예외 전파 계약을 지키고, `runSuspendCatching`을 기본 래퍼로 쓰지 않습니다. 취소는 실패로 알리지 않습니다(`FavoriteTogglerTest`).
+- 대안: 일반 Repository, 커스텀 페이징, Paging 3.
+- 검증: `SearchPresenterTest`, `FavoriteSubscriptionKeysTest`.
 
-## 실제 의사결정 기록
+### ADR-004: Metro와 Coil
 
-### ADR-001: retain + Navigation 3 유지
+- 결정: 개발자가 Metro와 Coil을 선택했고, AI는 최소 Metro 그래프와 Coil 3(coil-compose + coil-network-okhttp) 구성을 권장했습니다. 이미지 요청에는 API 인증 interceptor를 전달하지 않습니다.
+- 결과: Metro 1.4.5와 Coil 3.6.3으로 빌드했고, 이미지 로더는 인증 interceptor가 없는 클라이언트를 씁니다. 구조는 [ARCHITECTURE](ARCHITECTURE.md)에 정리했습니다.
 
-- 배경: 짧은 구현 일정 때문에 상태 관리의 구현 위험을 줄일 필요가 있었습니다.
-- AI의 초기 제안: 일정과 익숙한 구현 경로를 고려해 ViewModel을 사용하는 실용적인 방향을 제안했습니다.
-- 개발자가 추가한 맥락: 기존 retain PoC에서 Navigation 3 및 오류 처리를 상당 부분 시험했고, 결과와 무관하게 retain을 직접 학습하려는 목표가 있었습니다.
-- 최종 선택: retain + Navigation 3로 진행합니다. 기존 PoC의 원격 코드는 접근하지 못했으므로 구현 검증은 별도로 남아 있습니다.
-- 계획의 변경: ViewModel 전면 전환 대신 엔트리별 상태 수명, 코루틴 취소, pop 정리, saveable 최소 상태, 프로세스 종료 복원을 초기에 검증하도록 순서를 바꿨습니다.
-- 결과: retain 값을 Navigation 3 엔트리에 묶는 decorator를 구현했습니다. 엔트리 제거 시 정리, 구성 변경 시 유지를 `BookSearchNavHostTest`로 확인했고, 프로세스 재생성 복원은 실기기 QA(TC-54, TC-70b)로 확인했습니다.
+### ADR-005: 원문 재량 영역의 기본안
 
-이 사례는 AI 제안을 그대로 따르지 않고 개발자가 자신의 경험·학습 목표·위험 수용 범위로 최종 결정을 내린 기록입니다.
+- 배경: 원문은 의문점을 합리적으로 판단하라고 하고 UI 세부를 자유로 둡니다. 재량 영역은 명시한 기본안으로, 나머지는 구현 중 확인할 사실로 나누고, 필수 요구·제품 정책·구현 계약도 분리했습니다.
+- AI 작업: 원문 요약, UI 가이드, Kakao API 문서, Soil 소스(1.0.0-alpha15), DroidKaigi 2025·2026 기준 커밋을 대조해 [SPEC](SPEC.md)을 작성했습니다.
+- 정책 변경: Kakao API에 단건 조회가 없어, 복원 정책을 "bookId 저장 후 재조회"에서 "상세 진입 시점의 도서 스냅샷을 내비게이션 키에 저장"으로 바꿨습니다. Soil Mutation scope가 keepAliveTime 뒤 취소되므로 즐겨찾기 쓰기를 앱 scope와 Mutex로 옮겼습니다.
+- 제품 정책 근거: 공개 도서 서비스 UI와 Android 공식 지침을 참고했습니다. 가격 범위 입력·적용 UI와 위시리스트 흐름은 공개 자료로 확인했지만, 검색 트리거·내부 DB scope·프로세스 복원은 확인했다고 기록하지 않습니다. 정가 기준, 저장 버튼·화면 이동, 최소 상태 복원, 1-pane 우선은 이 앱이 선택한 설계입니다.
+- 참고 저장소: DroidKaigi 2026은 패턴만 참고하고, 열린 탭 관련 버그 이슈(#344, #226) 때문에 탭 전환 코드는 복사하지 않고 규칙을 직접 정했습니다. 2025는 Metro·Soil 사용의 교차 확인에만 씁니다.
+- 검증: 즐겨찾기 쓰기의 앱 scope와 Mutex는 `FavoriteWriterTest`(화면 취소 후 완료, 직렬 실행)로 확인했습니다.
 
-### ADR-002: Retrofit 선택
+### ADR-006: 모듈 분리와 Soil·Retrofit 연결
 
-- 배경: 참고 도서 검색 프로젝트는 Ktor를 사용하므로 초기 계획에서 재사용 후보로 검토했습니다.
-- 개발자가 추가한 맥락: Ktor보다 Retrofit 사용 경험이 많다고 밝혔습니다.
-- 최종 선택: 원격 통신은 Retrofit + OkHttp + kotlinx.serialization, 로컬 저장은 Room으로 구성합니다.
-- AI의 보완 제안: MockWebServer API 계층 테스트와 Fake 의존성을 이용한 Presenter 테스트를 권장했습니다. 선택한 Soil 구성에서는 provider/key의 의존성을 Fake key 또는 Fake 데이터 소스로 교체하는 방향을 검토합니다. 테스트 의존성은 [SPEC](SPEC.md) 2절에 고정했습니다.
-- 판단 근거: 익숙한 도구로 제한된 일정에서 구현·검증하는 데 집중합니다. Retrofit이 항상 우월하거나 Ktor로 테스트할 수 없다는 판단은 아닙니다.
-- 결과: `KakaoBookServiceTest`(MockWebServer)로 인증 헤더와 검색 파라미터, 알 수 없는 필드 무시, HTTP 오류 전파, 키 누락 시 요청 차단을 확인했습니다. Presenter 테스트는 key factory에 Fake API를 연결해 Soil key를 구성합니다.
-
-### ADR-003: Soil typed-key와 InfiniteQuery 선택
-
-- 배경: 사용자는 기존 방식의 반복보다 학습 가치를 고려해 Soil과 DroidKaigi의 데이터 접근 사례를 질문했습니다.
-- AI 제안: Query/InfiniteQuery → Retrofit, Subscription → Room Flow, Mutation → Room 쓰기의 작은 typed-key 구성을 제안했습니다.
-- 사용자 결정: Soil과 InfiniteQuery 사용에 동의했으며, 단순 위임 Repository는 추가하지 않기로 했습니다.
-- 유지하는 기준: 즐겨찾기 상태는 Room을 단일 기준으로 삼습니다. query/sort key, size=20, 페이지 메타데이터·is_end를 보존합니다.
-- 검증할 점: provider 범위, 취소·늦은 응답, 로딩·재시도, 호스트 수명은 테스트로 확인합니다. Soil이 이를 모두 자동 보장하거나 디스크 캐시를 자동 제공한다고 가정하지 않습니다.
-- 대안과 현재 상태: 일반 Repository·커스텀 페이징·Paging 3는 미채택 대안입니다. 검색은 InfiniteQuery, 즐겨찾기 조회는 Room Flow Subscription으로 구현했고 `SearchPresenterTest`·`FavoriteSubscriptionKeysTest`로 확인했습니다.
-
-### ADR-003 후속 검토: 기존 경험과 로컬 연결
-
-이후 사용자 본인의 [Soil 적용 기록](https://velog.io/@mraz3068/Soil-Apply)을 확인해, 과거 Room Mutation/Subscription 적용 뒤 로컬 Repository로 되돌린 경험을 발견했습니다. AI는 로컬 연결 비교를 제안했지만, 사용자는 DroidKaigi 2026이 당시의 여러 의문을 해소한 참고 구조라고 설명했습니다. 이에 현재 계획은 선택한 Subscription/Mutation→Room을 유지하며, 과거 경험은 단일 상태 기준·구독 수명·반영 순서 테스트에 반영하도록 바로잡았습니다. 직접 Flow 비교나 Repository 재도입을 필수화하지 않습니다. 관찰한 지연을 Soil의 확정적 결함으로 단정하지 않습니다. Retrofit 연결도 전용 공식 통합 모듈이 아닌 범용 suspend fetch 활용이라는 경계와 재시도 정책 확인 필요성을 문서에 보완했습니다.
-
-### ADR-004: Metro와 Coil, 아키텍처 문서
-
-사용자는 Metro 의존성 주입과 Coil 이미지 로딩을 선택하고, 정리된 기술 구성에 맞는 별도 아키텍처 문서를 요청했습니다. AI는 최소 Metro 그래프와 Coil 3의 coil-compose + coil-network-okhttp 구성을 권장했습니다. Coil의 정확한 세대·버전 확정과 Metro/Kotlin 컴파일러 호환성 검증은 남아 있습니다. API 인증 interceptor를 이미지 요청에 전달하지 않는 경계도 설계에 포함했습니다. [ARCHITECTURE.md](ARCHITECTURE.md)는 이 선택과 테스트 경계를 정리한 문서이며 구현 후 실제 구조로 갱신했습니다. Metro 1.4.5와 Coil 3.6.3으로 빌드했고, 이미지 로더는 인증 interceptor가 없는 클라이언트를 씁니다.
-
-### 오류 처리 helper 검토
-
-사용자가 확인을 요청한 runSuspendCatching은 취소를 보존하더라도 Soil fetch/Mutation의 기본 래퍼로 사용하면 안 되는 경계를 확인했습니다. Soil은 T 반환·예외 전파를 통해 오류 상태를 구성하므로, Result.failure를 데이터로 반환하는 방식은 피합니다. Room Subscription의 Flow 취소 투명성도 함께 검토했습니다. 구현에서도 fetch와 Mutation은 예외를 그대로 던지고, 취소는 실패로 알리지 않습니다(`FavoriteTogglerTest`).
-
-### retain과 factory 검토
-
-사용자의 retain 글과 DroidKaigi 2026을 확인해 객체 유지·프로세스 복원, Metro가 생성하는 factory 구현·과거 KSP 편의 함수 생성기를 구분했습니다. 현재 계획은 기존 Metro factory와 retain/Nav3를 최소한으로 연결하며 자체 생성기는 추가하지 않습니다. 과거 preview 설명과 이전 문제의식을 현재 구현의 미해결 결함으로 단정하지 않았습니다.
-
-### 제품 정책의 근거와 확인 범위
-
-사용자가 원문에 명시된 요구를 미정 목록에서 제거하도록 요청해 필수 요구·제품 정책·구현 계약을 분리했습니다. 이후 유명 도서 앱의 방식을 따르자는 지시에 따라 공개 도서 서비스 UI와 Android 공식 지침을 참고했습니다. 가격 범위 입력·적용 UI와 위시리스트 사용자 흐름은 공개 자료로 확인했으나, 검색 트리거나 내부 DB scope·프로세스 복원까지 직접 확인한 것으로 기록하지 않았습니다. 이 앱의 정가 기준, 저장 버튼·화면 이동, 최소 상태 복원, 1-pane 우선 정책은 근거를 바탕으로 선택한 설계이며 [STRATEGY.md](STRATEGY.md)에 출처와 한계를 남겼습니다.
-
-### ADR-005: 원문 재량 영역의 기본안 확정
-
-- 배경: 사용자가 구현 전에 암묵지를 해소하도록 요청했습니다. 과제 원문은 의문점을 스스로 합리적으로 판단하라고 안내하고, UI 세부 디자인도 자유로 둡니다. 그래서 암묵지를 0으로 만들 수는 없습니다. 목표를 "재량 영역은 명시된 기본안으로, 나머지는 구현 중 확인할 사실로 분리"로 정했습니다.
-- AI 작업: 원문 요약과 UI 가이드, Kakao API 문서, Soil 소스(1.0.0-alpha15), DroidKaigi 2025·2026 기준 커밋을 대조했습니다. 그 결과를 [SPEC.md](SPEC.md)에 정리했습니다(applicationId·minSdk, 키 주입, API 계약, ID 규칙, 화면 문구와 상태, 백스택 규칙, 즐겨찾기 쓰기 scope, 오류 분류, 적응형 레이아웃, 테스트 도구, 제출 패키지).
-- 정책 변경: Kakao API에 단건 조회가 없다는 점을 확인했습니다. 이에 따라 제품 정책 4번(복원)을 "bookId 저장 후 재조회"에서 "상세 진입 시점의 도서 스냅샷을 내비게이션 키에 저장"으로 바꿨습니다. 사용자가 다른 방향을 원하면 되돌립니다.
-- 참고 저장소 판단: DroidKaigi 2026은 스타·기여자 수가 이전 해보다 적습니다. 하지만 참고 범위가 패턴에 한정되므로 계속 참고합니다. 단, 열린 탭 관련 버그 이슈(#344, #226) 때문에 탭 전환 코드는 복사하지 않고 규칙을 직접 정했습니다. 2025는 Metro·Soil 사용을 교차 확인하는 용도로만 씁니다.
-- Soil 소스 확인 결과: Mutation scope가 keepAliveTime 뒤 취소된다는 점을 확인했습니다. 그래서 즐겨찾기 쓰기를 앱 scope와 Mutex로 옮기는 설계를 추가했습니다.
-- 결과: 구현은 이 기본안을 따랐습니다. 즐겨찾기 쓰기의 앱 scope와 Mutex는 `FavoriteWriterTest`(화면 취소 후 완료, 직렬 실행)로 확인했습니다.
-
-### ADR-006: 모듈 분리와 Soil·Retrofit 연결 확인
-
-- 개발자 질문: "`core:data` 하나로 묶을 것인가", "Soil이 Retrofit을 지원하는가(사용자는 지원하지 않는다고 알고 있었음)", "build-logic을 기존 저장소처럼 구성할 것인가".
-- AI 확인: Soil 소스에서 fetch 계약이 `suspend` 함수뿐이고 core 의존성에 HTTP 클라이언트가 없으며, Ktor는 선택 receiver 모듈(`soil-query-receivers/ktor`)에만 있음을 확인했습니다. KMP 공통 코드에서 Retrofit을 못 쓰는 것은 Retrofit의 플랫폼 제약이지 Soil의 제약이 아닙니다.
-- 결정: Retrofit 유지, key 생성자에 Retrofit 서비스를 Metro로 주입. 모듈은 `core:network`·`core:database`를 분리해 9개로 바꿨습니다(개발자 제안 반영). build-logic은 개발자의 기존 저장소 구성을 따르되 Circuit·Firebase·detekt 관련 플러그인은 제외합니다.
-- 버전 조회(2026-10-07, Maven Central·Google Maven): Metro 1.4.5, Compose BOM 2026.09.00(runtime-retain 1.12.1 포함), Navigation 3 1.2.0, Room 2.8.5, Retrofit 3.0.0, OkHttp 5.5.0, Coil 3.6.3, Robolectric 4.17을 후보로 정했고, 이 버전으로 빌드에 성공해 [SPEC](SPEC.md) 2절에 고정했습니다.
+- AI 확인(개발자 질문: Soil이 Retrofit을 지원하는지, `core:data`를 나눌지): Soil의 fetch 계약은 `suspend` 함수뿐이고 core 의존성에 HTTP 클라이언트가 없으며, Ktor는 선택 receiver 모듈에만 있습니다. KMP 공통 코드에서 Retrofit을 못 쓰는 것은 Retrofit의 플랫폼 제약입니다.
+- 결정: Retrofit을 유지하고 key 생성자에 Retrofit 서비스를 Metro로 주입합니다. 개발자 제안대로 `core:network`·`core:database`를 분리해 9개 모듈로 구성했습니다. build-logic은 개발자의 기존 저장소 구성을 따르되 Circuit·Firebase·detekt 관련 플러그인은 뺐습니다.
+- 버전: Maven Central·Google Maven에서 조회한 Metro 1.4.5, Compose BOM 2026.09.00(runtime-retain 1.12.1 포함), Navigation 3 1.2.0, Room 2.8.5, Retrofit 3.0.0, OkHttp 5.5.0, Coil 3.6.3, Robolectric 4.17로 빌드에 성공해 [SPEC](SPEC.md) 2절에 고정했습니다.
 
 ### ADR-007: 구현 중 개발자 판단
 
-구현 단계에서 AI가 보고한 문제나 제안에 대해 개발자가 정한 사항입니다.
-
-| 주제 | AI 보고·제안 | 개발자 결정 | 결과 |
+| 주제 | AI 보고·제안 | 개발자 결정 | 근거·결과 |
 | --- | --- | --- | --- |
-| JDK | Metro 1.4.5 Gradle 플러그인이 JVM 21 이상을 요구해 JDK 17로는 설정 단계에서 실패함을 로그로 보고. Metro를 낮추면 Kotlin 2.4.0과 맞지 않고, 다른 DI로 바꾸면 사용자 선택이 바뀐다는 점을 함께 제시 | 지정 버전을 유지하고 Gradle daemon만 JDK 21로 고정. 앱 바이트코드는 17 유지 | `c0f8117`. REQUIREMENTS R-006은 조건부로 남김 |
-| Timber 초기화 | Application에서 직접 Tree 등록 | 이전 프로젝트에서 쓰던 App Startup initializer 방식으로 변경 | `16aec38` |
-| 입력란 포커스 | 기기 확인 중 검색어 입력 뒤 가격 필터 시트를 닫으면 포커스가 입력란으로 돌아가 키보드가 다시 뜨는 현상 | 시트·메뉴를 열기 전 포커스 해제 | `2411297` |
-| 카드 간격 | 목록 카드가 붙어 보임 | 카드 사이 간격 추가 | `c7c8d6b` |
-| 상세 중복 진입 | 처음에는 흔치 않은 경우로 보고 우선순위를 낮춤 | 이전 프로젝트에서 두 손가락 동시 탭으로 상세 화면이 두 번 쌓인 경험을 근거로 대응 요청 | `1204d79`. Compose 테스트로 동시 탭 확인 |
-| QA | 자동 테스트와 일부 기기 확인으로 완료 판단 | 요구사항 기반 QA 시나리오를 만들어 실기기에서 전부 실행하고 통과시킬 것 | [QA](QA.md). 결함 2건 발견·수정 |
-| 문서 작성 | 구현·검증 기록 작성 | 설계 단계의 Codex는 구현 과정을 모르므로, 구현·검증 과정은 Claude가 직접 작성 | README AI 활용 절, 이 문서 |
+| JDK | Metro 1.4.5 Gradle 플러그인이 JVM 21 이상을 요구함을 실패 로그로 보고. Metro를 낮추면 Kotlin 2.4.0과 맞지 않고, DI를 바꾸면 사용자 선택이 바뀜 | 지정 버전 유지, Gradle daemon만 JDK 21. 앱 바이트코드는 17 | [ARCHITECTURE](ARCHITECTURE.md) 10절, REQUIREMENTS R-006(조건부) |
+| Timber 초기화 | Application에서 직접 Tree 등록 | 이전 프로젝트의 App Startup initializer 방식 | debug 빌드에서만 Tree 등록 |
+| UI 조정 | 기기 확인 중 필터 시트를 닫으면 키보드가 다시 뜨고, 목록 카드가 붙어 보임 | 시트·메뉴를 열기 전 포커스 해제, 카드 사이 간격 추가 | - |
+| 상세 중복 진입 | 흔치 않은 경우로 보고 우선순위를 낮춤 | 두 손가락 동시 탭으로 상세가 두 번 쌓인 이전 경험을 근거로 대응 요청 | Compose 테스트로 동시 탭 확인 |
+| QA | 자동 테스트와 일부 기기 확인으로 완료 판단 | 요구사항 기반 QA 시나리오를 실기기에서 전부 실행해 통과시킬 것 | [QA](QA.md) |
+| 2-pane | 선택 항목이라 미구현 | 남은 일정에 구현하고 태블릿 실기기 확인과 시연 영상 추가 요청 | [SPEC](SPEC.md) 10절, [QA](QA.md) TC-90~94, `demo-tablet.mp4` |
 
-### QA에서 찾은 결함과 테스트 보완
+## 단계 요약
 
-- **D-1(`513ebc1`)**: 추가 로딩 실패 뒤 다른 탭에 5초 넘게 있다가 돌아오면 목록이 사라졌습니다. Soil이 구독 없는 쿼리를 keepAliveTime 뒤 내리면서 오류 상태를 캐시에 남기지 않는 것이 원인이었습니다. Soil 동작을 결함으로 단정하지 않고, 검색 루트가 백스택에 있는 동안 retain 객체가 쿼리를 붙잡게 고쳤습니다.
-- **D-2(`22855b3`)**: 즐겨찾기 조회 조건을 바꿔도 스크롤 위치가 남았습니다. 조회 조건을 key로 스크롤 상태를 저장하게 고쳤습니다.
-- 두 결함 모두 재현 테스트를 먼저 작성해 수정 전 코드에서 실패하는 것을 확인한 뒤 고쳤습니다.
-- 문서 작성 중 요구사항과 테스트를 다시 대조해, 빠른 검색어·정렬 변경의 늦은 응답 테스트(`07f4bf1`)와 파일 DB를 닫았다 다시 여는 테스트(`71cdf67`)를 추가했습니다.
-- 테스트 개수 기록도 바로잡았습니다. 처음 보고한 86개는 `testDebugUnitTest`만 센 값이었습니다. 이 작업은 순수 JVM 모듈인 `core:model`을 실행하지 않습니다. `test` 작업을 함께 지정해 전체 110개를 실행하도록 명령과 문서를 고쳤습니다.
-
-## 활용 흐름
-
-2026-10-07 사용자 요청으로 사양 확정과 앱 구현을 Claude Code(Claude Opus 5.5)가 맡았습니다. 구현 단계에서는 아래 흐름을 따랐습니다.
-
-1. 작업을 작게 나누어 AI에 맡깁니다. 예: “이 API의 페이지 종료 계약을 확인하고 경계 테스트를 제안해 줘.”
-2. 결과에 근거를 요구합니다. 공식 문서, 확인한 코드 위치, 실제 diff, 실행한 명령과 결과를 붙입니다.
-3. 개발자가 요구사항·동작·유지보수 관점에서 검토합니다. 틀린 가정과 누락된 조건을 명시합니다.
-4. 채택·수정·기각 중 하나를 결정하고 이유를 기록합니다.
-5. 변경 후 관련 테스트를 실행합니다. 미실행·실패·통과를 구분하고 실제 로그나 커밋으로 연결합니다.
-
-병렬로 나눌 수 있는 일은 API 계약 조사, 화면 상태 검토, 테스트 케이스 제안처럼 결과가 독립적인 작업입니다. 동일한 핵심 상태 파일을 서로 다른 방향으로 수정하는 작업은 먼저 계약을 합의합니다. 
-
-## 구현 중 기록 방법
-
-AI가 추가로 구현·수정·테스트를 도왔다면 날짜와 범위를 기록합니다. 작성한 테스트와 실행하여 통과한 테스트를 구분하고, 오류 원인 설명은 실제 로그와 대조합니다. 생성된 코드는 개발자가 이해하고 검토한 뒤 반영합니다.
-
-현재 기록:
-
-| 날짜 | 도움받은 작업 | 개발자 결정 | 실제 증거와 상태 |
+| 단계 | AI가 한 일 | 개발자 판단 | 증거 |
 | --- | --- | --- | --- |
-| 2026-10-07 | 요구사항·참고 코드 분석 및 문서 초안 | retain 학습 목표 유지, Room 사용 허용 | 문서와 참조 커밋. 앱 빌드·테스트 미실행 |
-| 2026-10-07 | ViewModel 대안과 retain 위험 비교 | 기존 PoC 경험과 학습 목표로 retain + Navigation 3 선택 | ADR-001. 기존 PoC 내부 검증 미완료 |
-| 2026-10-07 | 원문·API·Soil·DroidKaigi 2025/2026 대조로 재량 영역 기본안 작성 | 구현을 AI 세션에 맡김. 암묵지는 기본안과 확인할 사실로 분리 | ADR-005, SPEC.md. 앱 빌드·테스트 미실행 |
-| 2026-10-07 | Soil fetch 계약·의존성 확인, 모듈 분리 검토, 라이브러리 최신 버전 조회 | Retrofit 유지, 9개 모듈, 기존 저장소 build-logic 구성 채택 | ADR-006, SPEC 2·4절 |
-| 2026-10-07 | 빌드 구성과 모듈별 구현·테스트 | daemon JDK 21, App Startup으로 Timber 초기화 | `c0f8117`~`f378299`. 기능 단위마다 빌드·테스트 실행 |
-| 2026-10-07~08 | 기기 확인 중 UI 수정, 상세 중복 진입 대응 | 포커스 해제, 카드 간격, 동시 탭 대응 요청 | `c7c8d6b`, `2411297`, `1204d79` |
-| 2026-10-08 | 요구사항 기반 실기기 QA 31건, 결함 2건 수정, 테스트 보완 | QA 실행과 전부 통과 요청 | [QA](QA.md), `513ebc1`, `22855b3`, `07f4bf1`, `71cdf67`. 110개 테스트 통과 |
-| 2026-10-08 | 요구사항별 검증 기록, README, 이 문서 갱신 | 구현·검증 과정은 Claude가 작성 | [REQUIREMENTS](REQUIREMENTS.md) 9절 |
-| 2026-10-08 | 시연 영상 녹화 | 선택 항목도 채워 제출. 녹화 중 방해 금지, 영상은 제출 ZIP에 포함 | `demo.mp4`(1분 42초), [QA](QA.md) 시연 영상 절 |
-| 2026-10-08 | 제출 ZIP 생성과 검증 | `.git`·`local.properties`·APK·영상 포함, 최종 패키지는 개발자가 확인 | `scripts/make-submission-zip.sh`, [REQUIREMENTS](REQUIREMENTS.md) R-072~077·084 |
-| 2026-10-08 | list-detail 2-pane 구현, 태블릿 실기기 QA와 시연 영상 | README 검토 중 2-pane 미구현 이유를 확인하고 남은 일정에 구현 요청. 태블릿 실기기로 확인하고 영상에 추가하도록 지시 | SPEC 10절, `fb1fa4c`, `98a16ff`, `bad3cd5`, [QA](QA.md) TC-90~94, `demo-tablet.mp4`(31초). 116개 테스트 통과 |
+| 설계 | 요구사항 정리, 참고 코드·API 조사, 위험 식별, 문서 초안 | retain + Nav3, Retrofit·Room, Soil, Metro·Coil 선택 | [REQUIREMENTS](REQUIREMENTS.md), [ARCHITECTURE](ARCHITECTURE.md) 9절, ADR-001~004 |
+| 사양 확정 | 원문·API·Soil·DroidKaigi 대조로 기본안 작성, 모듈·버전 확인 | 구현을 AI에 맡김, Retrofit 유지, 9개 모듈 | [SPEC](SPEC.md), ADR-005·006 |
+| 구현 | 빌드 구성, 9개 모듈 코드와 테스트, 기능 단위 빌드·테스트 | daemon JDK 21, App Startup, UI 조정, 중복 진입 대응 | ADR-007, [ARCHITECTURE](ARCHITECTURE.md) 10절 |
+| 실기기 QA | 요구사항 기반 시나리오 작성, adb로 실행, 회귀 테스트 추가 | 시나리오 전부 실기기 실행·통과 요구 | [QA](QA.md) |
+| 2-pane | list-detail 구현, 태블릿 실기기 QA, 시연 영상 | 남은 일정에 구현 요청 | [SPEC](SPEC.md) 10절, [QA](QA.md) TC-90~94 |
+| 제출 준비 | R-ID별 검증 기록, README, 시연 영상, 제출 ZIP 스크립트 | ZIP에 `.git`·`local.properties`·APK·영상 포함, 최종 패키지 직접 확인 | [REQUIREMENTS](REQUIREMENTS.md) 9절, R-072~077·084 |
 
-기록 항목:
-
-- 날짜 / 작업 ID:
-- 문제와 완료 기준:
-- AI에 맡긴 범위:
-- AI 제안 요약:
-- 확인한 공식 문서·코드·커밋:
-- 개발자 검토와 수정 지시:
-- 채택 / 수정 / 기각 및 이유:
-- 변경 파일·커밋:
-- 실행한 명령·환경·실제 결과:
-- 미실행 항목·남은 위험:
-
-예를 들어 페이지네이션 수정 기록에는 “AI로 구현함” 대신 재현 조건, is_end 누락이라는 원인, 적용한 수정, 마지막 페이지가 20개인 테스트의 실제 실행 결과를 남깁니다. 아직 결과가 없으면 미실행으로 적습니다.
+제출 전 AI가 실행한 실기기 QA로 문제를 찾았고, 회귀 테스트(`SearchQueryRetentionTest`, `FavoritesScreenTest`)를 추가했습니다. 자동 테스트 결과와 QA 결과는 [README](../README.md) 검증 결과 절과 [QA](QA.md)에 있습니다.
 
 ## 참고 코드와 보안
 
-참고 저장소와 기준 커밋은 [구현 전략](STRATEGY.md)에 기록했습니다. 개념 참고와 코드 복사는 구분합니다. 코드를 실제로 가져올 경우 해당 라이선스와 출처 표기 조건을 먼저 확인하고 반영 범위를 남깁니다.
+참고 저장소와 기준 커밋은 [ARCHITECTURE](ARCHITECTURE.md) 9절에 기록했습니다. 개념 참고와 코드 복사는 구분하며, 코드를 가져올 경우 라이선스와 출처 표기 조건을 먼저 확인하고 반영 범위를 남깁니다.
 
 API 키, 인증정보, 개인 이메일, 원본 비공개 메시지를 문서나 Git에 넣지 않습니다. 제출용 local.properties는 Git에서 제외하고 사용자가 최종 패키지와 전달 대상을 확인합니다.

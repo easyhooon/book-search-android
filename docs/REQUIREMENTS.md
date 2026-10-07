@@ -12,15 +12,10 @@
 
 ## 체크와 증거 기록 규칙
 
-각 항목의 R-ID를 아래 검증 기록과 연결합니다. 구현 후 하나씩 확인하며 **코드 작성 완료와 검증 완료는 구분**합니다. 해당 항목의 확인 방법을 실제로 실행하고 증거를 남긴 뒤에만 체크합니다. 테스트 파일이 있다는 이유나 설명 문서를 작성했다는 이유로 체크하지 않습니다.
-
-- 구현 상태: 미착수 / 진행 / 구현 완료 / 해당 없음
-- 검증 상태: 미검증 / 통과 / 실패 / 차단 / 해당 없음
-- 증거: 검증한 커밋, 실행 환경, 명령·테스트 이름과 결과, 필요한 화면 캡처·로그 경로
-- 미충족 사항: 남은 조건, 실패 재현법, 차단 원인, 다음 확인 작업
-- 선택 확장을 생략하면 미체크 상태에서 해당 없음·생략 이유를 기록합니다. 원문 필수는 임의로 해당 없음 처리하지 않습니다.
-- 아래 확인 방법은 예정된 검증 방법입니다. 실제 시험 이름·명령·환경은 실행 시 기록하며, 관련 코드 변경 후 영향받는 항목은 재검증합니다.
-- R-ID는 추적용 고유 번호입니다. 새 항목은 새 번호로 추가하고 기존 번호를 재배치하지 않습니다.
+- 확인 방법을 실제로 실행하고 증거를 남긴 항목만 체크합니다. 코드 작성 완료와 검증 완료를 구분하며, 테스트 파일이나 문서가 있다는 이유로 체크하지 않습니다.
+- 구현 상태: 미착수 / 진행 / 구현 완료 / 해당 없음. 검증 상태: 미검증 / 통과 / 실패 / 차단 / 해당 없음.
+- 9절에 증거(검증 커밋·환경·명령·테스트 이름과 결과)와 미충족 사항(남은 조건·차단 원인)을 적습니다. 관련 코드가 바뀌면 영향받는 항목을 재검증합니다.
+- 원문 필수는 임의로 해당 없음 처리하지 않습니다. R-ID는 재배치하지 않고 새 항목은 새 번호로 추가합니다.
 
 각 항목을 코드로 옮길 때의 세부 계약(ID, 화면 문구, 백스택, 오류 분류 등)은 [구현 사양](SPEC.md)을 따릅니다.
 
@@ -38,7 +33,7 @@
 - [x] **R-010** 별도 설명 없이도 재현 가능한 `./gradlew assembleDebug` 성공
 - [x] **R-011** 요청 버전 조합의 호환성 확인. 충돌 시 임의 변경하지 않고 실패 로그·공식 근거·대안 기록
 
-지정 버전 조합으로 빌드했습니다. minSdk 26, targetSdk 37은 [구현 사양](SPEC.md)에서 정했고, 라이브러리 버전은 빌드에 성공한 조합으로 [구현 사양](SPEC.md) 2절에 고정했습니다.
+minSdk 26, targetSdk 37과 빌드에 성공한 라이브러리 버전은 [구현 사양](SPEC.md) 2절에 고정했습니다.
 
 ## 2. 원격 도서 검색
 
@@ -76,10 +71,9 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 
 ### 가격 필터와 검색·정렬 구현 규칙
 
-- 현재 설계는 정가 기준 최소·최대 금액, 양끝 포함, 적용 버튼 방식입니다. 빈칸은 해당 방향 제한 없음이며 최소 > 최대는 적용을 막고 안내합니다.
-- 누락·음수 가격은 정보 없음으로 처리합니다. 0원은 유효합니다. 범위 미설정 시 정보 없음도 포함하고, 한쪽이라도 범위를 적용하면 정보 없음은 제외합니다.
-- 로컬 검색은 제목 또는 저자의 부분 일치(영문 대소문자 무시)와 검색 버튼/IME 확정 방식을 현재 설계로 둡니다. 원문에 명시된 로컬 검색 기능 자체와 세부 UX 선택을 구분합니다.
-- 정렬은 앞뒤 공백을 제거한 제목을 `Collator(Locale.KOREAN)`으로 비교하고, 같은 제목은 ID로 순서를 고정합니다. 구현 규칙으로 테스트합니다.
+- 가격 필터는 6절 정책 2를 따릅니다. 최소 > 최대는 적용을 막고 안내하며, 범위 미설정 시 정보 없음도 포함합니다.
+- 로컬 검색은 제목 또는 저자의 부분 일치(영문 대소문자 무시)이며 검색 버튼/IME로 확정합니다. 로컬 검색 기능 자체는 원문 필수이고 세부 UX는 선택입니다.
+- 정렬은 앞뒤 공백을 제거한 제목을 `Collator(Locale.KOREAN)`으로 비교하고, 같은 제목은 ID로 순서를 고정합니다.
 
 ## 4. 상세 화면
 
@@ -94,7 +88,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [ ] **R-033** 누락된 표지·저자·날짜·가격 등으로 화면이 깨지지 않음
 - [x] **R-087** 상세에서 즐겨찾기를 해제해도 표시 중인 도서 정보가 사라지지 않음
 
-저장된 표지 URL만으로 오프라인 이미지 표시가 보장되지는 않습니다. 텍스트 정보는 DB로 보장하고, 이미지 캐시가 없으면 대체 이미지를 보여줍니다. 오프라인에서도 원본 표지를 반드시 보장하려면 이미지 파일 저장을 추가 설계해야 합니다.
+오프라인에서 텍스트 정보는 DB로 보장하고, 이미지 캐시가 없으면 대체 이미지를 보여 줍니다. 원본 표지까지 보장하려면 이미지 파일 저장을 추가 설계해야 합니다.
 
 ## 5. 품질과 확장성
 
@@ -114,9 +108,9 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [x] **R-085** 탭·백스택 규칙 준수: 같은 탭 재선택 시 루트로 복귀하고 백스택 순서가 뒤집히지 않음, 상세 위에 상세가 쌓이지 않음(두 카드 동시 터치 포함), 즐겨찾기 루트에서 뒤로 가기 시 검색 탭으로 이동
 - [x] **R-086** API 키가 없어도 빌드가 성공하고, 검색 화면에서 키 미설정을 안내하며 즐겨찾기는 동작
 
-태블릿·폴더블 대응은 원문 필수입니다. 큰 화면에서도 안정적으로 동작하는 1-pane과 크기 변경 대응을 먼저 구현·검증했고, 그 뒤 일정이 남아 expanded 너비(840dp 이상)의 list-detail 2-pane을 추가했습니다(2026-10-08). 2-pane은 선택 항목이며 세부는 [구현 사양](SPEC.md) 10절을 따릅니다.
+태블릿·폴더블 대응은 원문 필수이고 list-detail 2-pane은 선택입니다(6절 정책 5, [구현 사양](SPEC.md) 10절).
 
-오프라인 즐겨찾기·상세는 기본 범위입니다. 원격 검색 결과 전체를 디스크에 보관하고 재시작 후 제공하는 기능은 명시된 필수 요구사항이 아닙니다. 초기 범위는 온라인 검색, 메모리 내 기존 결과 유지, 오류/재시도, 로컬 즐겨찾기 사용입니다. 영속 검색 캐시는 핵심 기능 검증 후 선택합니다.
+오프라인 즐겨찾기·상세는 기본 범위입니다. 원격 검색 결과를 디스크에 보관해 재시작 후 제공하는 기능은 필수가 아니며, 범위는 온라인 검색, 메모리 내 기존 결과 유지, 오류/재시도, 로컬 즐겨찾기입니다.
 
 ## 6. 선택 결정과 권장 설계
 
@@ -131,18 +125,18 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [x] **R-050** **설계 검증**: query/sort별 key, size=20, 페이지 메타데이터·is_end 유지, 로딩·취소·재시도 동작을 테스트로 확인. 커스텀 페이지네이션과 Paging 3는 미채택 대안
 - [x] **R-051** **로컬 연결 검증**: 선택한 Soil Subscription→Room Flow / Mutation→Room 쓰기에서 Room 단일 상태 기준, 반영 순서·지연, 구독 수명·재구독을 테스트. 과거 우려를 근거로 Repository를 재도입하지 않음
 - [x] **R-052** **오류 정책 검증**: Retrofit 예외의 재시도 가능 여부를 명시적으로 분류하고 CancellationException을 보존
-- [x] **R-053** **결정**: `app`, `core:model`, `core:network`, `core:database`, `core:data`, `core:ui`, `feature:search`, `feature:favorites`, `feature:detail`의 9개 모듈로 경계를 나누고, 그 이상의 모듈 증설은 피하기 (2026-10-07 `core:data`에서 network·database 분리)
+- [x] **R-053** **결정**: `app`, `core:model`, `core:network`, `core:database`, `core:data`, `core:ui`, `feature:search`, `feature:favorites`, `feature:detail`의 9개 모듈로 경계를 나누고, 그 이상의 모듈 증설은 피하기
 - [x] **R-054** **현재 제품 정책**: 시스템 프로세스 재생성 시 query/sort/filter/탭과 상세 도서 스냅샷을 복원하고 검색은 재조회. 결과 목록 전체를 saveable에 넣지 않음
 
 ### 제품 선택 5개의 현재 정책
 
-사용자의 “유명한 도서 앱들의 방법을 따르자”는 방향에 따라 정한 설계입니다. 모든 항목을 특정 앱에서 직접 관찰한 결과는 아니며, 확인된 UI 사례와 이 앱의 기술 정책을 구분합니다. 근거와 확인 한계는 [STRATEGY.md](STRATEGY.md)에 기록합니다.
+사용자의 도서 앱 사례 참고 방향에 따라 정했습니다. 모두 특정 앱에서 직접 관찰한 것은 아니며, 확인된 UI 사례와 이 앱의 기술 정책을 구분합니다. 근거와 한계는 [ARCHITECTURE](ARCHITECTURE.md) 9절에 있습니다.
 
 1. 검색 실행 시점: 검색 버튼 또는 키보드 IME 제출로 확정합니다. 로컬 검색에도 같은 방식을 적용합니다.
 2. 가격 필터: 정가 최소·최대 금액, 양끝 포함, 적용 버튼. 빈칸은 제한 없음, 최소 > 최대는 적용 금지. 누락·음수는 정보 없음, 0원은 유효하며 범위 적용 시 정보 없음은 제외합니다.
 3. 저장 중 버튼/pop: 해당 도서의 저장 버튼만 비활성화하고 화면 이동은 허용합니다. 짧은 DB 쓰기는 명시적으로 관리되는 화면 외부 scope에서 책별 순서를 지켜 완료합니다. 프로세스가 죽으면 미완료 쓰기의 완료를 보장하지 않습니다.
-4. 복원: 시스템 프로세스 재생성 시 조건·탭과 상세 엔트리를 복원합니다. 상세는 진입 시점의 도서 스냅샷을 내비게이션 키에 담아 네트워크 없이 다시 표시하며, 검색 결과는 조건으로 재조회합니다. 복원을 위해 자동으로 즐겨찾기에 저장하지 않습니다. 강제 종료 뒤 콜드 스타트에 같은 복원을 보장하지 않습니다. (2026-10-07 변경: 이전에는 bookId만 저장하고 재조회하는 안이었습니다. 하지만 Kakao API에 단건 조회가 없고 ISBN이 없는 도서는 재조회할 수 없어서 스냅샷 방식으로 바꿨습니다. 근거는 [구현 사양](SPEC.md) 7절에 있습니다.)
-5. 큰 화면: 안정적인 1-pane과 크기 변경 대응을 우선합니다. 이를 마친 뒤 expanded 너비(840dp 이상)에서 목록과 상세를 나란히 보여 주는 2-pane을 추가했습니다. (2026-10-08 변경: 이전에는 2-pane을 후순위로 두었습니다. 필수 항목 검증 후 일정이 남아 구현합니다.)
+4. 복원: 시스템 프로세스 재생성 시 조건·탭과 상세 엔트리를 복원합니다. 상세는 진입 시점의 도서 스냅샷을 내비게이션 키에 담아 네트워크 없이 다시 표시합니다(Kakao API에 단건 조회가 없음, [구현 사양](SPEC.md) 7절). 검색 결과는 조건으로 재조회하며, 복원을 위해 즐겨찾기에 자동 저장하지 않습니다. 강제 종료 뒤 콜드 스타트에 같은 복원을 보장하지 않습니다.
+5. 큰 화면: 안정적인 1-pane과 크기 변경 대응을 우선하고, expanded 너비(840dp 이상)에서는 목록과 상세를 나란히 보여 주는 2-pane을 제공합니다.
 
 로컬 저장, 가격 필터 기능 자체, 불안정한 네트워크 대응, 태블릿·폴더블 지원은 원문 필수입니다. 확정 검색 조건 기반 페이징, ISBN 정규화·대체 ID, DB 쓰기 순서, 크기 변경 중 상태 보존은 구현 계약·테스트로 정리하며 사용자에게 다시 승인받을 사항으로 늘리지 않습니다.
 
@@ -150,7 +144,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 
 ### 사용자 추가 필수: 테스트 코드
 
-원 과제의 명시 조건과 별개로, 사용자가 AI를 활용해 테스트 코드도 반드시 작성하도록 요청했습니다. 아래는 구현 단계의 필수 완료 기준입니다. 작성·실행 결과는 [QA](QA.md)의 자동 테스트 절에 있습니다.
+원 과제의 명시 조건과 별개로 사용자가 요청한 필수 완료 기준입니다. 작성·실행 결과는 [QA](QA.md)의 자동 테스트 절에 있습니다.
 
 - [x] **R-055** 핵심 단위 테스트: ID·가격 정책, 검색 상태 전이, 요청 역전·취소·초기화 경합
 - [x] **R-056** 페이지네이션 테스트: 마지막 20개 + is_end, 실패한 동일 페이지 재시도, 중복 요청·ISBN 중복
@@ -159,7 +153,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [x] **R-059** 회전·폴더블·프로세스 종료 등 자동화가 제한된 검증은 기기/에뮬레이터 수동 확인으로 보완하고 자동 테스트와 구분
 - [x] **R-060** 테스트별 실제 실행 명령·환경·결과 기록. 작성만으로 통과 처리하지 않으며, 미실행·실패는 이유와 함께 별도 표시
 
-이 항목은 3일 계획에 포함합니다. 선택 기능보다 먼저 확보하며, 기기나 실행 환경이 없어 검증이 막히면 테스트 코드 작성 상태와 실행 차단 상태를 나누어 기록합니다.
+기기나 실행 환경이 없어 검증이 막히면 테스트 작성 상태와 실행 차단 상태를 나누어 기록합니다.
 
 - [x] **R-061** 검색어 빠른 변경, 정렬 변경, 빈 검색어로 초기화
 - [x] **R-062** 마지막 페이지가 20개여도 `meta.is_end`에 따라 요청 종료
@@ -194,30 +188,30 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [ ] **R-083** 최종 키 설정·민감정보 포함 여부·제출 대상은 사용자가 직접 확인
 - [x] **R-084** 압축을 새 디렉터리에 풀고 빌드 및 APK 설치 확인
 
-비공개 저장소도 비밀정보 저장소가 아닙니다. local.properties는 Git에서 제외하되, 제출용 ZIP에는 요구에 맞게 별도로 넣습니다. 일반 `git archive`만으로는 `.git`이나 무시된 local.properties가 포함되지 않으므로 제출 형식 검증이 필요합니다.
+local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git archive`로는 `.git`과 무시된 local.properties가 들어가지 않으므로 제출 형식을 따로 검증합니다.
 
 ## 9. 항목별 구현·검증 기록
 
-각 R-ID의 요구 문장은 위 체크리스트에 있습니다. 공통 증거는 아래 두 가지이며, 표에서는 이름만 적습니다.
+공통 증거는 아래 두 가지이며 표에서는 이름만 적습니다.
 
 - **자동 테스트**: 2026-10-08, 커밋 `71cdf67`, macOS 26.3.1, Launcher JVM 17.0.10, Gradle daemon JVM 21. `./gradlew assembleDebug testDebugUnitTest test --continue` 성공, 110개 통과(실패·오류·건너뜀 0). 표의 테스트 클래스 이름은 이 실행에 포함됩니다.
 - **TC-NN**: [QA](QA.md)의 실기기 시나리오. SM-S936N, Android 17(API 37), 커밋 `22855b3` debug 빌드, 2026-10-07~08. 이후 커밋 `71cdf67`은 테스트만 추가해 앱 동작이 같습니다.
 
-"부분 통과"와 "조건부"는 확인한 부분은 통과했지만 요구 전체를 확인하지 못한 항목입니다. 체크하지 않았습니다.
+"부분 통과"·"조건부"는 요구 전체를 확인하지 못해 체크하지 않은 항목입니다.
 
 | 항목 | 구현 상태 | 검증 상태 | 실제 증거 | 미충족 사항 |
 | --- | --- | --- | --- | --- |
-| R-001 | 구현 완료 | 통과 | `./gradlew assembleDebug` 성공. 데이터 흐름은 Coroutines·Flow(Room Flow, Soil), 화면은 Compose | 없음 |
-| R-002 | 구현 완료 | 통과 | `gradle-wrapper.properties`의 `gradle-9.4.1-bin.zip`, 자동 빌드 성공 | 없음 |
-| R-003 | 구현 완료 | 통과 | `libs.versions.toml` AGP 9.2.1, 자동 빌드 성공 | 없음 |
-| R-004 | 구현 완료 | 통과 | `libs.versions.toml` Kotlin 2.4.0, 자동 빌드 성공 | 없음 |
-| R-005 | 구현 완료 | 통과 | KSP 2.3.10(Room 컴파일러), 자동 빌드 성공 | 없음 |
-| R-006 | 구현 완료 | 조건부 | 앱 바이트코드·컴파일 기준은 17(`JavaVersion.VERSION_17`, `JvmTarget.JVM_17`). Launcher JVM 17로 실행 성공 | Metro 1.4.5 Gradle 플러그인이 JVM 21 이상을 요구해 Gradle daemon만 JDK 21로 고정(2026-10-07 사용자 결정, [ARCHITECTURE](ARCHITECTURE.md) 10절). 글자 그대로의 "JDK 17 전용"과 다르므로 체크하지 않음 |
-| R-007 | 구현 완료 | 통과 | `compileSdk = "37"`, 자동 빌드 성공 | 없음 |
+| R-001 | 구현 완료 | 통과 | 빌드 성공. Coroutines·Flow(Room Flow, Soil), Compose 화면 | 없음 |
+| R-002 | 구현 완료 | 통과 | Wrapper `gradle-9.4.1-bin.zip`, 자동 빌드 | 없음 |
+| R-003 | 구현 완료 | 통과 | `libs.versions.toml` AGP 9.2.1, 자동 빌드 | 없음 |
+| R-004 | 구현 완료 | 통과 | `libs.versions.toml` Kotlin 2.4.0, 자동 빌드 | 없음 |
+| R-005 | 구현 완료 | 통과 | KSP 2.3.10(Room 컴파일러), 자동 빌드 | 없음 |
+| R-006 | 구현 완료 | 조건부 | 컴파일 기준 17(`JavaVersion.VERSION_17`, `JvmTarget.JVM_17`), Launcher JVM 17로 실행 | Metro 1.4.5 Gradle 플러그인 요구로 Gradle daemon만 JDK 21(사용자 결정, [ARCHITECTURE](ARCHITECTURE.md) 10절). "JDK 17 전용"과 달라 미체크 |
+| R-007 | 구현 완료 | 통과 | `compileSdk = "37"`, 자동 빌드 | 없음 |
 | R-008 | 구현 완료 | 미검증 | 명령행 빌드만 확인 | Android Studio에서 열어 Sync·실행하는 확인은 사용자가 수행 |
-| R-009 | 구현 완료 | 통과 | `git ls-files -s`: `gradlew` 100755, `gradle-wrapper.jar` 추적. 키 없는 별도 worktree에서 `./gradlew :app:installDebug` 성공([QA](QA.md) TC-86) | 없음 |
-| R-010 | 구현 완료 | 통과 | 새로 만든 worktree(빌드 산출물·키 없음)에서 Wrapper로 빌드·설치 성공(TC-86). 작업 디렉터리에서 자동 빌드 성공 | 제출 ZIP을 풀어 다시 빌드하는 확인은 R-084 |
-| R-011 | 구현 완료 | 통과 | 지정 버전을 바꾸지 않고 빌드. Metro의 JVM 21 요구는 실패 로그·공식 근거·대안을 [SPEC](SPEC.md) 2절과 [ARCHITECTURE](ARCHITECTURE.md) 10절에 기록 | 없음 |
+| R-009 | 구현 완료 | 통과 | `git ls-files -s`: `gradlew` 100755, `gradle-wrapper.jar` 추적. 키 없는 worktree에서 `./gradlew :app:installDebug` 성공(TC-86) | 없음 |
+| R-010 | 구현 완료 | 통과 | 빌드 산출물·키 없는 새 worktree에서 Wrapper로 빌드·설치(TC-86), 자동 빌드 | ZIP 재빌드는 R-084 |
+| R-011 | 구현 완료 | 통과 | 지정 버전 그대로 빌드. Metro의 JVM 21 요구는 실패 로그·공식 근거·대안을 [SPEC](SPEC.md) 2절, [ARCHITECTURE](ARCHITECTURE.md) 10절에 기록 | 없음 |
 | R-012 | 구현 완료 | 통과 | TC-01, `BookSearchNavHostTest` | 없음 |
 | R-013 | 구현 완료 | 통과 | TC-02(`query=kotlin` 요청 로그), `KakaoBookServiceTest` | 없음 |
 | R-014 | 구현 완료 | 통과 | TC-03(`sort=latest`, 출간일 내림차순), `SearchPresenterTest` 정렬 변경 | 없음 |
@@ -225,7 +219,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-016 | 구현 완료 | 통과 | TC-02 카드 필드, `BookFormattersTest` | 없음 |
 | R-017 | 구현 완료 | 통과 | TC-07, TC-27, `SearchPresenterTest` 하트 | 없음 |
 | R-018 | 구현 완료 | 통과 | TC-08, `BookSearchNavHostTest` | 없음 |
-| R-019 | 구현 완료 | 통과 | `SearchPresenterTest`의 늦은 응답 3건(검색어·정렬·빈 검색어), TC-03, TC-19 | 기기에서는 늦은 응답 경합을 재현하지 못함(QA TC-19 참고) |
+| R-019 | 구현 완료 | 통과 | `SearchPresenterTest` 늦은 응답 3건(검색어·정렬·빈 검색어), TC-03·19 | 기기에서는 늦은 응답 경합 재현 못 함(TC-19) |
 | R-020 | 구현 완료 | 통과 | TC-05(결과 없음), TC-20(최초 오류), TC-04(추가 로딩), TC-40(추가 오류), `SearchPresenterTest` | 없음 |
 | R-021 | 구현 완료 | 통과 | TC-07·10, `FavoriteBookDaoTest` | 없음 |
 | R-022 | 구현 완료 | 통과 | TC-11, `FavoritesPresenterTest`, `FavoriteListRulesTest` | 없음 |
@@ -234,20 +228,20 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-025 | 구현 완료 | 통과 | TC-25 | 없음 |
 | R-026 | 구현 완료 | 통과 | TC-26(`am force-stop` 후 재실행), `FavoriteBookDaoTest` 파일 DB 재열기 | 없음 |
 | R-027 | 구현 완료 | 통과 | TC-09·27·67·71, `FavoriteSubscriptionKeysTest` | 없음 |
-| R-028 | 구현 완료 | 통과 | `FavoriteWriterTest`(실패 전파), `FavoriteTogglerTest`, `SearchPresenterTest`·`FavoritesPresenterTest`·`BookDetailPresenterTest`의 쓰기 실패 | 기기에서 Room 쓰기 실패는 만들지 않음(Fake 실패 주입으로만 확인) |
+| R-028 | 구현 완료 | 통과 | `FavoriteWriterTest`(실패 전파), `FavoriteTogglerTest`, 세 Presenter 테스트의 쓰기 실패 | 기기 Room 쓰기 실패는 Fake 주입으로만 확인 |
 | R-029 | 구현 완료 | 통과 | TC-08, `BookDetailPresenterTest` | 없음 |
 | R-030 | 구현 완료 | 통과 | TC-08·09·71, `BookDetailPresenterTest` | 없음 |
 | R-031 | 구현 완료 | 통과 | TC-09(상세 해제 후 목록 반영) | 없음 |
 | R-032 | 구현 완료 | 통과 | TC-32(비행기 모드) | 없음 |
-| R-033 | 구현 완료 | 부분 통과 | `BookMapperTest`(누락·음수 가격, 빈 문자열), `BookFormattersTest`(빈 값 null), 표지 없음은 대체 이미지 컴포넌트 | 필드가 빠진 실제 도서를 기기 화면에서 확인하지 못함 |
-| R-034 | 구현 완료 | 통과 | TC-20·40·40b·42·32·70a | 재연결 시 자동 재요청은 하지 않음. 재시도 버튼으로 복구([SPEC](SPEC.md) 9절) |
-| R-035 | 구현 완료 | 부분 통과 | TC-35(1600x2560·320dpi 세로 800dp/가로 1280dp, 레일·다열 그리드), TC-68c(창 크기 변경), 태블릿 실기기 SM-X710의 2-pane TC-90~94, `BookSearchNavHostTest` 좁은/넓은 창과 2-pane | 실제 폴더블 기기나 폴더블 AVD의 접힘·펼침은 미실행 |
+| R-033 | 구현 완료 | 부분 통과 | `BookMapperTest`(누락·음수 가격, 빈 문자열), `BookFormattersTest`(빈 값 null), 표지 없음 대체 이미지 | 필드가 빠진 실제 도서를 기기에서 확인 못 함 |
+| R-034 | 구현 완료 | 통과 | TC-20·40·40b·42·32·70a | 재연결 시 자동 재요청 없음, 재시도 버튼으로 복구([SPEC](SPEC.md) 9절) |
+| R-035 | 구현 완료 | 부분 통과 | TC-35(1600x2560·320dpi, 레일·다열 그리드), TC-68c(창 크기 변경), 태블릿 SM-X710 2-pane TC-90~94, `BookSearchNavHostTest` 좁은/넓은 창·2-pane | 폴더블 기기·AVD 접힘·펼침 미실행 |
 | R-036 | 구현 완료 | 통과 | 9개 모듈 구성과 빌드, [ARCHITECTURE](ARCHITECTURE.md) 8절 | 없음 |
 | R-037 | 구현 완료 | 통과 | [ARCHITECTURE](ARCHITECTURE.md) 8절, [SPEC](SPEC.md) 2절 모듈 책임 | 없음 |
 | R-038 | 구현 완료 | 통과 | [ARCHITECTURE](ARCHITECTURE.md) 9절(선택 이유와 비용) | 없음 |
-| R-039 | 구현 완료 | 통과 | [ARCHITECTURE](ARCHITECTURE.md) 9절, [STRATEGY](STRATEGY.md) 미채택 대안(ViewModel, Repository, Paging 3) | 없음 |
+| R-039 | 구현 완료 | 통과 | [ARCHITECTURE](ARCHITECTURE.md) 9절 미채택 대안(ViewModel, Repository, Paging 3) | 없음 |
 | R-040 | 구현 완료 | 통과 | TC-40·40b·42, `SearchPresenterTest` 추가 오류 후 재시도 | 없음 |
-| R-041 | 구현 완료 | 통과 | TC-41·68a·68c·94, `BookSearchNavHostTest` 구성 변경과 2-pane↔1-pane 크기 변경, `FavoritesScreenTest` | 없음 |
+| R-041 | 구현 완료 | 통과 | TC-41·68a·68c·94, `BookSearchNavHostTest` 구성 변경·2-pane↔1-pane, `FavoritesScreenTest` | 없음 |
 | R-042 | 구현 완료 | 통과 | `RetainedValuesStoreNavEntryDecorator`, `BookSearchNavHostTest` retain 수명 4건 | 없음 |
 | R-043 | 구현 완료 | 통과 | `FavoriteBookDaoTest`, TC-26 | 없음 |
 | R-044 | 구현 완료 | 통과 | `FavoriteSubscriptionKeysTest`, TC-27 | 없음 |
@@ -255,7 +249,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-046 | 구현 완료 | 통과 | `KakaoBookServiceTest`(MockWebServer 4건) | 없음 |
 | R-047 | 구현 완료 | 통과 | `SearchBooksQueryKeyTest`, `SearchPresenterTest`. Repository 없음 | 없음 |
 | R-048 | 구현 완료 | 통과 | Metro 1.4.5 그래프 빌드, Coil 3.6.3 표지 표시(TC-02) | 없음 |
-| R-049 | 구현 완료 | 통과 | Kotlin 2.4.0 + Metro 1.4.5 빌드 성공. 이미지 로더는 인증 interceptor가 없는 기본 클라이언트를 사용(`AppGraph.provideImageLoader`), API 클라이언트에서만 interceptor 추가(`NetworkFactory`). 로그는 Authorization 헤더를 가림 | 없음 |
+| R-049 | 구현 완료 | 통과 | Kotlin 2.4.0 + Metro 1.4.5 빌드. 이미지 로더는 인증 interceptor 없는 클라이언트(`AppGraph.provideImageLoader`), interceptor는 API 클라이언트에만(`NetworkFactory`). 로그는 Authorization을 가림 | 없음 |
 | R-050 | 구현 완료 | 통과 | `SearchBooksQueryKeyTest`, `SearchPagingTest`, `SearchPresenterTest` | 없음 |
 | R-051 | 구현 완료 | 통과 | `FavoriteSubscriptionKeysTest`, `FavoriteWriterTest`, Presenter 테스트 | 없음 |
 | R-052 | 구현 완료 | 통과 | `ErrorKindTest`, `KakaoBookServiceTest`, `FavoriteTogglerTest`(취소를 실패로 알리지 않음) | 없음 |
@@ -268,29 +262,29 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-059 | 구현 완료 | 통과 | [QA](QA.md)에 실기기 시나리오와 자동 테스트를 나눠 기록 | 폴더블 고유 상태는 미실행(R-035, R-068) |
 | R-060 | 구현 완료 | 통과 | [QA](QA.md) 자동 테스트 절, [ARCHITECTURE](ARCHITECTURE.md) 10절 | 없음 |
 | R-061 | 구현 완료 | 통과 | `SearchPresenterTest`, TC-06·19 | 없음 |
-| R-062 | 구현 완료 | 통과 | `SearchPresenterTest` "마지막 페이지에서는 더 요청하지 않는다"(20개 + is_end), `SearchPagingTest` | 없음 |
+| R-062 | 구현 완료 | 통과 | `SearchPresenterTest`(20개 + is_end), `SearchPagingTest` | 없음 |
 | R-063 | 구현 완료 | 통과 | `SearchPresenterTest`, TC-40(오류 뒤 스크롤 요청 0건)·40b | 없음 |
 | R-064 | 구현 완료 | 통과 | `SearchPagingTest`, `SearchPresenterTest` 중복 ID | 없음 |
 | R-065 | 구현 완료 | 통과 | `PriceFilterTest`, `PriceInputTest`, `FavoritesPresenterTest`, TC-13 | 없음 |
 | R-066 | 구현 완료 | 통과 | TC-26·32·70a·70b | 없음 |
-| R-067 | 구현 완료 | 통과 | 쓰기 실패: Fake 주입 테스트. 연타: TC-67, `FavoriteTogglerTest`. 쓰기 중 뒤로: TC-71, `FavoriteWriterTest` | 기기에서 Room 쓰기 실패는 만들지 않음 |
+| R-067 | 구현 완료 | 통과 | 쓰기 실패: Fake 주입. 연타: TC-67, `FavoriteTogglerTest`. 쓰기 중 뒤로: TC-71, `FavoriteWriterTest` | 기기 Room 쓰기 실패는 미재현 |
 | R-068 | 구현 완료 | 부분 통과 | 회전 TC-41·68a·94(태블릿 2-pane↔1-pane), 창 크기 변경 TC-68c, 다크 모드 TC-68b | 폴더블 접힘·펼침 미실행 |
 | R-069 | 구현 완료 | 통과 | `BookSearchNavHostTest` retain 은퇴 3건, `SearchQueryRetentionTest`, TC-40b·85 | 없음 |
 | R-070 | 구현 완료 | 통과 | TC-70a·70b(미저장 도서), TC-32(저장 도서) | 없음 |
 | R-071 | 구현 완료 | 통과 | `FavoriteWriterTest` 화면 취소 후 완료·직렬 실행, TC-71 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음(정책) |
-| R-072 | 구현 완료 | 통과 | 2026-10-08 `scripts/make-submission-zip.sh`로 만든 `book-search-android.zip`(약 24.8MiB: 압축 후 debug APK 13.1MiB, 시연 영상 2개 5.4MiB, `.git` 3.3MiB, 나머지 소스·문서). 작업 트리가 깨끗하고 키가 있을 때만 만들며, `assembleDebug` 후 저장소를 복사해 압축 | 제출 직전 마지막 커밋으로 다시 생성. Gmail 직접 첨부 한도(인코딩 포함 25MB, 파일 약 18MB)를 넘어 Drive 링크로 보냄. 링크 공유 권한은 제출자가 확인 |
-| R-073 | 구현 완료 | 통과 | ZIP에 `.git` 포함. 압축을 푼 폴더에서 `git log`가 최신 커밋을 가리키고 `git status`에 변경 없음, `git fsck` 오류 없음 | 없음 |
-| R-074 | 구현 완료 | 통과 | `local.properties`에서 키를 읽고 Git에서는 제외(`.gitignore`). ZIP 루트에 `local.properties` 포함. 압축을 푼 폴더에서 키 값은 `local.properties`와 APK에만 있고 `.git` 객체에는 0건(값은 출력하지 않음) | 없음. ZIP의 `local.properties`에는 `sdk.dir`을 빼서 제출자 경로가 다른 환경의 SDK 탐색을 막지 않게 함(`sdk.dir` 없이 `ANDROID_HOME`만으로 빌드 성공 확인) |
+| R-072 | 구현 완료 | 통과 | 2026-10-08 `scripts/make-submission-zip.sh`로 `book-search-android.zip`(약 24.8MiB: APK 13.1MiB, 영상 2개 5.4MiB, `.git` 3.3MiB) 생성. 깨끗한 작업 트리·키 있을 때만 생성 | 제출 직전 마지막 커밋으로 재생성. 메일 첨부 한도 초과로 Drive 링크 전달, 공유 권한은 제출자 확인 |
+| R-073 | 구현 완료 | 통과 | 압축 푼 폴더에서 `git log` 최신 커밋, `git status` 변경 없음, `git fsck` 오류 없음 | 없음 |
+| R-074 | 구현 완료 | 통과 | 키는 `local.properties`에서 읽고 `.gitignore`로 제외, ZIP 루트에 포함. 키 값은 `local.properties`·APK에만 있고 `.git` 객체 0건. ZIP의 파일에는 `sdk.dir` 없음(`ANDROID_HOME`만으로 빌드 확인) | 없음 |
 | R-075 | 해당 없음 | 미검증 | 없음 | 사용자 확인 |
-| R-076 | 구현 완료 | 통과 | `unzip -l`에서 `build/`·`.gradle/`·`.kotlin/`·`.idea/` 경로 0건. 압축을 푼 폴더에서도 해당 디렉터리 없음 | 없음 |
-| R-077 | 구현 완료 | 통과 | ZIP 루트에 `app-debug.apk` 포함. 이 APK를 실기기에 설치해 검색 요청이 200으로 응답하고 결과가 표시됨 | 없음 |
-| R-078 | 진행 | 미검증 | README 갱신(2026-10-08) | 최종 제출 전 사용자 검토 |
-| R-079 | 구현 완료 | 통과 | `demo.mp4`, 1분 42초(`ffprobe` 101.7초), 720x1560 H.264, 약 4MB. 2026-10-08 SM-S936N에서 `adb shell screenrecord`로 녹화. 커밋 `71cdf67` debug 빌드. 검색·페이지네이션·정렬, 즐겨찾기 추가·해제, 즐겨찾기 정렬·검색·가격 필터, 오프라인 오류와 재시도, 회전, 다크 모드 포함. 태블릿 2-pane은 `demo-tablet.mp4`, 31초, 1280x746 H.264, 약 1.7MB. SM-X710, 커밋 `bad3cd5` | 저장소에는 넣지 않고(`.gitignore`) 제출 ZIP 루트에 넣음(R-072 ZIP에서 확인) |
-| R-080 | 구현 완료 | 통과 | 2026-10-08 지원 회사의 국문·영문 이름, 띄어쓰기 변형, 법인명·옛 법인명, 서비스 도메인으로 추적 파일, 파일 이름, 전체 이력의 diff·커밋 메시지, 브랜치·태그 이름, `local.properties`를 검색해 0건. GitHub 저장소명 `book-search-android`, 설명·홈페이지·토픽 비어 있음, PR·이슈 없음. 검색어는 이 문서에 적지 않음 | 스크린샷·영상은 앱 화면만 담아 텍스트 검색 대상에서 제외 |
-| R-081 | 해당 없음 | 통과 | 2026-10-08 `local.properties`의 키 값으로 `git log -p --all`과 `git grep`, 문서를 검색해 0건(값은 출력하지 않음). OkHttp 로그는 Authorization을 가림 | 제출 직전 다시 확인 |
-| R-082 | 해당 없음 | 통과 | 2026-10-08 제출 ZIP에서 꺼낸 `.git`으로 확인. `config`의 remote는 자격증명 없는 HTTPS URL이고 credential·token·extraheader 항목 없음. `.git/hooks`는 기본 sample만 있음. 객체 밖 파일과 모든 Git 객체에서 GitHub 토큰 형식·URL 내 자격증명 패턴 0건 | 커밋 작성자 이메일은 Git 메타데이터로 이력에 남음(자격증명 아님) |
+| R-076 | 구현 완료 | 통과 | `unzip -l`과 압축 푼 폴더에서 `build/`·`.gradle/`·`.kotlin/`·`.idea/` 0건 | 없음 |
+| R-077 | 구현 완료 | 통과 | ZIP 루트 `app-debug.apk`를 실기기에 설치, 검색 200 응답·결과 표시 | 없음 |
+| R-078 | 진행 | 미검증 | README 갱신 | 최종 제출 전 사용자 검토 |
+| R-079 | 구현 완료 | 통과 | `demo.mp4` 1분 42초(`ffprobe` 101.7초), 720x1560, 2026-10-08 SM-S936N, 커밋 `71cdf67`: 검색·페이지네이션·정렬, 즐겨찾기 추가·해제·정렬·검색·가격 필터, 오프라인 오류·재시도, 회전, 다크 모드. `demo-tablet.mp4` 31초, 1280x746, SM-X710, 커밋 `bad3cd5`: 2-pane | 저장소 제외(`.gitignore`), 제출 ZIP 루트에 포함 |
+| R-080 | 구현 완료 | 통과 | 2026-10-08 회사명 변형(국문·영문·띄어쓰기·법인명·옛 법인명·도메인)으로 추적 파일·파일명·전체 이력·커밋 메시지·브랜치·태그·`local.properties` 검색 0건. 저장소명 `book-search-android`, 설명·홈페이지·토픽 없음. 검색어는 문서에 적지 않음 | 스크린샷·영상은 텍스트 검색 대상 외 |
+| R-081 | 해당 없음 | 통과 | 2026-10-08 키 값으로 `git log -p --all`·`git grep`·문서 검색 0건(값 미출력). OkHttp 로그는 Authorization을 가림 | 제출 직전 재확인 |
+| R-082 | 해당 없음 | 통과 | 2026-10-08 제출 ZIP의 `.git`: remote는 자격증명 없는 HTTPS, credential·token·extraheader 없음, hooks는 기본 sample, 토큰 형식·URL 내 자격증명 패턴 0건 | 작성자 이메일은 Git 메타데이터로 남음(자격증명 아님) |
 | R-083 | 해당 없음 | 미검증 | 없음 | 사용자 확인 |
-| R-084 | 구현 완료 | 통과 | 새 디렉터리에 압축을 풀고 Launcher JVM 17로 `./gradlew --no-build-cache --no-configuration-cache assembleDebug` 성공(작업 271개 모두 실행). ZIP의 APK를 SM-S936N에 설치해 실행·검색 확인 | 없음 |
+| R-084 | 구현 완료 | 통과 | 새 디렉터리에 압축 해제 후 Launcher JVM 17로 `./gradlew --no-build-cache --no-configuration-cache assembleDebug` 성공(작업 271개 실행). ZIP의 APK를 SM-S936N에 설치·검색 | 없음 |
 | R-085 | 구현 완료 | 통과 | `BookSearchBackStackTest` 7건(2-pane 상세 교체 포함), `BookSearchNavHostTest`(두 손가락 동시 탭 포함), TC-18·85·92 | 없음 |
 | R-086 | 구현 완료 | 통과 | TC-86(키 없는 worktree 빌드·설치, 키 미설정 안내, 요청 0건, 즐겨찾기 정상), `KakaoBookServiceTest` 키 누락 | 없음 |
 | R-087 | 구현 완료 | 통과 | TC-09, `BookDetailPresenterTest` | 없음 |
