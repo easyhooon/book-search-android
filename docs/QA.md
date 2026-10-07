@@ -95,6 +95,21 @@
 | 35 | R-035 | `wm size 1600x2560`, `wm density 320`(세로 800dp) → 가로 회전(1280dp) → 검색·상세 | 넓은 창에서 내비게이션 레일, 가로에서 다열 그리드, 상세는 탐색 UI 숨김 | 세로: 레일 + 1열(사용 가능 폭 688dp라 `Adaptive(360dp)`가 1열). 가로: 레일 + 2열, 검색 상태 유지. 상세: 레일 숨김, 본문 폭 제한 | 통과 | [세로](qa/tc35_tablet_fav.jpg), [가로](qa/tc35_tablet_land_fav.jpg), [검색](qa/tc35_tablet_land_search.jpg), [상세](qa/tc35_tablet_land_detail.jpg) |
 | 68c | R-068 | 태블릿 크기에서 상세를 연 채 세로 회전 → `wm size reset`(휴대폰 크기) → 뒤로 | 크기가 바뀌어도 상세 유지, 뒤로 가면 검색 상태 유지 | 상세 유지, 하단 바로 바뀐 검색 화면에서 "compose" 결과 유지 | 통과 | [세로](qa/tc68_tablet_port_detail_after_rotate.jpg), [축소](qa/tc68_resize_to_phone_detail.jpg), [복귀](qa/tc68_resize_back_search.jpg) |
 
+## 시연 영상
+
+QA 시나리오 가운데 주요 흐름을 이어 붙여 녹화했습니다([요구사항](REQUIREMENTS.md) R-079).
+
+| 항목 | 값 |
+| --- | --- |
+| 파일 | 제출 ZIP 루트의 `demo.mp4`. 용량 때문에 Git에는 넣지 않음(`.gitignore`) |
+| 길이·형식 | 1분 42초, 720x1560 H.264, 약 4MB |
+| 녹화 | 2026-10-08, 위 기기, 커밋 `71cdf67` debug 빌드. `adb shell screenrecord`로 녹화하고 앞쪽 홈 화면 3.65초를 잘라 `ffmpeg`로 압축 |
+| 조작 | QA와 같은 `adb shell input` 스크립트. 탭마다 앱이 전면에 있는지 확인하고, 녹화 중에는 방해 금지를 켜고 화면을 세로로 고정 |
+| 순서 | 검색 → 페이지네이션 → 발간일순 정렬 → 목록·상세에서 즐겨찾기 추가 → 즐겨찾기 탭 제목 내림차순 정렬·검색 → 가격 필터 적용·초기화 → 상세에서 해제 → 비행기 모드에서 즐겨찾기 상세 열람과 검색 오류 → 연결 복구 후 재시도 → 가로 회전 → 다크 모드 |
+| 기기 설정 | 끝난 뒤 방해 금지 끔, 자동 회전 켬, 비행기 모드 끔, 라이트 모드로 되돌림 |
+
+오프라인 구간에서 시스템 토스트("모바일 네트워크에 연결합니다…")가 잠깐 보입니다. 앱이 띄운 메시지가 아닙니다.
+
 ## 자동 테스트
 
 마지막 실행: 2026-10-08, 커밋 `71cdf67`. 명령은 `./gradlew assembleDebug testDebugUnitTest test --continue`입니다. Android 모듈 87개와 순수 JVM 모듈 `core:model` 23개, 모두 110개가 통과했고 실패·오류·건너뜀은 0입니다. `testDebugUnitTest`만 실행하면 core:model 테스트가 빠지므로 `test`를 함께 지정합니다.

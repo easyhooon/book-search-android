@@ -184,7 +184,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [ ] **R-076** ZIP에서 모든 `build/`, `.gradle/` 제외
 - [ ] **R-077** APK 포함. Debug APK 허용
 - [ ] **R-078** README 포함: 빌드 방법, 사용 프레임워크, 구조, 주요 구현 포인트(원문 요구), 선택 이유·실제 검증 결과·한계, AI 활용 시 활용 작업·검증 방법·직접 판단해 바꾼 부분
-- [ ] **R-079** **선택**: 3분 이내 시연 영상
+- [x] **R-079** **선택**: 3분 이내 시연 영상
 - [ ] **R-080** GitHub 저장소명·설명·문서 등 저장소 콘텐츠에 회사명 미포함
 
 ### 추가 보안·재현성 검증
@@ -285,7 +285,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-076 | 미착수 | 미검증 | 없음 | 제출 ZIP 생성 후 확인 |
 | R-077 | 미착수 | 미검증 | `assembleDebug` 성공 | 제출 ZIP에 APK 포함 |
 | R-078 | 진행 | 미검증 | README 갱신(2026-10-08) | 최종 제출 전 사용자 검토 |
-| R-079 | 미착수 | 미검증 | 없음 | 시연 영상 촬영 |
+| R-079 | 구현 완료 | 통과 | `demo.mp4`, 1분 42초(`ffprobe` 101.7초), 720x1560 H.264, 약 4MB. 2026-10-08 SM-S936N에서 `adb shell screenrecord`로 녹화. 커밋 `71cdf67` debug 빌드. 검색·페이지네이션·정렬, 즐겨찾기 추가·해제, 즐겨찾기 정렬·검색·가격 필터, 오프라인 오류와 재시도, 회전, 다크 모드 포함 | 저장소에는 넣지 않고(`.gitignore`) 제출 ZIP 루트에 넣음. ZIP 포함 확인은 R-072와 함께 |
 | R-080 | 진행 | 미검증 | 저장소명 `book-search-android` | 회사명 포함 여부는 사용자 확인 |
 | R-081 | 해당 없음 | 통과 | 2026-10-08 `local.properties`의 키 값으로 `git log -p --all`과 `git grep`, 문서를 검색해 0건(값은 출력하지 않음). OkHttp 로그는 Authorization을 가림 | 제출 직전 다시 확인 |
 | R-082 | 해당 없음 | 미검증 | `git remote -v`가 자격증명 없는 HTTPS URL임을 확인 | 사용자 확인 |
