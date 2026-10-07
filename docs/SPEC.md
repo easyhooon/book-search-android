@@ -177,11 +177,26 @@ UI 가이드를 기준으로 Material 3 기본 컴포넌트로 구성합니다.
 
 | 상태 | 저장 방식 | 시스템 프로세스 재생성 후 |
 | --- | --- | --- |
-| 검색 입력값, 확정 검색어, 정렬 | `rememberSaveable` | 확정 검색어가 있으면 1페이지부터 다시 검색 |
-| 즐겨찾기 입력값, 확정 검색어, 정렬, 가격 필터 | `rememberSaveable` | Room 목록에 그대로 다시 적용 |
+| 검색 입력값, 확정 검색어, 정렬 | 화면 Store의 저장 데이터(`rememberSerializable`) | 확정 검색어가 있으면 1페이지부터 다시 검색 |
+| 즐겨찾기 입력값, 확정 검색어, 정렬, 가격 필터 | 화면 Store의 저장 데이터(`rememberSerializable`) | Room 목록에 그대로 다시 적용 |
 | 탭과 상세 엔트리 | `rememberNavBackStack` | 그대로 복원. 상세는 스냅샷으로 즉시 표시 |
 | 목록 스크롤 위치 | 조회 조건(확정 검색어·정렬, 즐겨찾기는 가격 필터 포함)을 key로 한 `rememberSaveable(saver = LazyGridState.Saver)`. 조건이 바뀌면 맨 위에서 시작하고, 하트 해제처럼 조건이 같으면 위치 유지 | 검색 탭은 1페이지 범위까지만 의미가 있음 |
-| 검색 결과 페이지, 진행 중 쓰기 ID | Soil 캐시 / retain | 소멸 |
+| 검색 결과 페이지, 진행 중 쓰기 ID | Soil 캐시 / 화면 Store의 retain 데이터 | 소멸 |
+
+### 화면 Store
+
+세 화면은 상태를 출처별로 나눕니다. 서버 상태는 Soil, 즐겨찾기는 Room, 화면에서만 쓰는 클라이언트 상태는 화면 Store가 소유합니다. Store는 공식 문서의 retain·save 분리 방식을 따릅니다.
+
+| 구성 | 수단 | 내용 |
+| --- | --- | --- |
+| 저장 데이터 | `rememberSerializable`로 `@Serializable` 묶음 하나 | 검색: 입력값, 확정 검색어, 정렬. 즐겨찾기: 입력값, 확정 검색어, 정렬, 최소·최대 정가. 상세: 없음 |
+| retain 데이터 | 파일 안 `private` `RetainObserver` 하나 | 코루틴 scope, `FavoriteToggler`. 검색은 쿼리를 붙잡는 `SearchQueryHolder`도 포함. `onRetired`·`onUnused`에서 scope를 취소하고 쿼리를 놓음 |
+| Store | 위 두 값을 key로 `remember`한 클래스 | 상태 읽기와 `dispatch(event, server)` 하나 |
+
+- Presenter는 `eventSink`를 그대로 화면의 단일 진입점으로 두고, 모든 이벤트를 `store.dispatch`로 넘깁니다. `dispatch`는 debug 로그(Timber)를 남깁니다.
+- `server`는 Presenter가 컴포지션마다 만드는 서버 쪽 상태·동작입니다. 즐겨찾기 ID, Mutation의 `mutate`, 검색의 재시도·다음 페이지(InfiniteQuery 객체 호출)를 담습니다. Store와 retain 데이터는 이를 보관하지 않습니다. 컴포지션 범위 객체를 retain하지 않기 위해서입니다.
+- `FavoriteToggler`는 `RetainObserver`가 아닌 일반 클래스이며, 받은 scope에서 쓰기를 실행하고 `mutate`는 호출마다 받습니다.
+- 저장 데이터는 retain 데이터로 바꾸지 않고, retain 데이터는 프로세스 재생성 뒤 새로 만듭니다.
 
 ## 7. 내비게이션과 상세 데이터
 
@@ -239,7 +254,7 @@ Soil 1.0.0-alpha15 소스 기준입니다.
 - Soil Mutation key의 `mutate`는 이 `setFavorite`를 호출합니다. 화면 pop으로 호출 코루틴이 취소되어도 시작한 DB 쓰기는 앱 scope에서 끝까지 실행됩니다.
 - 하나의 `Mutex`가 모든 즐겨찾기 쓰기를 직렬화해 화면이 달라도 순서가 유지됩니다. 명령은 토글이 아니라 목표 상태라 반복되어도 결과가 같습니다.
 - Mutation key는 화면별로 다른 ID를 써(DroidKaigi 2026의 extraTag 방식) 화면 간 Mutation 상태가 섞이지 않습니다.
-- Presenter는 진행 중인 도서 ID 집합을 retain해 해당 카드 버튼만 비활성화합니다. 실패하면 스낵바로 알리고 상태는 Room 값을 유지합니다.
+- 화면 Store는 진행 중인 도서 ID 집합을 retain 데이터로 들고 해당 카드 버튼만 비활성화합니다. 실패하면 스낵바로 알리고 상태는 Room 값을 유지합니다.
 - 알려진 한계: 같은 화면에서 A 쓰기 중 B를 누르고 수 밀리초 안에 떠나면 B 명령이 actor 전달 전에 취소될 수 있습니다. 구간이 작아 테스트로 동작을 기록하고 README 한계에 적습니다. 프로세스 종료 시 끝나지 않은 쓰기는 보장하지 않습니다.
 
 ### 읽기 경로
