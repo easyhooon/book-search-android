@@ -9,4 +9,7 @@ object BookListDefaults {
 
     /** 이 폭을 기준으로 화면 너비에 맞춰 열 수가 늘어납니다. */
     val GridMinCellWidth = 360.dp
+
+    /** 카드끼리 붙어 하나의 덩어리로 보이지 않도록 행과 열 사이에 두는 간격입니다. */
+    val GridItemSpacing = 12.dp
 }

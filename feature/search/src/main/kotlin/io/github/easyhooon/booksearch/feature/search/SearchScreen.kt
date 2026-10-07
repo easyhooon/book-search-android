@@ -1,5 +1,6 @@
 package io.github.easyhooon.booksearch.feature.search
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -121,6 +122,8 @@ private fun SearchContentArea(
                 state = gridState,
                 modifier = modifier.testTag(SearchTestTags.RESULT_GRID),
                 contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(BookListDefaults.GridItemSpacing),
+                horizontalArrangement = Arrangement.spacedBy(BookListDefaults.GridItemSpacing),
             ) {
                 items(content.books, key = { it.id }) { book ->
                     BookCard(

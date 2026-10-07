@@ -1,5 +1,6 @@
 package io.github.easyhooon.booksearch.feature.favorites
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -134,6 +135,8 @@ private fun FavoritesContentArea(
             state = rememberLazyGridState(),
             modifier = modifier.testTag(FavoritesTestTags.RESULT_GRID),
             contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(BookListDefaults.GridItemSpacing),
+            horizontalArrangement = Arrangement.spacedBy(BookListDefaults.GridItemSpacing),
         ) {
             items(content.books, key = { it.id }) { book ->
                 BookCard(
