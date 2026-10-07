@@ -11,3 +11,4 @@ build/
 *.apk
 *.aab
 *.zip
+/demo.mp4
