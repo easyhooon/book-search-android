@@ -17,6 +17,9 @@ Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하�
 - 검색 / 즐겨찾기 2개 탭과 도서 상세 화면
 - Navigation 3 + retain 기반 화면 상태 관리 (Circuit 미사용)
 - Room + Flow를 통한 즐겨찾기 영속 저장과 화면 간 상태 동기화
+- Retrofit + OkHttp + kotlinx.serialization 원격 통신
+- Soil typed-key와 InfiniteQuery 기반 데이터 접근·페이지네이션. 단순 위임 Repository는 생략
+- Metro 의존성 주입, Coil 이미지 로딩 (Coil 3 권장)
 - 불안정한 네트워크, 화면 회전, 태블릿·폴더블 대응
 
 retain은 결과와 무관하게 직접 익히려는 선택입니다. 프로세스 종료 복원, 코루틴 소유권, 화면 제거 시 정리를 별도 설계하고 검증합니다.
@@ -26,7 +29,8 @@ retain은 결과와 무관하게 직접 익히려는 선택입니다. 프로세�
 1. [구현 전략과 3일 일정](docs/STRATEGY.md): 설계 결정, 참고 코드의 활용 범위, 위험과 검증 순서
 2. [요구사항 체크리스트](docs/REQUIREMENTS.md): 필수 요구사항과 추가 권장사항 구분
 3. [AI 활용 기록](docs/AI_USAGE.md): 실제 도움받은 범위와 아직 수행하지 않은 작업
-4. [저장소 작업 지침](AGENTS.md): 문서·커밋·검증·보안 기준
+4. [아키텍처](docs/ARCHITECTURE.md): 기술별 역할, 데이터 흐름, 상태 소유권, 테스트 경계
+5. [저장소 작업 지침](AGENTS.md): 문서·커밋·검증·보안 기준
 
 ## 빌드 기준과 주의사항
 
