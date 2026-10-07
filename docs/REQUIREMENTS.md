@@ -190,7 +190,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 ### 추가 보안·재현성 검증
 
 - [x] **R-081** 실제 API 키가 Git 현재 파일·전체 이력·문서·로그에 없는지 확인
-- [ ] **R-082** ZIP에 포함될 `.git/config` 및 remote URL에 자격증명이 없는지 사용자 확인
+- [x] **R-082** ZIP에 포함될 `.git/config` 및 remote URL에 자격증명이 없는지 사용자 확인
 - [ ] **R-083** 최종 키 설정·민감정보 포함 여부·제출 대상은 사용자가 직접 확인
 - [x] **R-084** 압축을 새 디렉터리에 풀고 빌드 및 APK 설치 확인
 
@@ -288,7 +288,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-079 | 구현 완료 | 통과 | `demo.mp4`, 1분 42초(`ffprobe` 101.7초), 720x1560 H.264, 약 4MB. 2026-10-08 SM-S936N에서 `adb shell screenrecord`로 녹화. 커밋 `71cdf67` debug 빌드. 검색·페이지네이션·정렬, 즐겨찾기 추가·해제, 즐겨찾기 정렬·검색·가격 필터, 오프라인 오류와 재시도, 회전, 다크 모드 포함 | 저장소에는 넣지 않고(`.gitignore`) 제출 ZIP 루트에 넣음(R-072 ZIP에서 확인) |
 | R-080 | 구현 완료 | 통과 | 2026-10-08 지원 회사의 국문·영문 이름, 띄어쓰기 변형, 법인명·옛 법인명, 서비스 도메인으로 추적 파일, 파일 이름, 전체 이력의 diff·커밋 메시지, 브랜치·태그 이름, `local.properties`를 검색해 0건. GitHub 저장소명 `book-search-android`, 설명·홈페이지·토픽 비어 있음, PR·이슈 없음. 검색어는 이 문서에 적지 않음 | 스크린샷·영상은 앱 화면만 담아 텍스트 검색 대상에서 제외 |
 | R-081 | 해당 없음 | 통과 | 2026-10-08 `local.properties`의 키 값으로 `git log -p --all`과 `git grep`, 문서를 검색해 0건(값은 출력하지 않음). OkHttp 로그는 Authorization을 가림 | 제출 직전 다시 확인 |
-| R-082 | 해당 없음 | 미검증 | `git remote -v`가 자격증명 없는 HTTPS URL임을 확인. `.git/config`에 credential·token·extraheader 항목 없음, `.git/hooks`에는 기본 sample만 있음 | 사용자 확인 |
+| R-082 | 해당 없음 | 통과 | 2026-10-08 제출 ZIP에서 꺼낸 `.git`으로 확인. `config`의 remote는 자격증명 없는 HTTPS URL이고 credential·token·extraheader 항목 없음. `.git/hooks`는 기본 sample만 있음. 객체 밖 파일과 모든 Git 객체에서 GitHub 토큰 형식·URL 내 자격증명 패턴 0건 | 커밋 작성자 이메일은 Git 메타데이터로 이력에 남음(자격증명 아님) |
 | R-083 | 해당 없음 | 미검증 | 없음 | 사용자 확인 |
 | R-084 | 구현 완료 | 통과 | 새 디렉터리에 압축을 풀고 Launcher JVM 17로 `./gradlew --no-build-cache --no-configuration-cache assembleDebug` 성공(작업 271개 모두 실행). ZIP의 APK를 SM-S936N에 설치해 실행·검색 확인 | 없음 |
 | R-085 | 구현 완료 | 통과 | `BookSearchBackStackTest` 6건, `BookSearchNavHostTest`(두 손가락 동시 탭 포함), TC-18·85 | 없음 |
