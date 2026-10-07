@@ -138,6 +138,16 @@ DroidKaigi 2026([`300a81b`](https://github.com/DroidKaigi/conference-app-2026/tr
 
 화면마다 내비게이션·성공 알림 같은 일회성 이벤트가 여러 개로 늘어나면 `ScreenChannel` 방식을 다시 검토합니다.
 
+### 화면별 Scaffold
+
+앱 바깥에는 `NavigationSuiteScaffold` 하나만 두고, 하단 바·레일만 맡깁니다. 검색·즐겨찾기·상세 화면은 각자 `Scaffold`를 가집니다(2026-10-08 사용자 결정).
+
+- **2-pane:** 목록과 상세가 한 창에 함께 보입니다. 상세의 `TopAppBar`는 상세 칸에만 있어야 하고, 스낵바도 원인이 된 칸 안에서 떠야 합니다. 앱 수준 Scaffold 하나로는 topBar·snackbar 슬롯이 하나뿐이라 칸마다 나눌 수 없습니다.
+- **화면마다 다른 바 구성:** 상세만 topBar가 있고, 1-pane에서는 상세가 탐색 UI를 숨깁니다. 각 화면이 자기 바를 가지면 앱 수준에서 목적지별로 분기하지 않아도 됩니다.
+- **화면 단위 검증:** 화면 하나만 띄운 Compose 테스트와 Preview에서도 스낵바가 함께 동작합니다.
+
+검색·즐겨찾기는 topBar가 없어 `Scaffold`를 스낵바와 inset 처리에만 씁니다. 세 화면의 형태를 맞추려고 그대로 둡니다. 중첩 Scaffold에서 inset이 두 번 적용되지 않는지도 확인했습니다. `material3-adaptive-navigation-suite` 1.4.0의 `NavigationSuiteScaffold`는 콘텐츠에 `consumeWindowInsets`로 바가 차지한 쪽(하단 바는 bottom, 레일은 start)의 inset을 소비합니다. 그래서 안쪽 `Scaffold`의 `innerPadding`에는 이 inset이 다시 더해지지 않습니다. 이 확인은 바이트코드(`javap`)로 했습니다. 실기기에서 여백을 따로 측정하지는 않았습니다.
+
 ## 4. 핵심 동작
 
 ### 검색과 다음 페이지
