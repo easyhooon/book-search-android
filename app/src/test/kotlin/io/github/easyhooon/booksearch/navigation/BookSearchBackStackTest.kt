@@ -69,6 +69,25 @@ class BookSearchBackStackTest {
     }
 
     @Test
+    fun `2-pane에서는 다른 도서를 고르면 상세를 교체하고 같은 도서면 무시한다`() {
+        val stack = stackOf(FavoritesNavKey, SearchNavKey)
+
+        stack.openDetail(bookA, replaceDetail = true)
+        assertEquals(listOf(FavoritesNavKey, SearchNavKey, BookDetailNavKey(bookA)), stack)
+        assertEquals(bookA.id, stack.openedBookId)
+
+        stack.openDetail(bookB, replaceDetail = true)
+        assertEquals(listOf(FavoritesNavKey, SearchNavKey, BookDetailNavKey(bookB)), stack)
+
+        stack.openDetail(bookB, replaceDetail = true)
+        assertEquals(listOf(FavoritesNavKey, SearchNavKey, BookDetailNavKey(bookB)), stack)
+
+        assertTrue(stack.navigateBack())
+        assertEquals(listOf(FavoritesNavKey, SearchNavKey), stack)
+        assertEquals(null, stack.openedBookId)
+    }
+
+    @Test
     fun `뒤로 가기는 상세를 pop하고 즐겨찾기 루트에서는 검색 탭으로 간다`() {
         val stack = stackOf(SearchNavKey, FavoritesNavKey, BookDetailNavKey(bookA))
 

@@ -7,6 +7,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.retain.RetainObserver
 import androidx.compose.runtime.retain.retain
 import androidx.compose.ui.Modifier
@@ -34,6 +36,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /**
@@ -86,17 +89,18 @@ class BookSearchNavHostTest {
         activity.setContent {
             MaterialTheme {
                 val backStack = rememberNavBackStack(SearchNavKey).also { backStack = it }
+                val isTwoPane by rememberUpdatedState(isListDetailTwoPane())
+                fun open(id: String) = backStack.openDetail(testBook(id), replaceDetail = isTwoPane)
                 BookSearchNavHost(
                     backStack = backStack,
                     entryProvider = entryProvider<NavKey> {
-                        entry<SearchNavKey> {
-                            TrackedScreen(
-                                name = "search",
-                                onOpenOther = { backStack.openDetail(testBook("c")) },
-                            ) { backStack.openDetail(testBook("a")) }
+                        entry<SearchNavKey>(metadata = ListDetailMetadata.list) {
+                            TrackedScreen(name = "search", onOpenOther = { open("c") }) { open("a") }
                         }
-                        entry<FavoritesNavKey> { TrackedScreen("favorites") { backStack.openDetail(testBook("b")) } }
-                        entry<BookDetailNavKey>(clazzContentKey = { it.book.id }) { TrackedScreen("detail-${it.book.id}") }
+                        entry<FavoritesNavKey>(metadata = ListDetailMetadata.list) { TrackedScreen("favorites") { open("b") } }
+                        entry<BookDetailNavKey>(clazzContentKey = { it.book.id }, metadata = ListDetailMetadata.detail) {
+                            TrackedScreen("detail-${it.book.id}")
+                        }
                     },
                 )
             }
@@ -252,5 +256,85 @@ class BookSearchNavHostTest {
 
         assertTrue("왼쪽에 있어야 합니다: $tab", tab.right < root.right / 4)
         assertTrue("하단 바가 아니어야 합니다: $tab", tab.top < root.bottom / 2)
+    }
+
+    @Test
+    @Config(qualifiers = WIDE)
+    fun `넓은 창에서는 목록 옆에 안내 칸을 두고 상세를 열면 레일을 유지한 채 오른쪽에 보여 준다`() {
+        launch()
+        composeRule.onNodeWithTag("search").assertIsDisplayed()
+        composeRule.onNodeWithTag(ListDetailTestTags.PLACEHOLDER).assertIsDisplayed()
+
+        openDetailFrom("search")
+
+        composeRule.onNodeWithTag("search").assertIsDisplayed()
+        composeRule.onNodeWithTag("detail-a").assertIsDisplayed()
+        composeRule.onNodeWithTag(ListDetailTestTags.PLACEHOLDER).assertDoesNotExist()
+        composeRule.onNodeWithTag(NavHostTestTags.tab(TopLevelTab.Search)).assertIsDisplayed()
+        val list = composeRule.onNodeWithTag("search").getBoundsInRoot()
+        val detail = composeRule.onNodeWithTag("detail-a").getBoundsInRoot()
+        assertTrue("상세가 목록 오른쪽에 있어야 합니다: $list, $detail", detail.left >= list.right)
+    }
+
+    @Test
+    @Config(qualifiers = WIDE)
+    fun `넓은 창에서 다른 도서를 고르면 상세를 교체하고 이전 상세의 retain 값만 은퇴한다`() {
+        launch()
+        openDetailFrom("search")
+        composeRule.onNodeWithTag("search-open-other").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag("detail-c").assertIsDisplayed()
+        composeRule.onNodeWithTag("detail-a").assertDoesNotExist()
+        assertEquals(listOf(SearchNavKey, BookDetailNavKey(testBook("c"))), backStack.toList())
+        assertEquals(listOf("search", "detail-a", "detail-c"), created)
+        assertEquals(listOf("detail-a"), retired)
+    }
+
+    @Test
+    @Config(qualifiers = WIDE)
+    fun `넓은 창에서 뒤로 가기로 상세를 닫으면 안내 칸으로 돌아가고 검색 루트에서는 종료한다`() {
+        launch()
+        openDetailFrom("search")
+
+        pressBack()
+        composeRule.onNodeWithTag(ListDetailTestTags.PLACEHOLDER).assertIsDisplayed()
+        composeRule.onNodeWithTag("search").assertIsDisplayed()
+        assertEquals(listOf("detail-a"), retired)
+
+        pressBack()
+        scenario.onActivity { assertTrue(it.isFinishing) }
+    }
+
+    @Test
+    @Config(qualifiers = WIDE)
+    fun `창 너비가 바뀌면 같은 백스택으로 2-pane과 1-pane을 오가고 retain 값은 유지된다`() {
+        launch()
+        clickTab(TopLevelTab.Favorites)
+        openDetailFrom("favorites")
+
+        RuntimeEnvironment.setQualifiers(NARROW)
+        scenario.recreate()
+        setContent()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("detail-b").assertIsDisplayed()
+        composeRule.onNodeWithTag("favorites").assertDoesNotExist()
+        composeRule.onNodeWithTag(NavHostTestTags.tab(TopLevelTab.Search)).assertDoesNotExist()
+
+        RuntimeEnvironment.setQualifiers(WIDE)
+        scenario.recreate()
+        setContent()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("detail-b").assertIsDisplayed()
+        composeRule.onNodeWithTag("favorites").assertIsDisplayed()
+
+        assertEquals(listOf(SearchNavKey, FavoritesNavKey, BookDetailNavKey(testBook("b"))), backStack.toList())
+        assertEquals(listOf("search", "favorites", "detail-b"), created)
+        assertEquals(emptyList<String>(), retired)
+    }
+
+    private companion object {
+        const val WIDE = "w1280dp-h800dp"
+        const val NARROW = "w600dp-h800dp"
     }
 }

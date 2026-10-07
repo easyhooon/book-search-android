@@ -11,6 +11,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -19,6 +20,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import io.github.easyhooon.booksearch.R
 
@@ -30,12 +32,15 @@ import io.github.easyhooon.booksearch.R
  * 검색 루트에서 뒤로 가기를 미리 볼 때 다른 탭이 뒤에 비쳐 보이지도 않습니다.
  *
  * 화면에 엔트리가 하나뿐이면 NavDisplay가 뒤로 가기를 받지 않으므로, 검색 루트에서는 시스템이 Activity를 종료합니다.
+ *
+ * [isTwoPane]이면 [ListDetailSceneStrategy]로 목록과 상세를 나란히 보여 주고, 목록이 보이므로 상세에서도 탐색 UI를 유지합니다.
  */
 @Composable
 fun BookSearchNavHost(
     backStack: NavBackStack<NavKey>,
     entryProvider: (NavKey) -> NavEntry<NavKey>,
     modifier: Modifier = Modifier,
+    isTwoPane: Boolean = isListDetailTwoPane(),
 ) {
     val entries = rememberDecoratedNavEntries(
         backStack = backStack,
@@ -56,7 +61,7 @@ fun BookSearchNavHost(
 
     NavigationSuiteScaffold(
         modifier = modifier,
-        layoutType = if (backStack.isDetailOnTop) {
+        layoutType = if (backStack.isDetailOnTop && !isTwoPane) {
             NavigationSuiteType.None
         } else {
             NavigationSuiteScaffoldDefaults.calculateFromAdaptiveInfo(currentWindowAdaptiveInfo())
@@ -73,8 +78,12 @@ fun BookSearchNavHost(
             }
         },
     ) {
+        val sceneStrategy = remember(isTwoPane) {
+            if (isTwoPane) ListDetailSceneStrategy() else SinglePaneSceneStrategy()
+        }
         NavDisplay(
             entries = visibleEntries,
+            sceneStrategies = listOf(sceneStrategy),
             onBack = { backStack.navigateBack() },
         )
     }

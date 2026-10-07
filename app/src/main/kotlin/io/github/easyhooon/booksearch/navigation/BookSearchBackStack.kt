@@ -37,13 +37,23 @@ fun MutableList<NavKey>.selectTab(tab: TopLevelTab) {
 }
 
 /**
- * 상세는 목록에서만 엽니다. 상세 화면에는 다른 도서로 가는 경로가 없으므로, 맨 위가 이미 상세면
+ * 상세는 목록에서만 엽니다. 1-pane에서는 상세 화면에 다른 도서로 가는 경로가 없으므로, 맨 위가 이미 상세면
  * 두 손가락으로 두 카드를 동시에 눌렀거나 전환 중에 다른 카드를 누른 경우로 보고 무시합니다.
+ * 2-pane([replaceDetail])에서는 목록이 함께 보이므로 다른 도서를 누르면 상세를 교체합니다. 같은 도서면 무시합니다.
+ * 어느 경우에도 상세는 하나만 쌓입니다.
  */
-fun MutableList<NavKey>.openDetail(book: Book) {
-    if (isDetailOnTop) return
+fun MutableList<NavKey>.openDetail(book: Book, replaceDetail: Boolean = false) {
+    val top = lastOrNull()
+    if (top is BookDetailNavKey) {
+        if (!replaceDetail || top.book.id == book.id) return
+        removeAt(lastIndex)
+    }
     add(BookDetailNavKey(book))
 }
+
+/** 맨 위 상세의 도서 ID입니다. 2-pane에서 목록의 선택 표시에 씁니다. */
+val List<NavKey>.openedBookId: String?
+    get() = (lastOrNull() as? BookDetailNavKey)?.book?.id
 
 /** 처리했으면 true, 검색 루트라서 앱을 종료해야 하면 false입니다. */
 fun MutableList<NavKey>.navigateBack(): Boolean {
