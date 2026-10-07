@@ -1,6 +1,6 @@
 # 구현 사양
 
-기준일: 2026-10-07. 구현 착수 전에 남아 있던 암묵지를 이 문서에서 확정합니다. 과제 원문은 의문점을 스스로 합리적으로 판단해 진행하도록 안내합니다. 이에 따라 원문과 UI 가이드에 근거가 없는 세부사항은 아래 기본안으로 정하고 이유를 남깁니다. 구현 중 검증 결과로 바뀌면 이 문서를 먼저 갱신합니다.
+기준일: 2026-10-08. 구현 착수 전에 남아 있던 암묵지를 이 문서에서 확정했고, 구현 후 실제 코드와 검증 결과에 맞춰 갱신했습니다(커밋 `71cdf67` 기준). 과제 원문은 의문점을 스스로 합리적으로 판단해 진행하도록 안내합니다. 이에 따라 원문과 UI 가이드에 근거가 없는 세부사항은 아래 기본안으로 정하고 이유를 남깁니다. 구현 중 검증 결과로 바뀌면 이 문서를 먼저 갱신합니다.
 
 요구사항 체크는 [REQUIREMENTS](REQUIREMENTS.md), 구조와 상태 소유권은 [ARCHITECTURE](ARCHITECTURE.md), 일정·위험·참고 코드는 [STRATEGY](STRATEGY.md)를 기준으로 봅니다. 이 문서는 구현자가 바로 코드로 옮길 수 있는 계약만 다룹니다.
 
@@ -24,7 +24,7 @@
 | applicationId / namespace 접두 | `io.github.easyhooon.booksearch` | 회사명을 넣지 않고, 참고 저장소의 `com.easyhooon.booksearch`와 구분 |
 | compileSdk / targetSdk | 37 / 37 | compileSdk는 원문 지정. targetSdk는 같은 값으로 맞춤 |
 | minSdk | 26 | `java.time`을 desugaring 없이 사용. 현재 사용 기기 분포에서 제외 범위가 작음 |
-| JDK | 17 toolchain | 원문 지정 |
+| JDK | 앱 바이트코드·컴파일 기준 Java 17, Gradle daemon JVM 21 | 원문은 JDK 17. Metro 1.4.5 Gradle 플러그인이 실행 JVM 21 이상을 요구해 daemon만 21로 고정(아래 "JDK 기준") |
 | UI 언어 | 한국어 문자열 리소스 | 사용자 대상과 UI 가이드에 맞춤 |
 | 화면 방향 | 고정하지 않음 | 태블릿·폴더블·회전 대응 |
 
@@ -43,8 +43,11 @@
 | `feature:search` | 검색 탭 Root·Presenter·Screen | core:model, core:data, core:ui |
 | `feature:favorites` | 즐겨찾기 탭 Root·Presenter·Screen | core:model, core:data, core:ui |
 | `feature:detail` | 상세 Root·Presenter·Screen | core:model, core:data, core:ui |
+| `core:testing` | Presenter 테스트 실행 도구(Molecule·Turbine 연결, Main dispatcher 규칙), Fake `FavoriteWriter`, 테스트 도서 | 테스트 의존성으로만 사용 |
 
-모두 9개입니다. 처음에는 `core:data` 하나에 원격·로컬을 함께 두려 했으나, Repository가 없는 구조에서는 feature가 Soil key만 보도록 Retrofit·Room 타입을 `core:data` 뒤로 숨기는 편이 경계가 선명하고, Room KSP 재실행 범위도 줄어들어 2026-10-07에 나눴습니다. `core:designsystem`, `core:common`은 만들지 않습니다(Material 3 기본 테마, 공용 코드 없음).
+처음에는 `core:data` 하나에 원격·로컬을 함께 두려 했으나, Repository가 없는 구조에서는 feature가 Soil key만 보도록 Retrofit·Room 타입을 `core:data` 뒤로 숨기는 편이 경계가 선명하고, Room KSP 재실행 범위도 줄어들어 2026-10-07에 나눴습니다. `core:designsystem`, `core:common`은 만들지 않습니다(Material 3 기본 테마, 공용 코드 없음).
+
+앱 코드 모듈은 9개이고, 여기에 테스트 전용 `core:testing`을 더해 10개입니다. `core:testing`은 세 feature의 Presenter 테스트가 같은 실행 도구를 복사하지 않도록 구현 중 추가했으며, feature convention plugin이 `testImplementation`으로만 연결합니다.
 
 convention plugin은 사용자 기존 저장소의 `build-logic` 구성(includeBuild, `kotlin-dsl`, version catalog 공유, `pluginRegister` 패턴)을 따르고, Circuit·Firebase·detekt 관련 플러그인은 두지 않습니다. 플러그인 ID 접두는 `booksearch.`입니다. Room은 `core:database` 한 곳에서만 쓰므로 해당 build 파일에 직접 적습니다.
 
@@ -52,26 +55,41 @@ feature끼리는 서로 참조하지 않습니다. feature는 `onBookClick(book)
 
 ### 의존성 버전의 출발점
 
-참고 조합은 DroidKaigi 2026 기준 커밋 `300a81bc`입니다. 이 저장소의 원격 main과 같은 커밋이며 2026-10-07에 확인했습니다. 이 버전들은 **후보**이며, 지정 빌드 조합에서 실제 빌드가 성공한 뒤 고정합니다.
+참고 조합은 DroidKaigi 2026 기준 커밋 `300a81bc`입니다. 이 저장소의 원격 main과 같은 커밋이며 2026-10-07에 확인했습니다. 아래 버전은 지정 빌드 조합(Gradle 9.4.1, AGP 9.2.1, Kotlin 2.4.0, KSP 2.3.10, compileSdk 37)에서 `./gradlew assembleDebug testDebugUnitTest`가 성공해 **고정**했습니다.
 
-| 라이브러리 | 후보 |
+| 라이브러리 | 고정 버전 |
 | --- | --- |
 | Kotlin | 2.4.0 (원문 지정) |
 | KSP | 2.3.10 (원문 지정. DroidKaigi는 2.3.9이며 KSP 2.3.x는 Kotlin 버전과 분리됨) |
 | Metro | 1.4.5 (1.2.0부터 Kotlin 2.4.0 기준 빌드. DroidKaigi는 1.2.1) |
 | Soil | 1.0.0-alpha15 |
 | Compose BOM / runtime retain | 2026.09.00 / 1.12.1 (BOM에 포함된 정식판. DroidKaigi는 CMP 1.12.0-alpha03) |
+| material3-adaptive-navigation-suite | 1.4.0 (BOM 관리) |
 | Navigation 3 | 1.2.0 (DroidKaigi는 1.1.1) |
 | Coil 3 | 3.6.3 |
 | Timber | 5.0.1 (사용자 선택. 2021-08 이후 새 릴리스 없음) |
 | AndroidX App Startup | 1.2.0 (사용자 선택. Timber 초기화 등록) |
 | Retrofit / OkHttp | 3.0.0 / 5.5.0 |
 | Room | 2.8.5 |
-| Robolectric | 4.17 |
+| Robolectric | 4.17 (테스트 SDK 36) |
 | kotlinx.coroutines / serialization | 1.11.0 / 1.11.0 |
 | Molecule / Turbine | 2.2.0 / 1.2.1 |
 
-DroidKaigi는 JetBrains Compose Multiplatform 아티팩트를 씁니다. 이 앱은 Android 전용이므로 같은 기능을 제공하는 AndroidX 아티팩트를 우선 찾고, 없거나 맞지 않을 때만 대안을 기록합니다. Retrofit, OkHttp, Room, Robolectric 버전은 공식 릴리스에서 확인합니다.
+DroidKaigi는 JetBrains Compose Multiplatform 아티팩트를 씁니다. 이 앱은 Android 전용이므로 같은 기능을 제공하는 AndroidX 아티팩트를 우선 찾고, 없거나 맞지 않을 때만 대안을 기록합니다. Retrofit, OkHttp, Room, Robolectric 버전은 공식 릴리스에서 확인했습니다.
+
+### JDK 기준
+
+원문은 "JDK 17"만 적고, Gradle을 실행하는 JDK인지 코드의 컴파일 대상인지는 정하지 않았습니다. 구현 중 다음 충돌을 확인했습니다.
+
+- JDK 17로 Gradle을 실행하면 설정 단계에서 실패합니다: `dev.zacsweers.metro.gradle.plugin:1.4.5 ... Dependency requires at least JVM runtime version 21. This build uses a Java 17 JVM.`
+- Metro 변경 기록은 0.12.0부터 컴파일러와 Gradle 플러그인이 JVM 21 이상을 요구한다고 적습니다. 런타임 아티팩트의 JVM 대상은 별개입니다. Kotlin 2.4.0을 지원하는 Metro는 이보다 새 버전뿐이므로, Metro를 낮추면 지정 Kotlin 버전과 맞지 않습니다. Metro를 다른 DI로 바꾸면 사용자 선택을 바꾸게 됩니다.
+
+그래서 다음과 같이 나눴습니다(2026-10-07 사용자 결정).
+
+- `gradle/gradle-daemon-jvm.properties`에 `toolchainVersion=21`을 둡니다. 평가자가 JDK 17로 `./gradlew`를 실행해도 Gradle이 JDK 21 daemon을 찾고, 없으면 내려받아 실행합니다. 이 저장소에서 `./gradlew --version`은 `Launcher JVM: 17.0.10`, `Daemon JVM: Compatible with Java 21`을 출력합니다.
+- 앱과 라이브러리 모듈의 `sourceCompatibility`·`targetCompatibility`와 Kotlin `jvmTarget`은 17입니다. 순수 Kotlin 모듈은 `jvmToolchain(17)`으로 컴파일합니다.
+- Android 단위 테스트는 daemon과 같은 JDK 21에서 실행됩니다. Robolectric SDK 36 실행이 이 조건에 기댑니다(11절).
+- Android Studio의 기본 Gradle JDK(JBR 21)에서는 별도 설정이 없습니다.
 
 ## 3. API 키와 빌드 구성
 
@@ -157,8 +175,9 @@ UI 가이드를 기준으로 하되 세부 디자인은 Material 3 기본 컴포
 - 확정할 때 키보드를 내립니다. 직전과 같은 검색어·정렬을 다시 확정하면 새로 요청하지 않고, 오류 상태일 때만 재시도합니다. 당겨서 새로고침은 구현하지 않습니다.
 - 마지막 아이템 근처(남은 아이템 5개 이하)가 보이면 다음 페이지를 요청합니다. 보이는 아이템 수에 최소 문턱은 두지 않습니다.
 - 여러 페이지를 합칠 때 같은 ID가 다시 나오면 처음 나온 항목만 남깁니다. 목록의 `key`는 도서 ID이므로, 중복을 제거하지 않으면 Lazy 목록이 크래시합니다. 다음 페이지 번호와 종료 여부는 중복 제거 전의 응답 기준으로 계산합니다.
-- 검색 결과 Query의 `staleTime`은 5분으로 둡니다. 탭 전환이나 상세에서 돌아올 때 같은 조건을 다시 요청하지 않도록 하기 위해서입니다. 정확한 옵션 이름은 Soil 버전에서 확인합니다.
+- 검색 결과 Query의 `staleTime`은 5분으로 둡니다. 탭 전환이나 상세에서 돌아올 때 같은 조건을 다시 요청하지 않도록 하기 위해서입니다. key의 `onConfigureOptions`에서 `options.copy(staleTime = 5.minutes, ...)`로 지정합니다.
 - 검색 루트가 백스택에 있는 동안에는 확정 조건의 쿼리를 Soil에 붙여 둡니다. Soil은 구독이 모두 끊기고 `keepAliveTime`(기본 5초)이 지나면 쿼리를 내리면서 성공 상태만 캐시에 남깁니다. 그래서 추가 로딩이 실패한 채 즐겨찾기 탭에 5초 넘게 머물다 돌아오면 목록이 지워지고 전체 오류가 보였습니다(실기기 QA에서 발견). 검색 Presenter가 엔트리 범위로 retain한 참조로 쿼리를 붙잡고, 조건이 바뀌거나 검색어를 비우거나 엔트리가 은퇴하면 놓습니다. `SearchQueryRetentionTest`로 확인합니다.
+- 검색 결과 ID(`SearchBooksQueryId`)는 정규화한 검색어와 정렬로 만듭니다. Presenter는 `rememberInfiniteQuery`를 `key(queryKey.id)` 그룹 안에서 호출합니다. Soil compose의 기본 수집은 key 없는 `collectAsState`라서, 그룹을 나누지 않으면 조건이 바뀐 첫 프레임에 이전 조건의 결과가 보이기 때문입니다.
 
 ### 즐겨찾기 탭
 
@@ -201,9 +220,9 @@ UI 가이드를 기준으로 하되 세부 디자인은 Material 3 기본 컴포
 모든 키는 `@Serializable`이며 `rememberNavBackStack`으로 저장·복원합니다.
 
 - `SearchNavKey`, `FavoritesNavKey`: 탭 루트
-- `BookDetailNavKey(book: BookSnapshot)`: 상세
+- `BookDetailNavKey(book: Book)`: 상세
 
-`BookSnapshot`은 상세를 그리는 데 필요한 도서 필드를 담은 직렬화 가능 모델입니다. 엔트리의 `contentKey`는 `book.id`로 지정해, 같은 도서의 상세는 같은 retain 저장소를 씁니다.
+별도 스냅샷 타입을 두지 않고 `@Serializable`인 화면 계약 모델 `Book`을 그대로 담습니다. 상세에 필요한 필드가 `Book`과 같아서 변환 코드만 늘기 때문입니다. 엔트리는 `entry<BookDetailNavKey>(clazzContentKey = { it.book.id })`로 등록해, 같은 도서의 상세는 같은 retain 저장소를 씁니다.
 
 ### 상세에 스냅샷을 넣는 이유
 
@@ -230,7 +249,9 @@ DroidKaigi 2026의 탭 처리(`remove` + `add`)에는 같은 탭 재선택 시 �
 | 뒤로 가기(즐겨찾기 루트) | 검색 탭 선택과 같은 동작(즐겨찾기 루트는 유지) |
 | 뒤로 가기(검색 루트) | 앱 종료(Activity finish) |
 
-탭을 바꾸면 이전 탭의 상세는 정리됩니다. 탭마다 독립된 상세 스택을 유지하는 방식보다 단순하고, retain 정리 시점이 명확하기 때문입니다. 탭 루트를 옮길 때 retain decorator가 이를 pop으로 처리하지 않는지는 Compose 테스트로 확인합니다.
+탭을 바꾸면 이전 탭의 상세는 정리됩니다. 탭마다 독립된 상세 스택을 유지하는 방식보다 단순하고, retain 정리 시점이 명확하기 때문입니다.
+
+구현에서는 엔트리 decorator(saveable·retain)를 백스택 전체에 적용하고, `NavDisplay`에는 활성 탭 루트부터의 엔트리만 넘깁니다. 비활성 탭 루트는 백스택에 남아 있으므로 pop으로 처리되지 않아 retain 값이 유지되고, 검색 루트에서 뒤로 가기를 미리 볼 때 다른 탭이 뒤에 비치지도 않습니다. 화면에 엔트리가 하나뿐이면 `NavDisplay`가 뒤로 가기를 받지 않으므로 즐겨찾기 루트만 `BackHandler`로 처리하고, 검색 루트에서는 시스템이 Activity를 종료합니다. 탭 루트를 옮겨도 retain 값이 은퇴하지 않는다는 점은 `BookSearchNavHostTest`로 확인했습니다.
 
 ## 8. 즐겨찾기 쓰기 경로
 
@@ -274,13 +295,14 @@ Room Entity는 `id`(PK), 원본 `isbn`, 5절의 도서 필드, `savedAt`으로 �
 | 직렬화 실패 | 응답 형식 | 안 함 | 일반 오류 |
 | `CancellationException` | 취소 | 안 함 | 표시하지 않고 재전파 |
 
-- 자동 재시도는 Soil의 retry 옵션에 위 조건을 판정하는 함수를 넘겨 구현합니다. 횟수와 간격은 Soil 기본값에서 시작합니다.
+- 자동 재시도는 key의 `onConfigureOptions`에서 `shouldRetry = { error -> error.toErrorKind().isRetryable }`로 구현합니다. 횟수와 간격은 Soil 기본값을 씁니다. 키 미설정(`MissingApiKeyException`)은 `IOException` 하위 타입이지만 재시도하지 않습니다.
 - 화면의 재시도 버튼은 같은 key의 같은 페이지를 다시 요청합니다.
+- 클라이언트에 `AndroidNetworkConnectivity`를 넣었지만, 실기기에서는 연결이 돌아와도 최초 오류 화면이 자동으로 다시 요청하지 않았습니다(12초 대기 동안 요청 0건). 재시도 버튼은 요청 1건으로 복구됐습니다([QA](QA.md) TC-42). 그래서 오류 화면의 재시도 버튼을 복구 수단으로 둡니다.
 - 이미지용 클라이언트는 인증 interceptor가 없는 기본 `OkHttpClient`를 쓰고, API 클라이언트는 여기에 `newBuilder()`로 인증 interceptor만 더해 만듭니다.
 
 ## 10. 적응형 레이아웃
 
-- 탐색 UI는 `NavigationSuiteScaffold`를 씁니다. compact에서는 하단 바, medium·expanded에서는 내비게이션 레일로 바뀝니다. 상세에서는 탐색 UI를 숨깁니다.
+- 탐색 UI는 `NavigationSuiteScaffold`를 씁니다. compact에서는 하단 바, medium·expanded에서는 내비게이션 레일로 바뀝니다. 상세가 맨 위면 `layoutType = NavigationSuiteType.None`으로 탐색 UI를 숨깁니다.
 - 목록은 `LazyVerticalGrid(GridCells.Adaptive(minSize = 360.dp))`로 구성합니다. compact에서는 1열이고 넓은 창에서는 2~3열이 됩니다. 검색창과 필터 영역은 최대 너비를 제한합니다.
 - list-detail 2-pane은 구현하지 않습니다(제품 정책 5번). 이유와 영향은 README에 적습니다.
 - 회전·창 크기 변경 후에도 입력값, 확정 조건, 스크롤 위치, 상세 엔트리가 유지되는지 확인합니다.
@@ -297,7 +319,9 @@ Room Entity는 `id`(PK), 원본 `isbn`, 5절의 도서 필드, `savedAt`으로 �
 | Compose 내비게이션·적응형·retain 수명 | Robolectric Compose UI 테스트 | JVM 단위 테스트 |
 | 프로세스 재생성·폴더블·실제 API | 에뮬레이터 수동 확인 | 기록으로 남김 |
 
-Robolectric이 SDK 37을 지원하지 않으면 테스트에서만 `@Config(sdk = [지원 최대 버전])`을 쓰고, 이 제약을 기록합니다. 실행 명령은 기본적으로 `./gradlew testDebugUnitTest`입니다. 실제 task 이름은 프로젝트 생성 후 확인합니다.
+Robolectric 4.17은 SDK 37을 지원하지 않습니다. 그래서 Robolectric을 쓰는 7개 모듈의 `src/test/resources/robolectric.properties`에 `sdk=36`(지원 최댓값)을 둡니다. SDK 36 이상은 JDK 21에서만 실행되며, Robolectric이 `FileDescriptor` 내부를 다루려면 테스트 JVM에 `--add-exports=java.base/jdk.internal.access=ALL-UNNAMED`가 필요합니다. 이 인자는 convention plugin의 `unitTests.all`에서 넣습니다. 이 인자가 없으면 SDK 36 테스트가 `IllegalAccessException ... module java.base does not export jdk.internal.access`로 실패하는 것을 확인했습니다.
+
+실행 명령은 `./gradlew testDebugUnitTest`(Android 모듈)와 `./gradlew :core:model:test`(순수 Kotlin 모듈)입니다. `./gradlew testDebugUnitTest test`로 한 번에 실행할 수 있습니다.
 
 ## 12. 제출 패키지
 
@@ -307,12 +331,14 @@ Robolectric이 SDK 37을 지원하지 않으면 테스트에서만 `@Config(sdk 
 - ZIP을 새 디렉터리에 풀어 `./gradlew assembleDebug`가 다시 성공하는지 확인합니다.
 - 메일 발송, 실제 키 확인, 최종 첨부는 사용자가 합니다.
 
-## 13. 구현 중 검증으로 확정할 항목
+## 13. 구현 중 검증으로 확정한 항목
 
-아래 항목은 결정이 아니라 사실 확인이 필요합니다. 결과를 이 문서와 README에 반영합니다.
+구현 전에 사실 확인이 필요했던 항목과 결과입니다.
 
-1. 지정 빌드 조합에서 2절의 의존성 후보가 함께 빌드되는지
-2. AndroidX에서 retain decorator에 필요한 `RetainedValuesStoreRegistry` 계열 API를 제공하는 버전
-3. Soil 재시도 옵션에서 재시도 여부를 판정하는 함수의 정확한 이름과 형태
-4. Robolectric의 지원 SDK 최댓값
-5. `NavigationSuiteScaffold`와 Navigation 3를 함께 쓸 때 상세에서 탐색 UI를 숨기는 방법
+| 항목 | 결과 |
+| --- | --- |
+| 1. 지정 빌드 조합에서 2절의 의존성이 함께 빌드되는지 | 빌드됨. 단, Metro 1.4.5 때문에 Gradle daemon은 JDK 21이 필요함(2절 "JDK 기준") |
+| 2. retain decorator에 필요한 API | Navigation 3 1.2.0에는 retain decorator가 없음. `compose-runtime-retain` 1.12.1의 `RetainedValuesStoreRegistry`(`retainRetainedValuesStoreRegistry`, `LocalRetainedValuesStoreProvider`, `clearChild`)로 직접 만듦(`RetainedValuesStoreNavEntryDecorator.kt`) |
+| 3. Soil 재시도 판정 함수 | `QueryOptions.shouldRetry: (Throwable) -> Boolean`. key의 `onConfigureOptions`에서 `options.copy(...)`로 지정 |
+| 4. Robolectric 지원 SDK 최댓값 | 4.17 기준 36. JDK 21과 `--add-exports` 인자가 필요함(11절) |
+| 5. 상세에서 탐색 UI를 숨기는 방법 | `NavigationSuiteScaffold(layoutType = NavigationSuiteType.None)` |

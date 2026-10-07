@@ -2,7 +2,7 @@
 
 작성일: 2026-10-07 / 일정 기준: 한국 표준시(KST)
 
-이 문서는 구현 전 계획입니다. 참조 코드에서 확인한 사실, 사용자 선택, 설계 권장안, 미정 사항을 구분합니다. 현재 앱 구현·빌드·테스트 완료를 의미하지 않습니다. 원문이 재량에 맡긴 세부 동작은 [구현 사양](SPEC.md)에서 기본안으로 확정했습니다.
+이 문서는 구현 전에 세운 계획이며, 2026-10-07 구현 뒤 실제 결과를 해당 절에 덧붙였습니다. 참조 코드에서 확인한 사실, 사용자 선택, 설계 권장안, 미정 사항을 구분합니다. 자동 테스트 결과와 남은 수동 검증은 [REQUIREMENTS](REQUIREMENTS.md)의 검증 기록이 기준입니다. 원문이 재량에 맡긴 세부 동작은 [구현 사양](SPEC.md)에서 기본안으로 확정했습니다.
 
 ## 1. 목표와 우선순위
 
@@ -36,7 +36,7 @@ retain 학습은 사용자 선택입니다. 일정이 촉박하다는 이유로 
 | Metro | 사용자 선택 | 최소 DI 그래프. Kotlin 2.4.0과 컴파일러 플러그인 호환 먼저 검증 |
 | Coil | 사용자 선택 | Coil 3 + coil-compose/coil-network-okhttp 권장. API 인증 설정과 이미지 요청 분리 |
 | 가격 필터 | 현재 제품 정책 | 정가 최소·최대 금액, 양끝 포함, 적용 버튼. 누락·음수와 0원 구분 |
-| 모듈 구성 | 결정 | app, core:model/network/database/data/ui, feature:search/favorites/detail의 9개. 모듈 수 자체를 목표로 삼지 않음 |
+| 모듈 구성 | 결정 | app, core:model/network/database/data/ui, feature:search/favorites/detail의 9개 + 테스트 전용 core:testing. 모듈 수 자체를 목표로 삼지 않음 |
 | 검색 결과 디스크 캐시 | 후순위 | 필수 기능 완료 전에는 도입하지 않음 |
 | 사용자 retain PoC | 참고 정보 | 사용자가 공유한 경험. 코드는 확인하지 못했으므로 구현 근거로 쓰지 않음 |
 | 세부 동작 기본안 | 결정 | 원문의 재량 영역은 [SPEC](SPEC.md)에 기본안으로 확정. 구현 중 사실 확인이 필요한 항목은 SPEC 13절에 분리 |
@@ -73,6 +73,8 @@ retain 학습은 사용자 선택입니다. 일정이 촉박하다는 이유로 
 
 산출물은 실제 `java -version`, `./gradlew --version`, 의존성 버전, `./gradlew assembleDebug` 결과입니다. API 키 없이 가능한 컴파일 검증과 실제 API 통신 검증을 구분합니다.
 
+**실행 결과(2026-10-07).** 5번 단계에 해당하는 충돌이 하나 있었습니다. Metro 1.4.5의 Gradle 플러그인이 실행 JVM 21 이상을 요구해, JDK 17로 Gradle을 실행하면 설정 단계에서 실패했습니다. Kotlin 2.4.0을 지원하는 Metro는 모두 이 조건이 있고, Metro를 빼면 사용자 선택을 바꾸게 됩니다. 그래서 요청 버전은 그대로 두고 Gradle daemon만 JDK 21로 고정했으며, 앱 바이트코드는 Java 17을 유지했습니다(사용자 결정). 나머지 의존성은 지정 조합에서 함께 빌드되었고 버전은 [SPEC](SPEC.md) 2절에 고정했습니다. `./gradlew --version`은 `Launcher JVM: 17.0.10`, `Daemon JVM: Compatible with Java 21`을 출력하고, `./gradlew assembleDebug`는 성공했습니다. 실제 API 통신은 아직 기록하지 않았습니다.
+
 ## 3. 최소 아키텍처
 
 선택한 기술의 역할·데이터 흐름·상태 소유권·테스트 경계는 별도 [ARCHITECTURE.md](ARCHITECTURE.md)에 정리합니다. 이 문서에서는 구현 순서와 위험·참고 코드에 집중합니다.
@@ -95,7 +97,7 @@ feature 간 직접 구현 참조를 피합니다. 앱이 내비게이션을 조�
 
 ### Soil typed-key와 데이터 접근 책임
 
-사용자가 작은 Soil 데이터 계층을 선택했습니다. 검색은 typed Query/InfiniteQuery key에서 Retrofit 호출로 연결합니다. 로컬은 Subscription에서 Room Flow를 노출하고 Mutation에서 Room에 쓰는 구성으로 진행합니다. DroidKaigi의 typed-key 패턴을 참고하되 실제 사용 API와 버전은 구현 전 확인합니다.
+사용자가 작은 Soil 데이터 계층을 선택했습니다. 검색은 typed Query/InfiniteQuery key에서 Retrofit 호출로 연결합니다. 로컬은 Subscription에서 Room Flow를 노출하고 Mutation에서 Room에 쓰는 구성으로 진행합니다. DroidKaigi의 typed-key 패턴을 참고하되 실제 사용 API와 버전은 구현 중 확인했습니다(Soil 1.0.0-alpha15).
 
 이미 데이터 접근 책임을 가진 key를 단순히 전달하는 Repository는 추가하지 않습니다. 즐겨찾기의 확정 상태는 Room에 두고, Soil의 메모리 캐시를 별도 진실 공급원으로 만들지 않습니다. 일반 Repository는 검토한 대안으로 기록하되 현재 구현 계획에는 포함하지 않습니다.
 
@@ -115,7 +117,7 @@ feature 간 직접 구현 참조를 피합니다. 앱이 내비게이션을 조�
 - 목록 카드 모델, ID 규칙, 오류 타입을 먼저 합의합니다.
 - Soil provider/key 경계에서 Fake key 또는 Fake 데이터 소스로 의존성을 교체해 feature 상태 전이를 테스트할 수 있게 합니다. 구체적인 교체 API는 선택한 Soil 버전에서 확인합니다.
 - 새 기능을 위해 DB·네트워크·UI 전역 상태를 동시에 수정해야 한다면 경계를 다시 검토합니다.
-- 모듈은 위 9개로 시작합니다. 기능이 늘면 feature 모듈을 추가하고, core를 더 쪼개는 일은 실제 충돌이 생긴 뒤에 합니다.
+- 모듈은 위 9개로 시작했고, 구현 중 Presenter 테스트 공통 도구를 모은 테스트 전용 `core:testing`을 더했습니다. 기능이 늘면 feature 모듈을 추가하고, core를 더 쪼개는 일은 실제 충돌이 생긴 뒤에 합니다.
 
 ## 4. retain, 내비게이션, 코루틴 수명
 
@@ -192,7 +194,7 @@ Room Flow를 즐겨찾기 상태의 단일 기준으로 둡니다. 원격 검색
 
 API 계층은 MockWebServer로 요청 파라미터·인증 헤더 구성·응답 변환·HTTP 오류를 확인하는 안을 권장합니다. Presenter 테스트는 네트워크 서버 대신 교체 가능한 Fake 의존성으로 모델 방출과 상태 전이를 검증합니다. Soil provider/key가 사용하는 데이터 의존성을 Fake key 또는 Fake 데이터 소스로 교체하며, 테스트를 위해 별도 Repository를 추가하지 않습니다. 실제 API 키를 테스트 코드·fixture·로그에 넣지 않습니다. API 계층 테스트와 실제 서비스 통신 확인은 구분합니다.
 
-Retrofit은 현재 확인한 Soil 공식 모듈 목록의 전용 통합 모듈이 아닙니다. 범용 `buildQueryKey`의 `suspend QueryReceiver.() -> T` fetch 안에서 주입한 Retrofit suspend 함수를 호출하는 방식이며, 이를 위해 별도의 커스텀 어댑터가 필수인 것은 아닙니다. 실제 버전 조합의 컴파일·실행은 아직 검증하지 않았습니다. Ktor receiver도 HttpClient 주입 도구이며 예외를 자동 변환해 주는 것으로 가정하지 않습니다.
+Retrofit은 현재 확인한 Soil 공식 모듈 목록의 전용 통합 모듈이 아닙니다. 범용 `buildQueryKey`의 `suspend QueryReceiver.() -> T` fetch 안에서 주입한 Retrofit suspend 함수를 호출하는 방식이며, 이를 위해 별도의 커스텀 어댑터가 필수인 것은 아닙니다. 지정 버전 조합에서 컴파일과 MockWebServer·Presenter 테스트를 통과했습니다. Ktor receiver도 HttpClient 주입 도구이며 예외를 자동 변환해 주는 것으로 가정하지 않습니다.
 
 기본 재시도는 Soil의 `Retryable` 및 `canRetry` 조건을 사용하므로, Retrofit의 일반 `HttpException`이나 `IOException`이 자동 재시도된다고 쓰지 않습니다. `shouldRetry`를 명시하거나 재시도 가능한 오류를 매핑하는 정책을 선택해 테스트합니다. `CancellationException`은 재전파합니다. 인증 실패·일시적 실패·취소·수동 재시도의 동작을 나누어 확인합니다.
 
@@ -304,6 +306,8 @@ Paging 3는 로드 상태·취소·재시도 구조가 표준화되어 있다는
 - 참조 코드의 alpha/beta 버전 사용을 이 프로젝트의 호환성 보증으로 해석하지 않음
 - 탭 전환 코드(`NavigatorEffect`의 SelectTab 처리)는 그대로 쓰지 않음. 기준 시점에 열린 이슈 [DroidKaigi/conference-app-2026#344](https://github.com/DroidKaigi/conference-app-2026/issues/344)(같은 탭을 재선택하면 백스택 순서가 뒤집히고, 이후 뒤로 가기로 앱 종료)와 [DroidKaigi/conference-app-2026#226](https://github.com/DroidKaigi/conference-app-2026/issues/226)(상세 중복 push)가 있음. 규칙은 [SPEC](SPEC.md) 7절에서 직접 정하고 테스트함
 - 저장소 규모: 2026-10-07 기준 2026은 스타 83·기여자 54로, 2025(228·109)와 2024(491·133)보다 작음. 앱 전체의 완성도가 아니라 특정 패턴(retain decorator, Root/Presenter, Soil typed-key, Metro factory + retain)만 참고하므로 영향은 제한적이라고 판단함. 이 패턴들은 main의 여러 feature 모듈에 적용되어 있음. Kotlin 2.4.0 기준의 참고 버전 조합은 2026이 유일함
+- 기여 집중과 행사 후 정체: 2026-10-07 GitHub API 기준 기여 1,240건 중 767건(약 62%)이 한 기여자(kitakkun)의 것이고, 2위는 52건임. main의 월별 커밋은 7월 60, 8월 1,046, 9월 134건이며 행사(2026-09-01~03) 직후인 2026-09-06 커밋이 main의 마지막임. 이후 한 달간 main 변경이 없고 위 #344·#226도 열려 있음(10-05의 push는 다른 브랜치). 즉 참고하는 패턴의 설계 의도는 사실상 한 사람의 판단이며, 행사용 앱이라 이후 결함 수정이나 버전 갱신을 기대하기 어려움
+- 대응: 코드를 의존성이나 복사 대상으로 쓰지 않고 패턴만 참고함. retain decorator는 Navigation 3 1.2.0과 `compose-runtime-retain` 1.12.1 API로 다시 작성했고, 수명 동작(탭 전환 유지, pop 정리, 구성 변경 유지)은 `BookSearchNavHostTest`로 이 앱에서 직접 확인함. 탭 전환·상세 중복 같은 알려진 문제는 SPEC 7절 규칙과 `BookSearchBackStackTest`로 따로 막음
 - 2026과 2025 모두 즐겨찾기를 Room이 아닌 저장소에 둠. Soil Mutation/Subscription과 Room의 연결은 참고 사례 없이 이 앱이 직접 확장하는 부분이므로 테스트로 검증함
 
 ### DroidKaigi/conference-app-2025
@@ -324,9 +328,13 @@ Paging 3는 로드 상태·취소·재시도 구조가 표준화되어 있다는
 
 구현 착수는 2026-10-07(수) 저녁입니다. 아래 시간은 실행 제안입니다. 시작 시각이 밀리면 선택 기능을 줄이고, 빌드·핵심 기능·검증 시간을 보호합니다.
 
+**진행 상황(2026-10-07 밤).** 계획보다 빨리 진행되어 10월 7일에 아래 수·목·금 항목의 코드와 자동 테스트를 대부분 마쳤습니다(커밋 `c0f8117`~`f378299`, 단위·통합·Compose 테스트 95개 통과).
+
+**진행 상황(2026-10-08).** 실기기(SM-S936N, Android 17)에서 요구사항 기준 QA 시나리오 31건을 실행했습니다. 그 과정에서 결함 2건을 찾아 재현 테스트와 함께 고쳤습니다(`513ebc1`, `22855b3`). 빠른 검색어 변경 경합(`07f4bf1`)과 DB 재열기(`71cdf67`) 테스트도 보강해 자동 테스트는 110개입니다. 결과는 [QA](QA.md)에 있습니다. 남은 일은 시연 영상, 제출 ZIP 생성과 압축 해제 후 빌드 확인, 사용자의 최종 키·패키지 확인입니다. 체크 상태는 [REQUIREMENTS](REQUIREMENTS.md)를 기준으로 합니다.
+
 ### 10월 7일(수) 저녁: 빌드 조합
 
-1. 지정 버전의 Wrapper·AGP·Kotlin·KSP·JDK 17 조합으로 빈 프로젝트와 9개 모듈 골격 빌드
+1. 지정 버전의 Wrapper·AGP·Kotlin·KSP·JDK 17 조합으로 빈 프로젝트와 9개 모듈 골격 빌드(결과: Metro 때문에 Gradle daemon은 JDK 21, 2절 참고)
 2. Metro·Compose·Navigation 3·retain·Soil·Room·Retrofit·Coil 후보 버전을 추가하며 `assembleDebug` 확인
 3. 최소 retain + Navigation 3 화면 전환과 retain decorator 연결
 
