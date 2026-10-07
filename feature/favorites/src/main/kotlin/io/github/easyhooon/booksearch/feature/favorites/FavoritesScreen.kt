@@ -28,6 +28,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -58,6 +59,7 @@ fun FavoritesScreen(
         }
     }
     var showPriceFilter by rememberSaveable { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
 
     Scaffold(
         modifier = modifier,
@@ -89,7 +91,11 @@ fun FavoritesScreen(
                 ) {
                     FilterChip(
                         selected = uiState.priceFilter.isActive,
-                        onClick = { showPriceFilter = true },
+                        onClick = {
+                            // 시트가 닫힐 때 검색창으로 포커스가 돌아가 키보드가 다시 뜨지 않도록 합니다.
+                            focusManager.clearFocus()
+                            showPriceFilter = true
+                        },
                         label = { Text(uiState.priceFilter.label()) },
                         modifier = Modifier.testTag(FavoritesTestTags.PRICE_FILTER_CHIP),
                     )

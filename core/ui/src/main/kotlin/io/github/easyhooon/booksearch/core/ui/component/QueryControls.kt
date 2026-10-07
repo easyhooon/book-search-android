@@ -67,7 +67,10 @@ fun QueryField(
     )
 }
 
-/** 현재 정렬 라벨을 보여 주고, 누르면 정렬 목록을 펼칩니다. */
+/**
+ * 현재 정렬 라벨을 보여 주고, 누르면 정렬 목록을 펼칩니다.
+ * 메뉴가 닫힐 때 입력창으로 포커스가 돌아가 키보드가 다시 뜨지 않도록 열기 전에 포커스를 해제합니다.
+ */
 @Composable
 fun <T> SortMenuButton(
     selected: T,
@@ -76,9 +79,15 @@ fun <T> SortMenuButton(
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     var expanded by remember { mutableStateOf(false) }
     Box(modifier = modifier) {
-        TextButton(onClick = { expanded = true }) {
+        TextButton(
+            onClick = {
+                focusManager.clearFocus()
+                expanded = true
+            },
+        ) {
             Text(label(selected))
             Icon(Icons.Filled.ArrowDropDown, contentDescription = stringResource(R.string.sort_change))
         }
