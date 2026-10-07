@@ -8,7 +8,7 @@
 |---|---|
 | 기기 | Samsung SM-S936N, Android 17(API 37), 1080x2340, density 450 |
 | 태블릿 | Samsung SM-X710(Galaxy Tab S9), Android 16(API 36), 1600x2560, density 340. 세로 약 753dp(1-pane), 가로 약 1205dp(2-pane). TC-90~94에 사용 |
-| 빌드 | debug APK. 휴대폰 시나리오 최종 확인 커밋 `22855b3`, 2-pane 시나리오 `bad3cd5` |
+| 빌드 | debug APK. 휴대폰 시나리오 최종 확인 커밋 `22855b3`, 2-pane 시나리오 `bad3cd5`. 화면 Store 리팩터링(`91da389`) 뒤에는 실기기 재실행 없이 자동 테스트만 실행 |
 | 일시 | 2026-10-07 ~ 2026-10-08 |
 | 조작 | `adb shell input`(tap·swipe·text·keyevent) |
 | 판정 근거 | `screencap`, `uiautomator dump` 화면 텍스트, OkHttp 로그의 `--> GET` 요청 수, `dumpsys`(활성 Activity·키보드) |
@@ -19,7 +19,7 @@
 ## 결과 요약
 
 - 실기기 시나리오 표 40행(휴대폰 35, 태블릿 2-pane 5. TC-08/09는 한 행)을 실행했고 모두 통과입니다.
-- 단위·Compose·Room 자동 테스트 116개, 실패 0개입니다(아래 "자동 테스트").
+- 단위·Compose·Room 자동 테스트 120개, 실패 0개입니다(아래 "자동 테스트").
 
 ## 실기기 시나리오
 
@@ -116,7 +116,7 @@ QA 주요 흐름을 이어 녹화했습니다([요구사항](REQUIREMENTS.md) R-
 
 ## 자동 테스트
 
-마지막 실행: 2026-10-08, 커밋 `bad3cd5`, `./gradlew assembleDebug testDebugUnitTest test --continue`. Android 모듈 93개 + 순수 JVM 모듈 `core:model` 23개, 모두 116개 통과(실패·오류·건너뜀 0). `testDebugUnitTest`만으로는 core:model이 빠져 `test`를 함께 지정합니다.
+마지막 실행: 2026-10-08, 커밋 `91da389`, `./gradlew assembleDebug testDebugUnitTest test --continue`. Android 모듈 97개 + 순수 JVM 모듈 `core:model` 23개, 모두 120개 통과(실패·오류·건너뜀 0). `testDebugUnitTest`만으로는 core:model이 빠져 `test`를 함께 지정합니다.
 
 | 영역 | 테스트 클래스(개수) | 기기 시나리오가 다루지 못하는 부분 |
 |---|---|---|
@@ -126,7 +126,7 @@ QA 주요 흐름을 이어 녹화했습니다([요구사항](REQUIREMENTS.md) R-
 | 데이터 | `BookMapperTest`(3), `ErrorKindTest`(3), `SearchBooksQueryKeyTest`(3), `FavoriteWriterTest`(3) | 누락 필드 매핑(R-033), 오류 분류, 쓰기 실패 전파·순서·화면 취소 후 완료(R-067, R-071) |
 | UI 공통 | `BookFormattersTest`(3), `FavoriteTogglerTest`(3) | 누락 값 표시, 쓰기 실패 처리 |
 | Presenter | `SearchPresenterTest`(17), `FavoritesPresenterTest`(10), `BookDetailPresenterTest`(6), `PriceInputTest`(3) | 늦은 응답 경합(R-019, R-061), 추가 로딩 재시도와 중복 차단(R-063), 쓰기 실패 메시지(R-028, R-067) |
-| 화면 상태 | `SearchQueryRetentionTest`(2), `FavoritesScreenTest`(5) | 다른 탭에서 돌아와도 추가 로딩 실패 상태 유지(TC-40b), 즐겨찾기 검색어·정렬·가격 필터 변경 시 맨 위부터·조건이 같으면 위치 유지(TC-12b), 2-pane 선택 카드 강조 |
+| 화면 상태 | `SearchQueryRetentionTest`(2), `SearchStateRestorationTest`(1), `FavoritesStoreLifecycleTest`(3), `FavoritesScreenTest`(5) | 다른 탭에서 돌아와도 추가 로딩 실패 상태 유지(TC-40b), 프로세스 재생성 뒤 입력·확정 조건 복원, 쓰기 중 컴포지션 이탈·복귀 시 진행 상태 유지와 pop 후 정리, 즐겨찾기 검색어·정렬·가격 필터 변경 시 맨 위부터·조건이 같으면 위치 유지(TC-12b), 2-pane 선택 카드 강조 |
 | 내비게이션 | `BookSearchBackStackTest`(7), `BookSearchNavHostTest`(13) | 탭·백스택 규칙, 상세 중복 방지, retain 수명(R-058, R-069), 2-pane 장면·상세 교체 시 retain 정리·창 크기 변경 |
 
 ## 제약과 미실행 항목

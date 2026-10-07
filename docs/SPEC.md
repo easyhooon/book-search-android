@@ -189,13 +189,14 @@ UI 가이드를 기준으로 Material 3 기본 컴포넌트로 구성합니다.
 
 | 구성 | 수단 | 내용 |
 | --- | --- | --- |
-| 저장 데이터 | `rememberSerializable`로 `@Serializable` 묶음 하나 | 검색: 입력값, 확정 검색어, 정렬. 즐겨찾기: 입력값, 확정 검색어, 정렬, 최소·최대 정가. 상세: 없음 |
-| retain 데이터 | 파일 안 `private` `RetainObserver` 하나 | 코루틴 scope, `FavoriteToggler`. 검색은 쿼리를 붙잡는 `SearchQueryHolder`도 포함. `onRetired`·`onUnused`에서 scope를 취소하고 쿼리를 놓음 |
-| Store | 위 두 값을 key로 `remember`한 클래스 | 상태 읽기와 `dispatch(event, server)` 하나 |
+| 저장 데이터 | `rememberSerializable`로 `@Serializable` 묶음 하나 | 검색: 입력값, 확정 검색어, 정렬. 즐겨찾기: 입력값, 확정 검색어, 정렬, 최소·최대 정가 |
+| retain 데이터 | `private` `RetainObserver`로 감싼 값 | `retainFavoriteToggler(key)`: 코루틴 scope와 Mutation 구독(`MutationClient.getMutation`). 검색은 쿼리를 붙잡는 `SearchQueryHolder`도 둠. 은퇴(`onRetired`·`onUnused`)하면 scope를 취소하고 구독을 놓음 |
+| Store | 위 값들을 key로 `remember`한 클래스 | 상태 읽기와 `dispatch` 하나. 자체 상태는 없음 |
 
+- Store는 저장 데이터가 있는 검색·즐겨찾기 화면에만 둡니다. 상세는 저장할 클라이언트 상태가 없어 Presenter가 `retainFavoriteToggler`만 씁니다.
 - Presenter는 `eventSink`를 그대로 화면의 단일 진입점으로 두고, 모든 이벤트를 `store.dispatch`로 넘깁니다. `dispatch`는 debug 로그(Timber)를 남깁니다.
-- `server`는 Presenter가 컴포지션마다 만드는 서버 쪽 상태·동작입니다. 즐겨찾기 ID, Mutation의 `mutate`, 검색의 재시도·다음 페이지(InfiniteQuery 객체 호출)를 담습니다. Store와 retain 데이터는 이를 보관하지 않습니다. 컴포지션 범위 객체를 retain하지 않기 위해서입니다.
-- `FavoriteToggler`는 `RetainObserver`가 아닌 일반 클래스이며, 받은 scope에서 쓰기를 실행하고 `mutate`는 호출마다 받습니다.
+- 컴포지션마다 바뀌는 서버 쪽 값은 `dispatch` 인자로 받고 보관하지 않습니다. 즐겨찾기는 Room의 즐겨찾기 ID, 검색은 여기에 InfiniteQuery 객체의 재시도·다음 페이지 호출을 더해 `SearchServer`로 묶습니다.
+- `FavoriteToggler`는 받은 scope와 `mutate`로 쓰기를 실행하는 일반 클래스입니다. retain 값이 컴포지션 범위의 `rememberMutation`을 참조하지 않도록 Mutation 구독을 엔트리 범위로 직접 잡습니다.
 - 저장 데이터는 retain 데이터로 바꾸지 않고, retain 데이터는 프로세스 재생성 뒤 새로 만듭니다.
 
 ## 7. 내비게이션과 상세 데이터
