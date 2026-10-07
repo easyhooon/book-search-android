@@ -15,5 +15,6 @@ dependencies {
     testImplementation(libs.soil.query.test)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.robolectric)
+    testImplementation(libs.turbine)
     testImplementation(libs.androidx.test.ext.junit)
 }
