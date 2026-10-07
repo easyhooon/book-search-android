@@ -1,5 +1,6 @@
 package io.github.easyhooon.booksearch.core.ui.component
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,12 +11,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,6 +31,7 @@ import io.github.easyhooon.booksearch.core.ui.R
 /**
  * 검색·즐겨찾기 탭이 함께 쓰는 도서 카드입니다. 카드를 누르면 [onClick], 하트를 누르면
  * [onFavoriteClick]만 호출합니다. 빈 정보는 줄을 숨기지 않고 "정보 없음"으로 채웁니다.
+ * [selected]는 2-pane에서 오른쪽에 상세가 열린 도서임을 나타냅니다.
  */
 @Composable
 fun BookCard(
@@ -36,9 +41,21 @@ fun BookCard(
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
+    selected: Boolean = false,
 ) {
     val unavailable = stringResource(R.string.info_unavailable)
-    Card(onClick = onClick, modifier = modifier.fillMaxWidth()) {
+    Card(
+        onClick = onClick,
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics { this.selected = selected },
+        colors = if (selected) {
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        } else {
+            CardDefaults.cardColors()
+        },
+        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
+    ) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
             BookCover(
                 thumbnailUrl = book.thumbnailUrl,

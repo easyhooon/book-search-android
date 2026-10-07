@@ -43,6 +43,7 @@ fun SearchScreen(
     uiState: SearchUiState,
     onBookClick: (Book) -> Unit,
     modifier: Modifier = Modifier,
+    selectedBookId: String? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val userMessage = uiState.userMessage?.let { stringResource(it.resId) }
@@ -88,6 +89,7 @@ fun SearchScreen(
             }
             SearchContentArea(
                 uiState = uiState,
+                selectedBookId = selectedBookId,
                 onBookClick = onBookClick,
                 modifier = Modifier.weight(1f),
             )
@@ -98,6 +100,7 @@ fun SearchScreen(
 @Composable
 private fun SearchContentArea(
     uiState: SearchUiState,
+    selectedBookId: String?,
     onBookClick: (Book) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -132,6 +135,7 @@ private fun SearchContentArea(
                         isFavoritePending = book.id in uiState.pendingFavoriteIds,
                         onClick = { onBookClick(book) },
                         onFavoriteClick = { uiState.eventSink(SearchEvent.ToggleFavorite(book)) },
+                        selected = book.id == selectedBookId,
                     )
                 }
                 if (content.isLoadingMore || content.loadMoreError != null) {

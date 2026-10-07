@@ -11,12 +11,16 @@ import soil.query.annotation.ExperimentalSoilQueryApi
 import soil.query.compose.SubscriptionSuccessObject
 import soil.query.compose.rememberSubscription
 
-/** 상세 엔트리입니다. 같은 도서의 상세는 같은 retain 저장소를 쓰도록 contentKey를 도서 ID로 둡니다. */
+/**
+ * 상세 엔트리입니다. 같은 도서의 상세는 같은 retain 저장소를 쓰도록 contentKey를 도서 ID로 둡니다.
+ * [metadata]는 2-pane 배치 역할로 app이 넘깁니다.
+ */
 fun EntryProviderScope<NavKey>.bookDetailEntry(
     graphFactory: BookDetailScreenGraph.Factory,
     onBack: () -> Unit,
+    metadata: Map<String, Any> = emptyMap(),
 ) {
-    entry<BookDetailNavKey>(clazzContentKey = { it.book.id }) { key ->
+    entry<BookDetailNavKey>(clazzContentKey = { it.book.id }, metadata = metadata) { key ->
         val graph = retain { graphFactory.createBookDetailScreenGraph() }
         BookDetailScreenRoot(context = graph.bookDetailScreenContext, snapshot = key.book, onBack = onBack)
     }

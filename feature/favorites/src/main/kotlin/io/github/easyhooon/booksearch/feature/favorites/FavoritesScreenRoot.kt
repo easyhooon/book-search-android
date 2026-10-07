@@ -9,14 +9,19 @@ import io.github.easyhooon.booksearch.core.model.Book
 import soil.query.annotation.ExperimentalSoilQueryApi
 import soil.query.compose.rememberSubscription
 
-/** 즐겨찾기 탭 엔트리입니다. 상세 이동처럼 화면 밖 동작은 app이 연결합니다. */
+/**
+ * 즐겨찾기 탭 엔트리입니다. 상세 이동처럼 화면 밖 동작은 app이 연결합니다.
+ * [metadata]는 2-pane 배치 역할을, [selectedBookId]는 2-pane에서 오른쪽에 열린 도서를 app이 알려 줍니다.
+ */
 fun EntryProviderScope<NavKey>.favoritesEntry(
     graphFactory: FavoritesScreenGraph.Factory,
     onBookClick: (Book) -> Unit,
+    metadata: Map<String, Any> = emptyMap(),
+    selectedBookId: () -> String? = { null },
 ) {
-    entry<FavoritesNavKey> {
+    entry<FavoritesNavKey>(metadata = metadata) {
         val graph = retain { graphFactory.createFavoritesScreenGraph() }
-        FavoritesScreenRoot(context = graph.favoritesScreenContext, onBookClick = onBookClick)
+        FavoritesScreenRoot(context = graph.favoritesScreenContext, onBookClick = onBookClick, selectedBookId = selectedBookId())
     }
 }
 
@@ -26,11 +31,12 @@ fun FavoritesScreenRoot(
     context: FavoritesScreenContext,
     onBookClick: (Book) -> Unit,
     modifier: Modifier = Modifier,
+    selectedBookId: String? = null,
 ) {
     val favoriteBooks = rememberSubscription(context.favoriteBooksSubscriptionKey)
     val uiState = favoritesPresenter(
         favoriteBooks = favoriteBooks.data,
         favoriteMutationKey = context.favoriteMutationKey,
     )
-    FavoritesScreen(uiState = uiState, onBookClick = onBookClick, modifier = modifier)
+    FavoritesScreen(uiState = uiState, onBookClick = onBookClick, modifier = modifier, selectedBookId = selectedBookId)
 }

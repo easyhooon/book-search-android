@@ -48,6 +48,7 @@ fun FavoritesScreen(
     uiState: FavoritesUiState,
     onBookClick: (Book) -> Unit,
     modifier: Modifier = Modifier,
+    selectedBookId: String? = null,
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
     val userMessage = uiState.userMessage?.let { stringResource(it.resId) }
@@ -110,6 +111,7 @@ fun FavoritesScreen(
             }
             FavoritesContentArea(
                 uiState = uiState,
+                selectedBookId = selectedBookId,
                 onBookClick = onBookClick,
                 modifier = Modifier.weight(1f),
             )
@@ -129,6 +131,7 @@ fun FavoritesScreen(
 @Composable
 private fun FavoritesContentArea(
     uiState: FavoritesUiState,
+    selectedBookId: String?,
     onBookClick: (Book) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -161,6 +164,7 @@ private fun FavoritesContentArea(
                         isFavoritePending = book.id in uiState.pendingFavoriteIds,
                         onClick = { onBookClick(book) },
                         onFavoriteClick = { uiState.eventSink(FavoritesEvent.ToggleFavorite(book)) },
+                        selected = book.id == selectedBookId,
                     )
                 }
             }

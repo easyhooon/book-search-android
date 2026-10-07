@@ -4,6 +4,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -16,7 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
-/** 조회 조건이 바뀌면 새 목록이므로 맨 위에서 시작하는지 확인합니다. */
+/** 조회 조건이 바뀌면 새 목록이므로 맨 위에서 시작하는지, 2-pane에서 열린 도서를 강조하는지 확인합니다. */
 @RunWith(RobolectricTestRunner::class)
 class FavoritesScreenTest {
 
@@ -88,5 +90,19 @@ class FavoritesScreenTest {
 
         composeRule.onNodeWithText("제목 b38").assertIsDisplayed()
         composeRule.onNodeWithText("제목 b10").assertDoesNotExist()
+    }
+
+    @Test
+    fun `2-pane에서 오른쪽에 열린 도서의 카드만 선택 상태로 보여 준다`() {
+        var selectedBookId by mutableStateOf<String?>("b11")
+        composeRule.setContent {
+            FavoritesScreen(uiState = uiState, onBookClick = {}, selectedBookId = selectedBookId)
+        }
+
+        composeRule.onNodeWithText("제목 b11").assertIsSelected()
+        composeRule.onNodeWithText("제목 b10").assertIsNotSelected()
+
+        selectedBookId = null
+        composeRule.onNodeWithText("제목 b11").assertIsNotSelected()
     }
 }
