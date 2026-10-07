@@ -109,6 +109,35 @@ retain은 구성 변경(회전, 다크 모드, 창 크기 변경)에서 객체�
 
 자동 테스트는 `BookSearchNavHostTest`의 "구성 변경으로 Activity가 다시 만들어져도 백스택과 retain 값이 유지된다"입니다. 실기기 확인은 [QA](QA.md)의 TC-41·68(회전, 다크 모드, 창 크기 변경)과 TC-54·70(`am kill` 후 복원)에 있습니다.
 
+### 화면 이벤트 전달
+
+Circuit의 `eventSink` 형태만 빌려 왔고 라이브러리는 쓰지 않습니다.
+
+- **화면 → Presenter:** `UiState`에 담긴 `eventSink(event)`를 화면이 직접 호출합니다. Presenter의 `when`이 같은 컴포지션 안에서 상태를 바로 바꿉니다.
+- **Presenter → 화면:** 일회성 알림은 즐겨찾기 쓰기 실패 하나입니다. 이를 상태로 다룹니다.
+  1. `FavoriteToggler.hasFailure`가 `userMessage`가 됩니다.
+  2. 화면의 `LaunchedEffect`가 스낵바를 띄웁니다.
+  3. 표시가 끝나면 `UserMessageShown` 이벤트로 상태를 내립니다.
+  - 상태가 retain 범위에 있으므로 회전 중에도 알림이 사라지지 않습니다. 표시 도중 회전하면 다시 표시됩니다. 실패가 겹치면 스낵바 하나로 합쳐집니다.
+
+DroidKaigi 2026([`300a81b`](https://github.com/DroidKaigi/conference-app-2026/tree/300a81b), 2026-09-06)은 다른 방식을 씁니다.
+
+- **`ScreenChannel`:** BUFFERED 채널 두 개로 이루어진 양방향 통로입니다.
+  - Root가 `send(action)`을 보내면 Presenter가 `ActionEffect`로 받습니다.
+  - Presenter가 `emit(result)`를 보내면 Root가 `ActionResultEffect`로 받습니다.
+- **일회성 이벤트:** `docs/error-handling.md`는 `UiState`의 플래그로 일회성 이벤트를 만드는 것을 금지합니다. `MutationErrorEffect`·`MutationSuccessEffect`가 Mutation 상태를 한 번씩 소비해 `emit`합니다.
+- **핸들러 실행:** 이벤트마다 자식 코루틴에서 실행되어 서로 겹칠 수 있습니다. `CancellationException`이 아닌 예외는 로그로 보고하고 처리를 계속합니다.
+- **역할 강제:** context parameter와 자체 FIR 컴파일러 플러그인 검사로 `send`는 Root에서만, `emit`은 Presenter에서만 호출하게 막습니다.
+
+두 방식을 비교하고 현재 방식을 유지하기로 했습니다(2026-10-08 사용자 결정). 근거는 다음과 같습니다.
+
+- **핵심 장점을 가져올 수 없습니다.** `ScreenChannel`의 가장 큰 장점은 역할 위반을 컴파일 오류로 막는 것입니다. 이는 자체 컴파일러 플러그인에 기대므로 이 저장소의 제약상 가져올 수 없습니다. 채널만 옮기면 간접 경로만 늘어납니다.
+- **일회성 이벤트가 하나뿐입니다.** 상태 방식으로도 유실·중복 없이 처리되며, `FavoriteTogglerTest`와 세 화면의 Presenter 테스트로 확인했습니다. 실패를 하나로 합치는 동작도 이 화면에서는 자연스럽습니다.
+- **입력은 동기 반영이 유리합니다.** 검색어 입력(`InputChanged`)을 채널로 보내면 반영이 한 단계 늦어집니다. TextField 상태는 동기로 갱신하는 편이 안전합니다.
+- **진행 상태는 이미 따로 관리합니다.** 즐겨찾기 연타와 진행 중 표시는 `FavoriteToggler`가 도서 ID별로 관리합니다. 겹쳐 실행되는 핸들러의 순서를 화면에서 따로 맞출 필요가 없습니다.
+
+화면마다 내비게이션·성공 알림 같은 일회성 이벤트가 여러 개로 늘어나면 `ScreenChannel` 방식을 다시 검토합니다.
+
 ## 4. 핵심 동작
 
 ### 검색과 다음 페이지
