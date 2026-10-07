@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="detail_back">뒤로 가기</string>
+    <string name="detail_authors">저자</string>
+    <string name="detail_translators">역자</string>
+    <string name="detail_publisher">출판사</string>
+    <string name="detail_published_date">출간일</string>
+    <string name="detail_isbn">ISBN</string>
+    <string name="detail_price">정가</string>
+    <string name="detail_sale_price">할인가</string>
+    <string name="detail_status">판매 상태</string>
+    <string name="detail_contents">책 소개</string>
+</resources>
