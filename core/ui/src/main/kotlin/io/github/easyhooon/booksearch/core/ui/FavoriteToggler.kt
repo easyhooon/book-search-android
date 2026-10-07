@@ -17,22 +17,23 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import soil.query.MutationKey
-import soil.query.compose.rememberMutation
+import soil.query.MutationRef
+import soil.query.compose.LocalMutationClient
 import timber.log.Timber
 
 /**
  * 화면 하나의 즐겨찾기 쓰기 진행 상태입니다.
  *
- * 엔트리 범위로 retain되므로 회전이나 상세 진입처럼 컴포지션만 사라질 때는 진행 중인 ID와 실패
- * 알림이 유지되고, 엔트리가 pop되면 [onRetired]에서 대기만 취소합니다. 이미 시작한 DB 쓰기는
- * 앱 범위의 FavoriteWriter에서 끝까지 실행됩니다.
+ * [retainFavoriteToggler]가 엔트리 범위로 유지하므로 회전이나 상세 진입처럼 컴포지션만 사라질 때는
+ * 진행 중인 ID와 실패 알림이 유지되고, 엔트리가 pop되면 [scope]가 취소되어 대기만 멈춥니다.
+ * 이미 시작한 DB 쓰기는 앱 범위의 FavoriteWriter에서 끝까지 실행됩니다.
  */
 @Stable
-class FavoriteToggler internal constructor() : RetainObserver {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+class FavoriteToggler(
+    private val scope: CoroutineScope,
+    private val mutate: suspend (FavoriteCommand) -> Unit,
+) {
     private val pending = mutableStateSetOf<String>()
-
-    internal var mutate: suspend (FavoriteCommand) -> Unit = {}
 
     val pendingIds: Set<String> get() = pending
 
@@ -61,6 +62,23 @@ class FavoriteToggler internal constructor() : RetainObserver {
     fun consumeFailure() {
         hasFailure = false
     }
+}
+
+/**
+ * 현재 엔트리 범위로 [FavoriteToggler]를 유지합니다.
+ *
+ * retain 값이 컴포지션 범위인 `rememberMutation`을 참조하지 않도록 Mutation 구독을 엔트리 범위로 직접 잡고,
+ * 엔트리가 은퇴할 때 놓습니다.
+ */
+@Composable
+fun retainFavoriteToggler(key: MutationKey<Unit, FavoriteCommand>): FavoriteToggler {
+    val client = LocalMutationClient.current
+    return retain(client, key.id) { RetainedFavoriteToggler(client.getMutation(key)) }.toggler
+}
+
+private class RetainedFavoriteToggler(private val mutation: MutationRef<Unit, FavoriteCommand>) : RetainObserver {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    val toggler = FavoriteToggler(scope, mutation::mutate)
 
     override fun onRetained() = Unit
 
@@ -68,15 +86,12 @@ class FavoriteToggler internal constructor() : RetainObserver {
 
     override fun onExitedComposition() = Unit
 
-    override fun onRetired() = scope.cancel()
+    override fun onRetired() = close()
 
-    override fun onUnused() = scope.cancel()
-}
+    override fun onUnused() = close()
 
-@Composable
-fun retainFavoriteToggler(key: MutationKey<Unit, FavoriteCommand>): FavoriteToggler {
-    val mutation = rememberMutation(key)
-    val toggler = retain { FavoriteToggler() }
-    toggler.mutate = mutation.mutate
-    return toggler
+    private fun close() {
+        scope.cancel()
+        mutation.close()
+    }
 }

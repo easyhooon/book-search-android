@@ -7,6 +7,7 @@ import io.github.easyhooon.booksearch.core.model.FavoriteCommand
 import io.github.easyhooon.booksearch.core.ui.ErrorMessage
 import io.github.easyhooon.booksearch.core.ui.retainFavoriteToggler
 import soil.query.MutationKey
+import timber.log.Timber
 
 @Immutable
 data class BookDetailUiState(
@@ -36,6 +37,7 @@ fun bookDetailPresenter(
     isRoomLoaded: Boolean,
     favoriteMutationKey: MutationKey<Unit, FavoriteCommand>,
 ): BookDetailUiState {
+    // 저장할 클라이언트 상태가 없어 Store 없이 엔트리 범위의 쓰기 진행 상태만 둡니다.
     val favoriteToggler = retainFavoriteToggler(favoriteMutationKey)
     val book = roomBook ?: snapshot
     val isFavorite = roomBook != null
@@ -46,6 +48,7 @@ fun bookDetailPresenter(
         isFavoriteEnabled = isRoomLoaded && book.id !in favoriteToggler.pendingIds,
         userMessage = if (favoriteToggler.hasFailure) ErrorMessage.FavoriteWrite else null,
     ) { event ->
+        Timber.d("상세 이벤트: %s", event)
         when (event) {
             BookDetailEvent.ToggleFavorite -> if (isRoomLoaded) {
                 favoriteToggler.setFavorite(book = book, favorite = !isFavorite)
