@@ -241,13 +241,13 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-032 | 구현 완료 | 통과 | TC-32(비행기 모드) | 없음 |
 | R-033 | 구현 완료 | 부분 통과 | `BookMapperTest`(누락·음수 가격, 빈 문자열), `BookFormattersTest`(빈 값 null), 표지 없음은 대체 이미지 컴포넌트 | 필드가 빠진 실제 도서를 기기 화면에서 확인하지 못함 |
 | R-034 | 구현 완료 | 통과 | TC-20·40·40b·42·32·70a | 재연결 시 자동 재요청은 하지 않음. 재시도 버튼으로 복구([SPEC](SPEC.md) 9절) |
-| R-035 | 구현 완료 | 부분 통과 | TC-35(1600x2560·320dpi 세로 800dp/가로 1280dp, 레일·다열 그리드), TC-68c(창 크기 변경), `BookSearchNavHostTest` 좁은/넓은 창 | 실제 폴더블 기기나 폴더블 AVD의 접힘·펼침은 미실행 |
+| R-035 | 구현 완료 | 부분 통과 | TC-35(1600x2560·320dpi 세로 800dp/가로 1280dp, 레일·다열 그리드), TC-68c(창 크기 변경), 태블릿 실기기 SM-X710의 2-pane TC-90~94, `BookSearchNavHostTest` 좁은/넓은 창과 2-pane | 실제 폴더블 기기나 폴더블 AVD의 접힘·펼침은 미실행 |
 | R-036 | 구현 완료 | 통과 | 9개 모듈 구성과 빌드, [ARCHITECTURE](ARCHITECTURE.md) 8절 | 없음 |
 | R-037 | 구현 완료 | 통과 | [ARCHITECTURE](ARCHITECTURE.md) 8절, [SPEC](SPEC.md) 2절 모듈 책임 | 없음 |
 | R-038 | 구현 완료 | 통과 | [ARCHITECTURE](ARCHITECTURE.md) 9절(선택 이유와 비용) | 없음 |
 | R-039 | 구현 완료 | 통과 | [ARCHITECTURE](ARCHITECTURE.md) 9절, [STRATEGY](STRATEGY.md) 미채택 대안(ViewModel, Repository, Paging 3) | 없음 |
 | R-040 | 구현 완료 | 통과 | TC-40·40b·42, `SearchPresenterTest` 추가 오류 후 재시도 | 없음 |
-| R-041 | 구현 완료 | 통과 | TC-41·68a·68c, `BookSearchNavHostTest` 구성 변경, `FavoritesScreenTest` | 없음 |
+| R-041 | 구현 완료 | 통과 | TC-41·68a·68c·94, `BookSearchNavHostTest` 구성 변경과 2-pane↔1-pane 크기 변경, `FavoritesScreenTest` | 없음 |
 | R-042 | 구현 완료 | 통과 | `RetainedValuesStoreNavEntryDecorator`, `BookSearchNavHostTest` retain 수명 4건 | 없음 |
 | R-043 | 구현 완료 | 통과 | `FavoriteBookDaoTest`, TC-26 | 없음 |
 | R-044 | 구현 완료 | 통과 | `FavoriteSubscriptionKeysTest`, TC-27 | 없음 |
@@ -274,7 +274,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-065 | 구현 완료 | 통과 | `PriceFilterTest`, `PriceInputTest`, `FavoritesPresenterTest`, TC-13 | 없음 |
 | R-066 | 구현 완료 | 통과 | TC-26·32·70a·70b | 없음 |
 | R-067 | 구현 완료 | 통과 | 쓰기 실패: Fake 주입 테스트. 연타: TC-67, `FavoriteTogglerTest`. 쓰기 중 뒤로: TC-71, `FavoriteWriterTest` | 기기에서 Room 쓰기 실패는 만들지 않음 |
-| R-068 | 구현 완료 | 부분 통과 | 회전 TC-41·68a, 창 크기 변경 TC-68c, 다크 모드 TC-68b | 폴더블 접힘·펼침 미실행 |
+| R-068 | 구현 완료 | 부분 통과 | 회전 TC-41·68a·94(태블릿 2-pane↔1-pane), 창 크기 변경 TC-68c, 다크 모드 TC-68b | 폴더블 접힘·펼침 미실행 |
 | R-069 | 구현 완료 | 통과 | `BookSearchNavHostTest` retain 은퇴 3건, `SearchQueryRetentionTest`, TC-40b·85 | 없음 |
 | R-070 | 구현 완료 | 통과 | TC-70a·70b(미저장 도서), TC-32(저장 도서) | 없음 |
 | R-071 | 구현 완료 | 통과 | `FavoriteWriterTest` 화면 취소 후 완료·직렬 실행, TC-71 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음(정책) |
@@ -285,12 +285,12 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-076 | 구현 완료 | 통과 | `unzip -l`에서 `build/`·`.gradle/`·`.kotlin/`·`.idea/` 경로 0건. 압축을 푼 폴더에서도 해당 디렉터리 없음 | 없음 |
 | R-077 | 구현 완료 | 통과 | ZIP 루트에 `app-debug.apk` 포함. 이 APK를 실기기에 설치해 검색 요청이 200으로 응답하고 결과가 표시됨 | 없음 |
 | R-078 | 진행 | 미검증 | README 갱신(2026-10-08) | 최종 제출 전 사용자 검토 |
-| R-079 | 구현 완료 | 통과 | `demo.mp4`, 1분 42초(`ffprobe` 101.7초), 720x1560 H.264, 약 4MB. 2026-10-08 SM-S936N에서 `adb shell screenrecord`로 녹화. 커밋 `71cdf67` debug 빌드. 검색·페이지네이션·정렬, 즐겨찾기 추가·해제, 즐겨찾기 정렬·검색·가격 필터, 오프라인 오류와 재시도, 회전, 다크 모드 포함 | 저장소에는 넣지 않고(`.gitignore`) 제출 ZIP 루트에 넣음(R-072 ZIP에서 확인) |
+| R-079 | 구현 완료 | 통과 | `demo.mp4`, 1분 42초(`ffprobe` 101.7초), 720x1560 H.264, 약 4MB. 2026-10-08 SM-S936N에서 `adb shell screenrecord`로 녹화. 커밋 `71cdf67` debug 빌드. 검색·페이지네이션·정렬, 즐겨찾기 추가·해제, 즐겨찾기 정렬·검색·가격 필터, 오프라인 오류와 재시도, 회전, 다크 모드 포함. 태블릿 2-pane은 `demo-tablet.mp4`, 31초, 1280x746 H.264, 약 1.7MB. SM-X710, 커밋 `bad3cd5` | 저장소에는 넣지 않고(`.gitignore`) 제출 ZIP 루트에 넣음(R-072 ZIP에서 확인) |
 | R-080 | 구현 완료 | 통과 | 2026-10-08 지원 회사의 국문·영문 이름, 띄어쓰기 변형, 법인명·옛 법인명, 서비스 도메인으로 추적 파일, 파일 이름, 전체 이력의 diff·커밋 메시지, 브랜치·태그 이름, `local.properties`를 검색해 0건. GitHub 저장소명 `book-search-android`, 설명·홈페이지·토픽 비어 있음, PR·이슈 없음. 검색어는 이 문서에 적지 않음 | 스크린샷·영상은 앱 화면만 담아 텍스트 검색 대상에서 제외 |
 | R-081 | 해당 없음 | 통과 | 2026-10-08 `local.properties`의 키 값으로 `git log -p --all`과 `git grep`, 문서를 검색해 0건(값은 출력하지 않음). OkHttp 로그는 Authorization을 가림 | 제출 직전 다시 확인 |
 | R-082 | 해당 없음 | 통과 | 2026-10-08 제출 ZIP에서 꺼낸 `.git`으로 확인. `config`의 remote는 자격증명 없는 HTTPS URL이고 credential·token·extraheader 항목 없음. `.git/hooks`는 기본 sample만 있음. 객체 밖 파일과 모든 Git 객체에서 GitHub 토큰 형식·URL 내 자격증명 패턴 0건 | 커밋 작성자 이메일은 Git 메타데이터로 이력에 남음(자격증명 아님) |
 | R-083 | 해당 없음 | 미검증 | 없음 | 사용자 확인 |
 | R-084 | 구현 완료 | 통과 | 새 디렉터리에 압축을 풀고 Launcher JVM 17로 `./gradlew --no-build-cache --no-configuration-cache assembleDebug` 성공(작업 271개 모두 실행). ZIP의 APK를 SM-S936N에 설치해 실행·검색 확인 | 없음 |
-| R-085 | 구현 완료 | 통과 | `BookSearchBackStackTest` 6건, `BookSearchNavHostTest`(두 손가락 동시 탭 포함), TC-18·85 | 없음 |
+| R-085 | 구현 완료 | 통과 | `BookSearchBackStackTest` 7건(2-pane 상세 교체 포함), `BookSearchNavHostTest`(두 손가락 동시 탭 포함), TC-18·85·92 | 없음 |
 | R-086 | 구현 완료 | 통과 | TC-86(키 없는 worktree 빌드·설치, 키 미설정 안내, 요청 0건, 즐겨찾기 정상), `KakaoBookServiceTest` 키 누락 | 없음 |
 | R-087 | 구현 완료 | 통과 | TC-09, `BookDetailPresenterTest` | 없음 |

@@ -85,6 +85,7 @@ Navigation 3 1.2.0에는 retain용 엔트리 decorator가 없어 `RetainedValues
 - `retainRetainedValuesStoreRegistry()`로 레지스트리를 만들고, 엔트리를 그릴 때 `registry.LocalRetainedValuesStoreProvider(entry.contentKey)`로 감쌉니다. 엔트리마다 retain 저장소가 따로 생깁니다.
 - 엔트리가 백스택에서 빠지면(`onPop`) `registry.clearChild(contentKey)`로 그 저장소를 비웁니다. 이때 retain한 객체의 `RetainObserver.onRetired`가 불립니다.
 - `BookSearchNavHost`는 saveable·retain decorator를 백스택 전체에 적용하고, `NavDisplay`에는 활성 탭 루트부터의 엔트리만 넘깁니다. 비활성 탭 루트는 백스택에 남아 있으므로 pop되지 않고 retain 값이 유지됩니다.
+- 창 너비가 840dp 이상이면 `ListDetailSceneStrategy`가 `[목록 루트, 상세]`를 한 장면에 나란히 그립니다. 엔트리 metadata로 목록·상세 역할을 표시하고, 장면 key를 목록 엔트리로 두어 상세를 열고 닫아도 목록을 다시 그리지 않습니다. 다른 도서로 상세를 바꾸면 이전 상세 엔트리가 pop되어 그 retain 값만 정리됩니다([SPEC](SPEC.md) 10절).
 
 `FavoriteToggler`는 retain으로 유지되는 화면별 즐겨찾기 진행 상태입니다. 진행 중인 도서 ID와 실패 여부를 Compose 상태로 들고, `onRetired`·`onUnused`에서 자기 scope만 취소합니다. 이미 시작한 DB 쓰기는 앱 범위의 `FavoriteWriter`가 끝까지 실행하므로, 쓰기 도중 상세를 닫아도 쓰기는 완료되고 실패 알림만 사라집니다.
 
@@ -103,7 +104,7 @@ retain은 구성 변경(회전, 다크 모드, 창 크기 변경)에서 객체�
 | 검색 결과 페이지 | 앱 그래프 싱글턴의 Soil `SwrCachePlus` 메모리 캐시(`staleTime` 5분) | 유지. 다시 요청하지 않음 | 남지 않음. 조건으로 다시 요청 |
 | 즐겨찾기 | Room(단일 기준), Subscription으로 관찰 | 유지 | 디스크에서 그대로 읽음 |
 | 진행 중인 즐겨찾기 쓰기 | 앱 범위 `FavoriteWriter`(`ApplicationScope` + `Mutex`) | 화면이 사라져도 끝까지 실행 | 미완료 쓰기는 보장하지 않음 |
-| 탐색 UI 형태(하단 바/레일), 그리드 열 수 | `currentWindowAdaptiveInfo()`와 `GridCells.Adaptive`를 매 구성마다 다시 계산 | 새 크기에 맞춰 바뀜 | 같음 |
+| 탐색 UI 형태(하단 바/레일), 그리드 열 수, 1-pane/2-pane | `currentWindowAdaptiveInfo()`와 `GridCells.Adaptive`를 매 구성마다 다시 계산. 2-pane 여부에 따라 `NavDisplay`의 장면 전략만 바꾸고 백스택은 그대로 둠 | 새 크기에 맞춰 바뀜. 열린 상세는 유지 | 같음 |
 | 키보드 표시 중 레이아웃 | Manifest `windowSoftInputMode="adjustResize"` | 해당 없음 | 해당 없음 |
 
 자동 테스트는 `BookSearchNavHostTest`의 "구성 변경으로 Activity가 다시 만들어져도 백스택과 retain 값이 유지된다"입니다. 실기기 확인은 [QA](QA.md)의 TC-41·68(회전, 다크 모드, 창 크기 변경)과 TC-54·70(`am kill` 후 복원)에 있습니다.

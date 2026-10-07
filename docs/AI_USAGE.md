@@ -160,6 +160,7 @@ AI가 추가로 구현·수정·테스트를 도왔다면 날짜와 범위를 �
 | 2026-10-08 | 요구사항별 검증 기록, README, 이 문서 갱신 | 구현·검증 과정은 Claude가 작성 | [REQUIREMENTS](REQUIREMENTS.md) 9절 |
 | 2026-10-08 | 시연 영상 녹화 | 선택 항목도 채워 제출. 녹화 중 방해 금지, 영상은 제출 ZIP에 포함 | `demo.mp4`(1분 42초), [QA](QA.md) 시연 영상 절 |
 | 2026-10-08 | 제출 ZIP 생성과 검증 | `.git`·`local.properties`·APK·영상 포함, 최종 패키지는 개발자가 확인 | `scripts/make-submission-zip.sh`, [REQUIREMENTS](REQUIREMENTS.md) R-072~077·084 |
+| 2026-10-08 | list-detail 2-pane 구현, 태블릿 실기기 QA와 시연 영상 | README 검토 중 2-pane 미구현 이유를 확인하고 남은 일정에 구현 요청. 태블릿 실기기로 확인하고 영상에 추가하도록 지시 | SPEC 10절, `fb1fa4c`, `98a16ff`, `bad3cd5`, [QA](QA.md) TC-90~94, `demo-tablet.mp4`(31초). 116개 테스트 통과 |
 
 기록 항목:
 
