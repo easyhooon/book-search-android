@@ -6,6 +6,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import timber.log.Timber
 import java.util.concurrent.TimeUnit
 
 internal val NetworkJson = Json {
@@ -32,7 +33,7 @@ fun createKakaoBookService(
         .apply {
             if (config.enableHttpLog) {
                 addInterceptor(
-                    HttpLoggingInterceptor().apply {
+                    HttpLoggingInterceptor { message -> Timber.tag(HTTP_LOG_TAG).d(message) }.apply {
                         level = HttpLoggingInterceptor.Level.BASIC
                         redactHeader(KakaoAuthInterceptor.AUTHORIZATION)
                     },
@@ -47,3 +48,5 @@ fun createKakaoBookService(
         .build()
         .create(KakaoBookService::class.java)
 }
+
+private const val HTTP_LOG_TAG = "OkHttp"

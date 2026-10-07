@@ -23,6 +23,7 @@ soil = "1.0.0-alpha15"
 retrofit = "3.0.0"
 okhttp = "5.5.0"
 coil = "3.6.3"
+timber = "5.0.1"
 
 junit = "4.13.2"
 androidx-test-ext-junit = "1.3.0"
@@ -78,6 +79,8 @@ okhttp-mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver3"
 
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
+
+timber = { group = "com.jakewharton.timber", name = "timber", version.ref = "timber" }
 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext-junit" }

@@ -63,6 +63,7 @@ feature끼리는 서로 참조하지 않습니다. feature는 `onBookClick(book)
 | Compose BOM / runtime retain | 2026.09.00 / 1.12.1 (BOM에 포함된 정식판. DroidKaigi는 CMP 1.12.0-alpha03) |
 | Navigation 3 | 1.2.0 (DroidKaigi는 1.1.1) |
 | Coil 3 | 3.6.3 |
+| Timber | 5.0.1 (사용자 선택. 2021-08 이후 새 릴리스 없음) |
 | Retrofit / OkHttp | 3.0.0 / 5.5.0 |
 | Room | 2.8.5 |
 | Robolectric | 4.17 |
@@ -77,6 +78,7 @@ DroidKaigi는 JetBrains Compose Multiplatform 아티팩트를 씁니다. 이 앱
 - `app/build.gradle.kts`에서 `local.properties`를 읽어 `BuildConfig.KAKAO_REST_API_KEY`로 주입합니다. AGP 8부터 BuildConfig 생성이 기본으로 꺼져 있으므로 `buildFeatures.buildConfig = true`를 설정합니다.
 - 키가 없어도 빌드는 성공해야 합니다. 이때는 빈 문자열을 주입하고, 런타임 검색 시 "API 키가 설정되지 않았습니다" 상태를 보여 줍니다. 즐겨찾기 기능은 키 없이도 동작합니다.
 - 키는 인증 interceptor에서만 `Authorization: KakaoAK {key}` 헤더로 붙입니다. 로그·예외 메시지·테스트 fixture에 키를 남기지 않습니다. HTTP 로그는 debug 빌드에서 BASIC 수준만 남기고 `Authorization` 헤더를 가립니다.
+- 로그는 Timber로 남깁니다. `Application`이 debug 빌드에서만 `Timber.DebugTree`를 심고, release에는 Tree를 심지 않습니다. OkHttp 로그(`OkHttp` 태그)와 즐겨찾기 쓰기 실패를 Timber로 보냅니다. 선택 이유는 [아키텍처](ARCHITECTURE.md) 6절에 적습니다.
 - `local.properties`는 계속 Git에서 제외합니다. 제출 ZIP에는 사용자가 확인한 뒤 포함합니다.
 
 ## 4. Kakao 책 검색 API 계약

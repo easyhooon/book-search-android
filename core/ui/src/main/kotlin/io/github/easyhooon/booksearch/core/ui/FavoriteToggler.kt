@@ -18,6 +18,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import soil.query.MutationKey
 import soil.query.compose.rememberMutation
+import timber.log.Timber
 
 /**
  * 화면 하나의 즐겨찾기 쓰기 진행 상태입니다.
@@ -49,6 +50,7 @@ class FavoriteToggler internal constructor() : RetainObserver {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                Timber.w(e, "즐겨찾기 쓰기 실패: id=%s, favorite=%s", book.id, favorite)
                 hasFailure = true
             } finally {
                 pending.remove(book.id)

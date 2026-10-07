@@ -11,6 +11,7 @@ dependencies {
     implementation(libs.soil.query.core)
     implementation(libs.soil.query.compose)
     implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.timber)
 
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
