@@ -21,20 +21,40 @@ Android 전용이며 KMP 구성과 Circuit은 도입하지 않습니다(사용�
 
 ## 2. 의존성과 데이터 흐름
 
-```text
-Screen Root
-  → Soil Query / InfiniteQuery → Retrofit → OkHttp → Kakao API
-  → Soil Subscription → Room DAO Flow
-  → 로딩·오류 boundary와 준비된 데이터
-      → 얇은 Composable Presenter → Compose Screen
-          → 사용자 명령 → Soil Mutation → Room DAO 쓰기
+모듈 의존 방향입니다. 들여쓴 항목이 위 모듈이 의존하는 모듈입니다.
 
-Navigation 3 + retain: 엔트리 상태의 유지·제거
-Metro: API, DB, key의 의존성, 이미지 로더 등 객체 조립
-Coil: Screen의 표지 요청 → 이미지 전용 네트워크 설정과 캐시
+```text
+app                                        내비게이션 조립과 AppGraph. Metro 조립을 위해 모든 core도 직접 봄
+└── feature:search · favorites · detail    서로 참조하지 않음
+    ├── core:data                          Soil key, FavoriteWriter
+    │   ├── core:network                   Retrofit·OkHttp (feature에는 숨김)
+    │   ├── core:database                  Room (feature에는 숨김)
+    │   └── core:model                     api로 노출
+    ├── core:ui                            공통 컴포넌트, FavoriteToggler
+    └── core:model                         순수 Kotlin 모델과 규칙
+core:testing                               테스트 전용. Fake FavoriteWriter, Presenter 테스트 도구
 ```
 
-DroidKaigi 2026의 패턴을 얇게 적용합니다. Root가 query/subscription과 로딩·오류 boundary를 조립하고, Presenter는 UI 모델을 만들고 이벤트를 데이터 명령으로 연결합니다. 화면은 DTO나 Room Entity를 직접 다루지 않습니다. typed-key가 이미 맡은 호출을 전달만 하는 Repository는 두지 않습니다. 이는 이 프로젝트의 책임 분리이며 Soil이 Repository를 금지한다는 뜻은 아닙니다. ID 정규화·가격 정책 같은 독립 규칙은 일반 Kotlin 함수로 둡니다.
+화면 하나의 데이터 흐름입니다.
+
+```text
+*ScreenRoot                                엔트리 등록, Room 값을 읽어 Presenter에 넘김
+├── Soil Subscription ── Room DAO Flow     즐겨찾기 목록·ID (단일 기준). 값이 오기 전에는 로딩
+└── *Presenter (@Composable)               화면 상태와 이벤트 처리
+    ├── Soil InfiniteQuery                 검색 결과. 확정 검색어·정렬로 key가 바뀌어 여기서 연결
+    │   └── Retrofit ── OkHttp ── Kakao API
+    ├── rememberSerializable               검색·즐겨찾기의 입력·확정 검색어·정렬·가격 범위 (저장 데이터)
+    ├── retainFavoriteToggler              쓰기 진행 상태 (retain 데이터)
+    │   └── Soil Mutation ── FavoriteWriter ── Room DAO 쓰기
+    └── *Screen                            UiState를 그리고 eventSink로 이벤트 전달
+
+app
+├── Navigation 3 + retain decorator        엔트리 상태의 유지·제거
+├── Metro AppGraph                         API, DB, key, 이미지 로더 등 객체 조립
+└── Coil ImageLoader                       Screen의 표지 요청. 인증 interceptor 없는 이미지 전용 클라이언트
+```
+
+DroidKaigi 2026의 패턴을 얇게 적용합니다. Root가 Room subscription을 연결하고, Presenter는 UI 모델을 만들고 이벤트를 데이터 명령으로 연결합니다. 검색 InfiniteQuery는 확정 검색어에 따라 key가 바뀌므로 Presenter가 연결합니다. 화면은 DTO나 Room Entity를 직접 다루지 않습니다. typed-key가 이미 맡은 호출을 전달만 하는 Repository는 두지 않습니다. 이는 이 프로젝트의 책임 분리이며 Soil이 Repository를 금지한다는 뜻은 아닙니다. ID 정규화·가격 정책 같은 독립 규칙은 일반 Kotlin 함수로 둡니다.
 
 Metro는 의존성을 연결할 뿐 화면 상태나 데이터의 기준을 대신하지 않습니다. 그래프는 앱 그래프 하나(`AppGraph`, `AppScope`)와 화면별 `GraphExtension` 세 개(`SearchScreenGraph`, `FavoritesScreenGraph`, `BookDetailScreenGraph`)입니다. `AppGraph`가 화면 그래프의 `Factory`를 구현하고, Retrofit·OkHttp·Room·`SwrCachePlus`·Coil `ImageLoader`·`FavoriteWriter`·`ApplicationCoroutineScope`를 싱글턴으로 둡니다.
 
