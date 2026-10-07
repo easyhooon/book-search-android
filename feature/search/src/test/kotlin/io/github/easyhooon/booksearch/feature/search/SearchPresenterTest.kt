@@ -3,6 +3,7 @@ package io.github.easyhooon.booksearch.feature.search
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import app.cash.turbine.Event
 import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import io.github.easyhooon.booksearch.core.data.SearchBooksQueryId
@@ -19,6 +20,7 @@ import io.github.easyhooon.booksearch.core.testing.presenterFlow
 import io.github.easyhooon.booksearch.core.testing.testBook
 import io.github.easyhooon.booksearch.core.ui.ErrorMessage
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runCurrent
@@ -51,6 +53,9 @@ class SearchPresenterTest {
     /** 요청을 기록하고, 테스트가 정한 응답이나 대기 지점을 돌려주는 가짜 검색 API입니다. */
     private class FakeSearchApi {
         val requests = mutableListOf<Request>()
+
+        /** fetch가 실제로 시작된 요청입니다. Soil은 fetch를 테스트 스케줄러 밖에서 시작합니다. */
+        val started = Channel<Request>(Channel.UNLIMITED)
         var respond: suspend (Request) -> SearchPage = { page(it.page, isEnd = true) }
 
         val factory = SearchBooksQueryKeyFactory { query, sort -> key(query, sort) }
@@ -61,6 +66,7 @@ class SearchPresenterTest {
                 fetch = { page ->
                     val request = Request(query, sort, page)
                     requests += request
+                    started.trySend(request)
                     respond(request)
                 },
                 initialParam = { SearchPaging.FIRST_PAGE },
@@ -105,6 +111,13 @@ class SearchPresenterTest {
 
     private suspend fun ReceiveTurbine<SearchUiState>.awaitResults(): SearchUiState =
         awaitItemMatching { it.content is SearchContent.Results }
+
+    /** 요청이 fetch까지 도달해 응답을 기다리는 상태가 될 때까지 진행합니다. 늦은 응답 경합을 만들 때 씁니다. */
+    private suspend fun awaitRequestStarted(predicate: (Request) -> Boolean) {
+        while (!predicate(api.started.receive())) Unit
+    }
+
+    private fun SearchUiState.resultIds(): List<String>? = (content as? SearchContent.Results)?.books?.map { it.id }
 
     @Test
     fun `처음에는 검색 전 상태다`() = runPresenterTest {
@@ -272,6 +285,79 @@ class SearchPresenterTest {
             listOf(Request("코틀린", SearchSort.Accuracy, 1), Request("코틀린", SearchSort.Latest, 1)),
             api.requests,
         )
+    }
+
+    @Test
+    fun `검색어를 빠르게 바꾸면 늦게 도착한 이전 검색어의 응답을 섞지 않는다`() {
+        val gates = mapOf("자바" to CompletableDeferred<Unit>(), "코틀린" to CompletableDeferred<Unit>())
+        api.respond = { request ->
+            gates.getValue(request.query).await()
+            page(request.page, isEnd = true, ids = listOf("${request.query}-1"))
+        }
+        runPresenterTest {
+            search("자바")
+            awaitItemMatching { it.content == SearchContent.Loading }
+            awaitRequestStarted { it.query == "자바" }
+            search("코틀린")
+            awaitItemMatching { it.input == "코틀린" && it.content == SearchContent.Loading }
+
+            gates.getValue("코틀린").complete(Unit)
+            assertEquals(listOf("코틀린-1"), awaitResults().resultIds())
+
+            // 이전 검색어의 응답이 뒤늦게 와도 현재 화면에는 반영되지 않아야 합니다.
+            gates.getValue("자바").complete(Unit)
+            testScope.runCurrent()
+            val late = cancelAndConsumeRemainingEvents().mapNotNull { (it as? Event.Item)?.value }
+            assertTrue(late.none { it.resultIds().orEmpty().any { id -> id.startsWith("자바") } })
+            assertEquals(listOf("코틀린-1"), latest.resultIds())
+            assertEquals(listOf("자바", "코틀린"), api.requests.map { it.query })
+        }
+    }
+
+    @Test
+    fun `첫 페이지를 받기 전에 정렬을 바꾸면 바꾼 정렬의 결과만 보여 준다`() {
+        val gates = mapOf(
+            SearchSort.Accuracy to CompletableDeferred<Unit>(),
+            SearchSort.Latest to CompletableDeferred<Unit>(),
+        )
+        api.respond = { request ->
+            gates.getValue(request.sort).await()
+            page(request.page, isEnd = true, ids = listOf("${request.sort}-1"))
+        }
+        runPresenterTest {
+            search("코틀린")
+            awaitItemMatching { it.content == SearchContent.Loading }
+            awaitRequestStarted { it.sort == SearchSort.Accuracy }
+            send(SearchEvent.SortSelected(SearchSort.Latest))
+            awaitItemMatching { it.sort == SearchSort.Latest && it.content == SearchContent.Loading }
+
+            gates.getValue(SearchSort.Accuracy).complete(Unit)
+            testScope.runCurrent()
+            assertEquals(SearchContent.Loading, latest.content)
+
+            gates.getValue(SearchSort.Latest).complete(Unit)
+            assertEquals(listOf("${SearchSort.Latest}-1"), awaitResults().resultIds())
+        }
+    }
+
+    @Test
+    fun `첫 페이지를 받기 전에 빈 검색어로 초기화하면 늦게 온 응답을 보여 주지 않는다`() {
+        val gate = CompletableDeferred<Unit>()
+        api.respond = { gate.await(); page(it.page, isEnd = true) }
+        runPresenterTest {
+            search("코틀린")
+            awaitItemMatching { it.content == SearchContent.Loading }
+            awaitRequestStarted { it.query == "코틀린" }
+            send(SearchEvent.InputChanged(""))
+            awaitItemMatching { it.input.isEmpty() }
+            send(SearchEvent.Submit)
+            awaitItemMatching { it.content == SearchContent.Idle }
+
+            gate.complete(Unit)
+            testScope.runCurrent()
+            assertEquals(SearchContent.Idle, latest.content)
+            assertEquals(1, api.requests.size)
+        }
     }
 
     @Test
