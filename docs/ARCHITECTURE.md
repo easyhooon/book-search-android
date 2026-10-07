@@ -128,10 +128,16 @@ Reed의 runSuspendCatching은 취소 예외를 다시 던지지만 다른 Throwa
 
 로그는 [Timber](https://github.com/JakeWharton/timber)로 남깁니다(사용자 선택). 이유는 다음과 같습니다.
 
-- 출력 여부를 한 곳에서 정합니다. `Application`이 debug 빌드에서만 `DebugTree`를 심으므로, release에서는 호출 지점마다 `BuildConfig.DEBUG`를 확인하지 않아도 아무것도 출력되지 않습니다. 라이브러리 모듈은 app의 `BuildConfig`를 볼 수 없으므로 이 방식이 특히 맞습니다.
+- 출력 여부를 한 곳에서 정합니다. `TimberInitializer`가 debug 빌드에서만 `DebugTree`를 심으므로, release에서는 호출 지점마다 `BuildConfig.DEBUG`를 확인하지 않아도 아무것도 출력되지 않습니다. 라이브러리 모듈은 app의 `BuildConfig`를 볼 수 없으므로 이 방식이 특히 맞습니다.
 - 인증 경계와 함께 관리합니다. OkHttp 로그도 Timber로 보내므로, `Authorization` 헤더 가림과 debug 전용 출력이라는 두 가지 규칙이 같은 경로를 지납니다.
 - 테스트에 영향이 없습니다. JVM 단위 테스트에서는 Tree를 심지 않으므로 `android.util.Log`를 호출하지 않으며, 로그 때문에 Robolectric이 필요해지지 않습니다.
 - 태그를 호출 클래스에서 자동으로 만들고, 포맷 인자와 예외를 함께 넘길 수 있어 `Log` 직접 호출보다 호출 지점이 짧습니다.
+
+초기화는 [App Startup](https://developer.android.com/topic/libraries/app-startup)의 `Initializer`로 등록합니다(사용자 선택, Reed와 같은 방식).
+
+- `Application`은 앱 그래프와 Coil 연결만 맡고, 라이브러리 초기화는 `initializer` 패키지의 클래스 하나에 하나씩 둡니다. 초기화가 늘어도 `Application.onCreate`가 커지지 않고, 순서는 `dependencies()`로 표현합니다.
+- `InitializationProvider`가 `Application.onCreate`보다 먼저 실행하므로, 그 뒤의 어떤 코드가 남긴 로그도 빠지지 않습니다.
+- 병합 매니페스트에는 emoji2·lifecycle·OkHttp가 이미 같은 `InitializationProvider`를 등록하고 있습니다. 이 앱은 그 provider에 `meta-data` 한 줄을 더할 뿐이라 ContentProvider가 늘지 않습니다.
 
 2021-08의 5.0.1 이후 새 릴리스는 없습니다. API가 작고 안정적이라 이 앱의 사용 범위에서는 문제로 보지 않습니다. 남기는 로그는 HTTP 요청 요약과 즐겨찾기 쓰기 실패이며, API 키나 요청 헤더 값은 남기지 않습니다.
 

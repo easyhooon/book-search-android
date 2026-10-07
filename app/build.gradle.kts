@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.soil.query.compose)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.androidx.startup.runtime)
     implementation(libs.timber)
 
     testImplementation(projects.core.testing)

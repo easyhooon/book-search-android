@@ -18,6 +18,7 @@ androidx-activity = "1.13.0"
 androidx-compose-bom = "2026.09.00"
 androidx-navigation3 = "1.2.0"
 androidx-room = "2.8.5"
+androidx-startup = "1.2.0"
 
 soil = "1.0.0-alpha15"
 retrofit = "3.0.0"
@@ -66,6 +67,7 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "androidx-room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "androidx-room" }
 androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "androidx-room" }
+androidx-startup-runtime = { group = "androidx.startup", name = "startup-runtime", version.ref = "androidx-startup" }
 
 soil-query-core = { group = "com.soil-kt.soil", name = "query-core", version.ref = "soil" }
 soil-query-compose = { group = "com.soil-kt.soil", name = "query-compose", version.ref = "soil" }
