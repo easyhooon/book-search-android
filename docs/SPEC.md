@@ -191,7 +191,7 @@ UI 가이드를 기준으로 하되 세부 디자인은 Material 3 기본 컴포
 | 검색 입력값, 확정 검색어, 정렬 | `rememberSaveable` | 확정 검색어가 있으면 1페이지부터 다시 검색 |
 | 즐겨찾기 입력값, 확정 검색어, 정렬, 가격 필터 | `rememberSaveable` | Room 목록에 그대로 다시 적용 |
 | 탭과 상세 엔트리 | `rememberNavBackStack` | 그대로 복원. 상세는 스냅샷으로 즉시 표시 |
-| 목록 스크롤 위치 | `rememberLazyGridState`(saveable) | 검색 탭은 1페이지 범위까지만 의미가 있음 |
+| 목록 스크롤 위치 | 조회 조건(확정 검색어·정렬, 즐겨찾기는 가격 필터 포함)을 key로 한 `rememberSaveable(saver = LazyGridState.Saver)`. 조건이 바뀌면 맨 위에서 시작하고, 하트 해제처럼 조건이 같으면 위치 유지 | 검색 탭은 1페이지 범위까지만 의미가 있음 |
 | 검색 결과 페이지, 진행 중 쓰기 ID | Soil 캐시 / retain | 소멸 |
 
 ## 7. 내비게이션과 상세 데이터

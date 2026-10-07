@@ -10,9 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -136,22 +136,33 @@ private fun FavoritesContentArea(
         FavoritesContent.Loading -> LoadingContent(modifier)
         FavoritesContent.NoFavorites -> MessageContent(stringResource(R.string.favorites_empty), modifier)
         FavoritesContent.NoMatch -> MessageContent(stringResource(R.string.favorites_no_match), modifier)
-        is FavoritesContent.Results -> LazyVerticalGrid(
-            columns = GridCells.Adaptive(BookListDefaults.GridMinCellWidth),
-            state = rememberLazyGridState(),
-            modifier = modifier.testTag(FavoritesTestTags.RESULT_GRID),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(BookListDefaults.GridItemSpacing),
-            horizontalArrangement = Arrangement.spacedBy(BookListDefaults.GridItemSpacing),
-        ) {
-            items(content.books, key = { it.id }) { book ->
-                BookCard(
-                    book = book,
-                    isFavorite = true,
-                    isFavoritePending = book.id in uiState.pendingFavoriteIds,
-                    onClick = { onBookClick(book) },
-                    onFavoriteClick = { uiState.eventSink(FavoritesEvent.ToggleFavorite(book)) },
-                )
+        is FavoritesContent.Results -> {
+            // 조회 조건이 바뀌면 새 목록이므로 맨 위에서 시작합니다. 하트 해제처럼 조건이 같으면 위치를 유지합니다.
+            val gridState = rememberSaveable(
+                uiState.submittedQuery,
+                uiState.sort,
+                uiState.priceFilter,
+                saver = LazyGridState.Saver,
+            ) {
+                LazyGridState()
+            }
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(BookListDefaults.GridMinCellWidth),
+                state = gridState,
+                modifier = modifier.testTag(FavoritesTestTags.RESULT_GRID),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(BookListDefaults.GridItemSpacing),
+                horizontalArrangement = Arrangement.spacedBy(BookListDefaults.GridItemSpacing),
+            ) {
+                items(content.books, key = { it.id }) { book ->
+                    BookCard(
+                        book = book,
+                        isFavorite = true,
+                        isFavoritePending = book.id in uiState.pendingFavoriteIds,
+                        onClick = { onBookClick(book) },
+                        onFavoriteClick = { uiState.eventSink(FavoritesEvent.ToggleFavorite(book)) },
+                    )
+                }
             }
         }
     }
