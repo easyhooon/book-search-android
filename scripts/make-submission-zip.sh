@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 제출 ZIP을 만듭니다: 소스, .git, local.properties, debug APK, 시연 영상.
+# 제출 ZIP을 만듭니다: 소스, .git, local.properties, debug APK, 시연 영상(휴대폰·태블릿).
 # build/, .gradle/ 등 빌드 산출물과 IDE 설정은 넣지 않습니다.
 # local.properties의 sdk.dir은 이 기기의 경로라서 빼고 넣습니다. SDK는 Android Studio나 ANDROID_HOME으로 찾습니다.
 # 사용법: scripts/make-submission-zip.sh [출력 경로]  (기본값: 저장소 상위 폴더의 book-search-android.zip)
@@ -17,6 +17,7 @@ cd "$root"
 [ -f local.properties ] || fail "local.properties가 없습니다."
 grep -q '^KAKAO_REST_API_KEY=..*' local.properties || fail "local.properties에 KAKAO_REST_API_KEY 값이 없습니다."
 [ -f demo.mp4 ] || fail "시연 영상 demo.mp4가 없습니다."
+[ -f demo-tablet.mp4 ] || fail "태블릿 시연 영상 demo-tablet.mp4가 없습니다."
 
 ./gradlew assembleDebug
 apk=app/build/outputs/apk/debug/app-debug.apk
