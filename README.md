@@ -91,15 +91,15 @@ feature:detail      상세 화면과 Presenter
 - **즐겨찾기 단일 기준**: 즐겨찾기 상태는 Room 하나만 기준으로 삼고, 검색·즐겨찾기·상세 화면이 모두 Room Flow를 구독합니다.
 - **쓰기 순서와 화면 이탈**: 즐겨찾기 쓰기는 앱 범위 코루틴에서 Mutex로 직렬 실행해, 저장 중 화면을 닫아도 끝까지 실행됩니다. 저장 중에는 그 도서의 버튼만 비활성화합니다.
 - **상세 중복 진입 방지**: 상세 화면이 맨 위에 있는 동안의 상세 열기 요청은 무시해, 두 카드를 동시에 눌러도 상세는 하나만 쌓입니다. 2-pane에서는 다른 도서를 고르면 상세를 바꿉니다.
-- **상태 수명과 복원**: 화면별 retain 값은 Navigation 3 엔트리에 묶여 엔트리가 빠지면 정리되고 구성 변경에서는 유지됩니다. `configChanges`로 재생성을 막지 않고, 백스택은 직렬화한 NavKey로, 입력값·정렬·필터는 화면 Store의 `rememberSerializable`, 스크롤 위치는 `rememberSaveable`로 복원합니다. 서버 상태는 Soil·Room, 화면 전용 상태는 화면 Store가 나눠 소유합니다. 상세 키는 진입 시점의 도서 스냅샷을 담아 단건 조회 API 없이도 상세를 다시 그립니다([아키텍처](docs/ARCHITECTURE.md) "구성 변경과 프로세스 재생성 대응").
+- **상태 수명과 복원**: 화면별 retain 값은 Navigation 3 엔트리에 묶여 엔트리가 빠지면 정리되고 구성 변경에서는 유지됩니다. `configChanges`로 재생성을 막지 않고, 백스택은 직렬화한 NavKey로, 입력값·정렬·필터는 Presenter의 `rememberSerializable`, 스크롤 위치는 `rememberSaveable`로 복원합니다. 서버 상태는 Soil·Room이 소유하고, 화면 전용 상태는 Presenter가 저장 데이터와 retain 데이터로 나눠 둡니다. 상세 키는 진입 시점의 도서 스냅샷을 담아 단건 조회 API 없이도 상세를 다시 그립니다([아키텍처](docs/ARCHITECTURE.md) "구성 변경과 프로세스 재생성 대응").
 - **오류 처리**: 키 누락·인증 실패·요청 한도 초과·서버·네트워크·응답 해석 오류를 나눠 안내하고, 네트워크·서버 오류만 자동 재시도합니다. 오프라인에서도 저장한 도서의 목록과 상세는 열립니다.
 - **적응형 레이아웃**: 창 크기에 따라 하단 탭과 내비게이션 레일을 바꾸고, 목록은 `GridCells.Adaptive`로 열 수를 늘립니다. 840dp 이상에서는 Navigation 3 `SceneStrategy`로 직접 구현한 list-detail 2-pane을 보여 줍니다(Material의 list-detail 전략은 Navigation 3 1.2.0과 맞지 않음). 창 크기가 바뀌어도 열린 상세가 유지됩니다.
 - **보안**: 이미지 로더는 인증 interceptor가 없는 OkHttp 클라이언트를 써서 표지 요청에 API 키가 실리지 않습니다. 네트워크 로그는 debug 빌드에서만 남기며 Authorization 헤더를 가립니다.
 
 ## 검증 결과
 
-- **자동 테스트**: 2026-10-08, 커밋 `91da389`에서 `./gradlew assembleDebug testDebugUnitTest test --continue` 성공. 테스트 120개(Android 모듈 97개, `core:model` 23개), 실패·오류·건너뜀 0.
-- **실기기 QA**: SM-S936N(Android 17)에서 요구사항 기반 시나리오 35행, Galaxy Tab S9 SM-X710(Android 16)에서 2-pane 시나리오 5행을 실행해 모두 통과했습니다. 실기기 QA는 화면 Store 리팩터링(`91da389`) 이전 빌드에서 실행했고, 리팩터링 뒤에는 자동 테스트로만 확인했습니다. 시나리오별 절차와 화면은 [QA](docs/QA.md)에 있습니다.
+- **자동 테스트**: 2026-10-08, 커밋 `ae19d98`에서 `./gradlew assembleDebug testDebugUnitTest test --continue` 성공. 테스트 120개(Android 모듈 97개, `core:model` 23개), 실패·오류·건너뜀 0.
+- **실기기 QA**: SM-S936N(Android 17)에서 요구사항 기반 시나리오 35행, Galaxy Tab S9 SM-X710(Android 16)에서 2-pane 시나리오 5행을 실행해 모두 통과했습니다. 실기기 QA는 화면 상태 구조 정리(`91da389`~`ae19d98`) 이전 빌드에서 실행했고, 이 정리는 자동 테스트로만 확인했습니다. 시나리오별 절차와 화면은 [QA](docs/QA.md)에 있습니다.
 - **시연 영상**: 제출 ZIP 루트에 있으며 용량 때문에 Git에는 넣지 않았습니다. `demo.mp4`(1분 42초)는 검색·페이지네이션·정렬, 즐겨찾기 추가·해제·정렬·검색·가격 필터, 오프라인 오류와 재시도, 회전, 다크 모드를 보여 줍니다. `demo-tablet.mp4`(31초)는 2-pane에서 상세 교체, 뒤로 가기, 탭 전환, 회전 뒤 상세 유지를 보여 줍니다.
 - **요구사항별 상태**: [요구사항 체크리스트](docs/REQUIREMENTS.md) 9절에 R-ID마다 구현 상태·검증 상태·증거·미충족 사항을 적었습니다. 실제로 확인한 항목만 체크했습니다.
 

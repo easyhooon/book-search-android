@@ -73,7 +73,7 @@
 | 상세 중복 진입 | 흔치 않은 경우로 보고 우선순위를 낮춤 | 두 손가락 동시 탭으로 상세가 두 번 쌓인 이전 경험을 근거로 대응 요청 | Compose 테스트로 동시 탭 확인 |
 | QA | 자동 테스트와 일부 기기 확인으로 완료 판단 | 요구사항 기반 QA 시나리오를 실기기에서 전부 실행해 통과시킬 것 | [QA](QA.md) |
 | 2-pane | 선택 항목이라 미구현 | 남은 일정에 구현하고 태블릿 실기기 확인과 시연 영상 추가 요청 | [SPEC](SPEC.md) 10절, [QA](QA.md) TC-90~94, `demo-tablet.mp4` |
-| 화면 상태 구조 | Presenter 안에 흩어진 `rememberSaveable`·retain 값과 공식 retain 문서의 저장·retain 데이터 분리 기준을 정리해 보고 | TanStack Query + Zustand처럼 서버 상태(Soil·Room)와 화면 Store를 나누고, Store는 공식 문서 방식대로 구성 | [ARCHITECTURE](ARCHITECTURE.md) "화면 Store", `SearchStateRestorationTest`, `FavoritesStoreLifecycleTest` |
+| 화면 상태 구조 | 공식 retain 문서의 저장·retain 데이터 분리 기준을 정리하고, 화면 Store 계층은 간접 경로와 코드량을 늘린다고 검토해 보고 | 서버 상태(Soil·Room)와 화면 상태를 나누되 Store 없이 Presenter가 공식 문서 방식대로 직접 소유. 읽기 쉬운 코드를 우선 | [ARCHITECTURE](ARCHITECTURE.md) "화면 상태 소유", `SearchStateRestorationTest`, `FavoritesStateLifecycleTest` |
 
 ## 단계 요약
 

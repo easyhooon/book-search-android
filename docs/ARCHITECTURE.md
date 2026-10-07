@@ -79,16 +79,16 @@ Navigation 3 1.2.0에는 retain용 엔트리 decorator가 없어 `RetainedValues
 - `BookSearchNavHost`는 saveable·retain decorator를 백스택 전체에 적용하고 `NavDisplay`에는 활성 탭 루트부터의 엔트리만 넘깁니다. 비활성 탭 루트는 백스택에 남아 retain 값이 유지됩니다.
 - 840dp 이상에서는 `ListDetailSceneStrategy`가 `[목록 루트, 상세]`를 나란히 그리고, 장면 key를 목록 엔트리로 두어 상세를 열고 닫아도 목록을 다시 그리지 않습니다. 다른 도서로 바꾸면 이전 상세만 pop되어 정리됩니다([SPEC](SPEC.md) 10절).
 
-### 화면 Store
+### 화면 상태 소유
 
-TanStack Query + Zustand처럼 서버 상태와 클라이언트 상태를 나눕니다. 서버 상태는 Soil(`rememberInfiniteQuery`)과 Room(즐겨찾기)이 소유하고, 화면에서만 쓰는 상태는 검색·즐겨찾기 화면의 Store가 소유합니다(사용자 결정). Store는 공식 retain 문서의 권장대로 저장 데이터와 retain 데이터를 나눕니다([SPEC](SPEC.md) "화면 Store").
+서버 상태는 Soil(`rememberInfiniteQuery`)과 Room(즐겨찾기)이 소유하고, 화면에서만 쓰는 상태는 각 Presenter가 공식 retain 문서의 권장대로 저장 데이터와 retain 데이터로 나눠 직접 둡니다([SPEC](SPEC.md) "화면 상태 소유").
 
 - 저장 데이터(입력·확정 검색어·정렬·가격 범위)는 `rememberSerializable`로 묶어 프로세스 재생성 뒤 복원합니다.
-- retain 데이터는 `private` `RetainObserver`로 감싸 엔트리가 은퇴할 때 정리합니다. `FavoriteToggler`(진행 중인 도서 ID·실패 여부)와 그 scope·Mutation 구독, 검색의 `SearchQueryHolder`가 여기에 속합니다.
-- Store는 두 값을 묶어 `dispatch`로 이벤트를 처리할 뿐 자체 상태가 없습니다. InfiniteQuery 객체와 Room 즐겨찾기 ID처럼 컴포지션마다 바뀌는 값은 `dispatch` 인자로 받고 보관하지 않습니다.
-- 상세는 저장할 클라이언트 상태가 없어 Store 없이 `retainFavoriteToggler`만 씁니다.
+- retain 데이터는 `private` `RetainObserver`로 감싸 엔트리가 은퇴할 때 정리합니다. `retainFavoriteToggler`(진행 중인 도서 ID·실패 여부와 그 scope·Mutation 구독)와 검색의 `retainSearchQueryHolder`가 여기에 속합니다.
+- InfiniteQuery 객체와 Room 즐겨찾기 ID처럼 컴포지션마다 바뀌는 값은 `eventSink` 람다가 그 컴포지션의 값을 읽고, retain 값에는 보관하지 않습니다.
+- 별도 Store 클래스는 두지 않습니다. 재시도·다음 페이지처럼 이벤트가 쿼리를 다시 부르는 흐름을 Presenter 한 파일에서 읽을 수 있게 하기 위한 개발자 결정입니다.
 
-엔트리가 은퇴하면 `FavoriteToggler`의 scope만 취소되어 대기를 멈춥니다. 이미 시작한 쓰기는 앱 범위의 `FavoriteWriter`가 끝까지 실행하므로, 쓰기 도중 상세를 닫아도 쓰기는 완료되고 실패 알림만 사라집니다(`FavoritesStoreLifecycleTest`).
+엔트리가 은퇴하면 `FavoriteToggler`의 scope만 취소되어 대기를 멈춥니다. 이미 시작한 쓰기는 앱 범위의 `FavoriteWriter`가 끝까지 실행하므로, 쓰기 도중 상세를 닫아도 쓰기는 완료되고 실패 알림만 사라집니다(`FavoritesStateLifecycleTest`).
 
 ### 구성 변경과 프로세스 재생성 대응
 
@@ -98,10 +98,10 @@ retain은 구성 변경(회전, 다크 모드, 창 크기 변경)에서 객체�
 | --- | --- | --- | --- |
 | 백스택(탭 루트, 상세) | `rememberNavBackStack` + `@Serializable` NavKey. 상세 키에 `Book` 스냅샷 | 유지 | 복원. 상세는 네트워크 없이 표시 |
 | 엔트리별 화면 상태 | `rememberSaveableStateHolderNavEntryDecorator` | 유지 | 복원 |
-| 검색어·정렬·가격 범위(입력·확정) | 화면 Store의 `rememberSerializable` | 유지 | 복원. 검색 결과는 재요청 |
+| 검색어·정렬·가격 범위(입력·확정) | Presenter의 `rememberSerializable` | 유지 | 복원. 검색 결과는 재요청 |
 | 가격 필터 시트 열림과 입력 중 금액 | 화면의 `rememberSaveable` | 유지 | 복원 |
 | 목록 스크롤 위치 | 조회 조건을 key로 둔 `rememberSaveable(..., saver = LazyGridState.Saver)` | 유지 | 복원. 조건이 바뀌면 맨 위부터 |
-| 화면 그래프, `FavoriteToggler`, `SearchQueryHolder` | `retain` + `RetainedValuesStoreNavEntryDecorator` | 같은 객체 유지. 쓰기 진행 상태 유지(`FavoritesStoreLifecycleTest`) | 새로 만듦 |
+| 화면 그래프, `FavoriteToggler`, `SearchQueryHolder` | `retain` + `RetainedValuesStoreNavEntryDecorator` | 같은 객체 유지. 쓰기 진행 상태 유지(`FavoritesStateLifecycleTest`) | 새로 만듦 |
 | 검색 결과 페이지 | 앱 싱글턴 Soil `SwrCachePlus` 메모리 캐시(`staleTime` 5분) | 유지. 재요청 없음 | 조건으로 재요청 |
 | 즐겨찾기 | Room, Subscription으로 관찰 | 유지 | 디스크에서 읽음 |
 | 진행 중인 즐겨찾기 쓰기 | 앱 범위 `FavoriteWriter`(`ApplicationScope` + `Mutex`) | 화면이 사라져도 완료 | 보장하지 않음 |
