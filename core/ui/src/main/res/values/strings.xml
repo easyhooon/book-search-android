@@ -9,6 +9,9 @@
     <string name="book_cover_description">%1$s 표지</string>
     <string name="cover_unavailable">표지 없음</string>
     <string name="retry">다시 시도</string>
+    <string name="query_submit">검색</string>
+    <string name="query_clear">검색어 지우기</string>
+    <string name="sort_change">정렬 변경</string>
     <string name="error_missing_api_key">API 키가 설정되지 않았습니다. local.properties의 KAKAO_REST_API_KEY를 확인해 주세요.</string>
     <string name="error_unauthorized">API 키 인증에 실패했습니다. 키가 올바른지 확인해 주세요.</string>
     <string name="error_network">네트워크 연결을 확인한 뒤 다시 시도해 주세요.</string>

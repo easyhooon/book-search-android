@@ -12,6 +12,7 @@ import io.github.easyhooon.booksearch.core.model.FavoriteCommand
 import io.github.easyhooon.booksearch.core.model.SearchPage
 import io.github.easyhooon.booksearch.core.model.SearchPaging
 import io.github.easyhooon.booksearch.core.model.SearchSort
+import io.github.easyhooon.booksearch.core.testing.FakeFavoriteWriter
 import io.github.easyhooon.booksearch.core.testing.MainDispatcherRule
 import io.github.easyhooon.booksearch.core.testing.awaitItemMatching
 import io.github.easyhooon.booksearch.core.testing.presenterFlow
@@ -30,12 +31,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import soil.query.InfiniteQueryKey
-import soil.query.MutationId
 import soil.query.QueryOptionsOverride
 import soil.query.SwrCachePlus
 import soil.query.annotation.ExperimentalSoilQueryApi
 import soil.query.buildInfiniteQueryKey
-import soil.query.buildMutationKey
 import soil.query.copy
 import java.io.IOException
 
@@ -72,18 +71,6 @@ class SearchPresenterTest {
                 override fun onConfigureOptions(): QueryOptionsOverride = { it.copy(shouldRetry = { false }) }
             }
         }
-    }
-
-    private class FakeFavoriteWriter {
-        val commands = mutableListOf<FavoriteCommand>()
-        var write: suspend (FavoriteCommand) -> Unit = {}
-        val key = buildMutationKey<Unit, FavoriteCommand>(
-            id = MutationId("favorite", "screen" to "test"),
-            mutate = { command ->
-                commands += command
-                write(command)
-            },
-        )
     }
 
     private val api = FakeSearchApi()

@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="search_hint">검색어를 입력하세요</string>
-    <string name="search_action">검색</string>
-    <string name="search_clear">검색어 지우기</string>
     <string name="search_idle">도서를 검색해 보세요</string>
     <string name="search_empty">검색 결과가 없습니다</string>
     <string name="sort_accuracy">정확도순</string>
     <string name="sort_latest">발간일순</string>
-    <string name="sort_change">정렬 변경</string>
 </resources>
