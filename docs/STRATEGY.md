@@ -24,6 +24,10 @@ retain 학습은 사용자 선택입니다. 일정이 촉박하다는 이유로 
 | --- | --- | --- |
 | Kotlin / Coroutines / Flow / Compose | 필수 | 요구 기술 유지 |
 | retain + Navigation 3 | 사용자 선택 | 화면 단위 상태 소유권과 제거 시 정리 검증 |
+| Circuit | 사용자 선택: 미도입 | Reed는 구현 패턴 참고 자료로만 사용 |
+| 플랫폼 구성 | 사용자 선택: Android 전용 | KMP source set, expect/actual, 플랫폼 추상화 미도입 |
+| Presenter 형태 | 현재 권장안 | DroidKaigi 방식의 얇은 @Composable Presenter. 최종 형태와 테스트 의존성은 구현 검증 후 확정 |
+| 테스트 코드 작성 | 사용자 추가 필수 | 핵심 단위·경합·페이지네이션, Room 통합, 필수 Compose UI 테스트. 실제 실행 증거는 별도 기록 |
 | Room | 사용 허용, 권장 | 즐겨찾기 영속 저장. 라이브러리 자체는 필수 아님 |
 | Room Flow 단일 상태 기준 | 권장 | 목록·상세의 즐겨찾기 상태 불일치 방지 |
 | Ktor | 후보 | 기존 경험과 코드 활용. 버전 호환성 확인 후 확정 |
@@ -228,6 +232,7 @@ Paging 3는 로드 상태·취소·재시도 구조가 표준화되어 있다는
 [기준 커밋 74a8ce90](https://github.com/YAPP-Github/Reed-Android/tree/74a8ce9009260859f0a2e468ac1d6db928e62f50)
 
 - 활용: BookSearchPresenter의 최초/추가 로딩 분리, 하단 재시도, 성공 후 페이지 증가, 취소 예외 재전파
+- Circuit 라이브러리는 도입하지 않음. 이 저장소는 상태 전이·오류 처리 패턴을 참고하는 자료로만 활용
 - 개선: 이전 검색 Job 경합, append가 편집 중 입력을 사용하는 문제, 푸터 상태 초기화 누락, 중복 제거 부재
 - InfinityLazyColumn의 보이는 아이템 수 ≤6에서 자동 로드를 막는 조건을 그대로 쓰지 않음
 - 자체 API의 start/maxResults/lastPage는 Kakao의 page/size/meta.is_end와 다른 계약
@@ -241,6 +246,7 @@ Paging 3는 로드 상태·취소·재시도 구조가 표준화되어 있다는
 - SearchScreenPresenter의 retain query만으로 프로세스 종료 복원이 되는 것은 아님
 - ScreenChannel의 retained channel + LaunchedEffect 소비 구조에서 실행 중 작업 소유권, 이벤트 동시 실행, trySend 실패를 별도로 확인
 - Metro/KSP/Soil 및 전체 그래프를 이 작은 앱에 복제하지 않음
+- Android 전용으로 구현하므로 KMP 프로젝트 설정·source set·expect/actual·플랫폼 추상화를 가져오지 않음. retain/Navigation 3 소유권과 Presenter·테스트 패턴만 선택적으로 참고
 - 참조 코드의 alpha/beta 버전 사용을 이 프로젝트의 호환성 보증으로 해석하지 않음
 
 ### 기존 retain PoC
@@ -294,6 +300,24 @@ Paging 3는 로드 상태·취소·재시도 구조가 표준화되어 있다는
 업로드와 실제 키 전달은 사용자가 최종 확인합니다. 빌드 실패나 핵심 데이터 손실이 남아 있으면 영상·검색 캐시·추가 애니메이션보다 먼저 해결합니다.
 
 ## 10. 테스트 설계
+
+테스트 코드 작성은 사용자가 추가한 필수 요구사항입니다. 원 과제의 명시 조건과 구분하되, 구현 완료 기준에 포함합니다. Day 1의 핵심 단위·상태 경합·페이징 테스트, Day 2의 Room 통합 및 Compose 내비게이션·적응형 화면·retain 수명 테스트, Day 3의 실제 실행과 회귀 검증 시간을 확보합니다. 선택 기능을 줄이더라도 이 범위를 먼저 보호합니다.
+
+테스트 작성과 실행 성공은 별개입니다. 명령·환경·실제 결과를 남기고, 실행이 막히면 코드 작성 상태와 미실행 사유를 구분합니다. 프로세스 종료·폴더블 등 자동화 범위 밖의 확인은 수동 검증으로 보완하되 자동 테스트 통과로 표현하지 않습니다. 현재는 문서 단계이며 테스트 코드는 아직 없습니다.
+
+### 상태 관리와 테스트 가능성
+
+사용자는 ViewModel 테스트에서 구성에 따라 viewModelScope, Main 디스패처, SavedStateHandle 등의 준비가 추가될 수 있다는 점을 지적했습니다. retain + Navigation 3 사용과 Circuit 미도입은 확정했으며, 현재 권장안은 DroidKaigi 방식의 얇은 @Composable Presenter입니다. 이는 변경 불가능한 결정이 아니며, 실제 구현과 검증 후 확정합니다. 순수 Kotlin 형태를 만들기 위해 별도의 전체 StateFlow 상태 소유자를 중복으로 둘 필요는 없습니다.
+
+테스트는 다음 층으로 나누는 방향을 권장합니다.
+
+- 순수 비즈니스 규칙·ID·가격 정책·분리 가능한 페이지네이션 로직: 일반 Kotlin 단위 테스트
+- Presenter의 모델 방출·이벤트·비동기 상태 전이: 로컬 JVM에서 Molecule + Turbine + kotlinx-coroutines-test를 사용하는 안 검토. Compose runtime/compiler가 필요하지만, 의존성이 허용하면 Android UI나 기기가 본질적으로 필요한 것은 아님
+- retain 유지·제거, 백스택, 구성 변경, 프로세스 종료 복원: 실제 호스트와 연결한 별도 통합 검증. UI와 기기 동작도 이 범위에서 확인
+
+[Molecule 공식 문서](https://github.com/cashapp/molecule)는 Composable에서 Flow/StateFlow 모델을 만들고 실행하는 방식을 설명합니다. 구체적인 테스트 라이브러리·버전은 아직 도입하지 않았습니다. Molecule 실행 환경에 실제 호스트와 동등한 retained store가 제공된다고 가정하지 않습니다. 기본 저장소가 forgetful하게 동작하는 구성도 고려해야 하므로, 모델 방출 테스트 통과만으로 호스트의 retain 수명을 검증했다고 판단하지 않습니다.
+
+이는 앞으로 확인할 테스트 설계입니다. retain의 보편적 우위나 이미 실행한 테스트의 성공을 뜻하지 않으며, 동시성·수명 검증 책임도 그대로 남습니다.
 
 | 위험 | 테스트 입력 | 기대 결과 |
 | --- | --- | --- |
