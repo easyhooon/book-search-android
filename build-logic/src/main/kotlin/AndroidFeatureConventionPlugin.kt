@@ -10,7 +10,7 @@ import org.gradle.kotlin.dsl.dependencies
 
 /**
  * 화면 모듈 공통 설정입니다. feature는 core:model·core:data·core:ui만 보고,
- * Retrofit·Room 타입은 core:data 뒤에 숨겨 둡니다. NavKey와 화면 Store의 저장 상태 직렬화를 위해 serialization 플러그인을 씁니다.
+ * Retrofit·Room 타입은 core:data 뒤에 숨겨 둡니다. NavKey와 화면 저장 상태 직렬화를 위해 serialization 플러그인을 씁니다.
  */
 internal class AndroidFeatureConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -30,7 +30,6 @@ internal class AndroidFeatureConventionPlugin : Plugin<Project> {
                 implementation(libs.soil.query.compose)
                 implementation(libs.androidx.navigation3.runtime)
                 implementation(libs.kotlinx.coroutines.core)
-                implementation(libs.timber)
 
                 testImplementation(project(path = ":core:testing"))
                 testImplementation(libs.molecule.runtime)

@@ -25,7 +25,7 @@ import soil.query.buildInfiniteQueryKey
 import soil.query.compose.LocalMutationClient
 import soil.query.compose.LocalQueryClient
 
-/** 프로세스가 재생성되어도 검색 Store의 저장 데이터(입력·확정 검색어·정렬)를 복원하는지 확인합니다. */
+/** 프로세스가 재생성되어도 검색 Presenter의 저장 데이터(입력·확정 검색어·정렬)를 복원하는지 확인합니다. */
 @RunWith(RobolectricTestRunner::class)
 @OptIn(ExperimentalSoilQueryApi::class)
 class SearchStateRestorationTest {

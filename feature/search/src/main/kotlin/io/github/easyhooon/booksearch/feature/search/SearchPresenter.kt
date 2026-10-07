@@ -3,16 +3,22 @@ package io.github.easyhooon.booksearch.feature.search
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSerializable
+import androidx.compose.runtime.setValue
 import io.github.easyhooon.booksearch.core.data.SearchBooksQueryKeyFactory
 import io.github.easyhooon.booksearch.core.model.Book
 import io.github.easyhooon.booksearch.core.model.FavoriteCommand
 import io.github.easyhooon.booksearch.core.model.SearchPaging
 import io.github.easyhooon.booksearch.core.model.SearchSort
 import io.github.easyhooon.booksearch.core.ui.ErrorMessage
+import io.github.easyhooon.booksearch.core.ui.retainFavoriteToggler
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import soil.query.MutationKey
 import soil.query.QueryFetchStatus
 import soil.query.compose.InfiniteQueryLoadingErrorObject
@@ -59,12 +65,20 @@ sealed interface SearchEvent {
     data object UserMessageShown : SearchEvent
 }
 
+/** 프로세스 재생성 뒤에도 복원하는 검색 화면의 클라이언트 상태입니다. */
+@Serializable
+private data class SearchSavedState(
+    val input: String = "",
+    val submittedQuery: String = "",
+    val sort: SearchSort = SearchSort.Accuracy,
+)
+
 /**
  * 검색 화면의 상태를 출처별로 모아 화면 상태로 바꿉니다.
  *
- * 입력·확정 조건·정렬과 즐겨찾기 쓰기 진행은 [SearchStore], 검색 결과는 확정 조건의 Soil InfiniteQuery,
- * 즐겨찾기 ID는 Root가 Room Subscription에서 읽어 넘깁니다. 검색 결과 key는 확정 검색어에 따라 바뀌므로
- * Root가 아니라 여기서 연결합니다.
+ * 입력·확정 조건·정렬은 저장 데이터, 즐겨찾기 쓰기 진행과 붙잡아 둔 쿼리는 retain 데이터로 여기서 직접 둡니다.
+ * 검색 결과는 확정 조건의 Soil InfiniteQuery, 즐겨찾기 ID는 Root가 Room Subscription에서 읽어 넘깁니다.
+ * 검색 결과 key는 확정 검색어에 따라 바뀌므로 Root가 아니라 여기서 연결합니다.
  */
 @Composable
 fun searchPresenter(
@@ -72,18 +86,19 @@ fun searchPresenter(
     favoriteIds: Set<String>,
     favoriteMutationKey: MutationKey<Unit, FavoriteCommand>,
 ): SearchUiState {
-    val store = rememberSearchStore(favoriteMutationKey)
-    val state = store.state
+    var saved by rememberSerializable { mutableStateOf(SearchSavedState()) }
+    val favoriteToggler = retainFavoriteToggler(favoriteMutationKey)
+    val queryHolder = retainSearchQueryHolder()
     val scope = rememberCoroutineScope()
     val queryClient = LocalQueryClient.current
 
-    val query: InfiniteQueryObject<List<Book>, Int>? = if (state.submittedQuery.isEmpty()) {
+    val query: InfiniteQueryObject<List<Book>, Int>? = if (saved.submittedQuery.isEmpty()) {
         null
     } else {
-        val queryKey = remember(state.submittedQuery, state.sort) {
-            queryKeyFactory.create(state.submittedQuery, state.sort)
+        val queryKey = remember(saved.submittedQuery, saved.sort) {
+            queryKeyFactory.create(saved.submittedQuery, saved.sort)
         }
-        SideEffect { store.holdQuery(queryClient, queryKey) }
+        SideEffect { queryHolder.hold(queryClient, queryKey) }
         // Soil의 기본 수집은 key 없는 collectAsState라서 조건이 바뀐 첫 프레임에 이전 결과를 돌려줍니다.
         // 조건별로 그룹을 나눠 새 조건은 항상 자기 상태에서 시작하게 합니다.
         key(queryKey.id) {
@@ -91,41 +106,49 @@ fun searchPresenter(
         }
     }
 
-    if (query == null) SideEffect { store.releaseQuery() }
+    if (query == null) SideEffect { queryHolder.release() }
 
-    val server = object : SearchServer {
-        override val favoriteIds: Set<String> = favoriteIds
-
-        override fun retry() {
-            when (query) {
-                is InfiniteQueryLoadingErrorObject -> scope.launch { query.refresh() }
-                is InfiniteQueryRefreshErrorObject -> {
-                    val param = query.loadMoreParam
-                    scope.launch { if (param != null) query.loadMore(param) else query.refresh() }
-                }
-                else -> Unit
+    fun retry() {
+        when (query) {
+            is InfiniteQueryLoadingErrorObject -> scope.launch { query.refresh() }
+            is InfiniteQueryRefreshErrorObject -> {
+                val param = query.loadMoreParam
+                scope.launch { if (param != null) query.loadMore(param) else query.refresh() }
             }
-        }
-
-        override fun loadMore() {
-            // 같은 param의 중복 요청은 Soil이 actor에서 건너뜁니다.
-            val param = query?.loadMoreParam
-            if (query is InfiniteQuerySuccessObject && query.fetchStatus == QueryFetchStatus.Idle && param != null) {
-                scope.launch { query.loadMore(param) }
-            }
+            else -> Unit
         }
     }
 
     return SearchUiState(
-        input = state.input,
-        submittedQuery = state.submittedQuery,
-        sort = state.sort,
+        input = saved.input,
+        submittedQuery = saved.submittedQuery,
+        sort = saved.sort,
         content = query.toContent(),
         favoriteIds = favoriteIds,
-        pendingFavoriteIds = store.pendingFavoriteIds.toSet(),
-        userMessage = if (store.hasFavoriteFailure) ErrorMessage.FavoriteWrite else null,
-        eventSink = { event -> store.dispatch(event, server) },
-    )
+        pendingFavoriteIds = favoriteToggler.pendingIds.toSet(),
+        userMessage = if (favoriteToggler.hasFailure) ErrorMessage.FavoriteWrite else null,
+    ) { event ->
+        when (event) {
+            is SearchEvent.InputChanged -> saved = saved.copy(input = event.value)
+            SearchEvent.Submit -> {
+                val submitted = saved.input.trim()
+                // 같은 조건을 다시 확정하면 새로 요청하지 않고 오류일 때만 재시도합니다.
+                if (submitted == saved.submittedQuery) retry() else saved = saved.copy(submittedQuery = submitted)
+            }
+            is SearchEvent.SortSelected -> saved = saved.copy(sort = event.sort)
+            SearchEvent.LoadMore -> {
+                // 같은 param의 중복 요청은 Soil이 actor에서 건너뜁니다.
+                val param = query?.loadMoreParam
+                if (query is InfiniteQuerySuccessObject && query.fetchStatus == QueryFetchStatus.Idle && param != null) {
+                    scope.launch { query.loadMore(param) }
+                }
+            }
+            SearchEvent.Retry -> retry()
+            is SearchEvent.ToggleFavorite ->
+                favoriteToggler.setFavorite(book = event.book, favorite = event.book.id !in favoriteIds)
+            SearchEvent.UserMessageShown -> favoriteToggler.consumeFailure()
+        }
+    }
 }
 
 /** 재시도 중(Fetching)에는 직전 오류를 지우고 로딩으로 보여 줍니다. */

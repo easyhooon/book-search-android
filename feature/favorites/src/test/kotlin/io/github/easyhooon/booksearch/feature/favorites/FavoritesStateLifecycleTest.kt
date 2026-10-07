@@ -35,14 +35,14 @@ import soil.query.compose.LocalMutationClient
 import soil.query.compose.LocalQueryClient
 
 /**
- * 화면 Store의 저장 데이터와 retain 데이터가 각자의 수명을 따르는지 확인합니다.
+ * 즐겨찾기 Presenter의 저장 데이터와 retain 데이터가 각자의 수명을 따르는지 확인합니다.
  *
  * 저장 데이터는 프로세스 재생성(저장 후 복원)에서, 즐겨찾기 쓰기 진행은 회전처럼 컴포지션만 빠졌다 돌아올 때
  * 유지되어야 합니다. 엔트리가 pop되면 진행 상태는 버리지만 이미 시작한 쓰기는 앱 범위에서 끝납니다.
  */
 @RunWith(RobolectricTestRunner::class)
 @OptIn(ExperimentalSoilQueryApi::class)
-class FavoritesStoreLifecycleTest {
+class FavoritesStateLifecycleTest {
 
     @get:Rule
     val composeRule = createComposeRule()
