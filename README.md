@@ -33,7 +33,7 @@ Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하�
 
 `scripts/make-submission-zip.sh`로 만듭니다. 저장소 전체와 `.git`에 더해, Git에서 제외한 다음 파일이 루트에 들어 있습니다. `build/`·`.gradle/` 등 빌드 산출물은 넣지 않았습니다.
 
-- `local.properties`: 제출용 API 키. `sdk.dir`은 제출자 환경의 경로라서, 다른 경로라면 Android Studio에서 프로젝트를 열 때 바뀌거나 직접 고쳐야 합니다.
+- `local.properties`: 제출용 API 키. 제출자 기기의 SDK 경로(`sdk.dir`)는 뺐습니다. Android Studio로 열면 SDK 경로가 자동으로 채워지고, 명령줄 빌드는 `ANDROID_HOME` 환경 변수로 SDK를 찾습니다.
 - `app-debug.apk`: debug APK. `adb install app-debug.apk`로 바로 설치할 수 있습니다.
 - `demo.mp4`: 시연 영상(1분 42초)
 

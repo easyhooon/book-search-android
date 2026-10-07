@@ -185,7 +185,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [x] **R-077** APK 포함. Debug APK 허용
 - [ ] **R-078** README 포함: 빌드 방법, 사용 프레임워크, 구조, 주요 구현 포인트(원문 요구), 선택 이유·실제 검증 결과·한계, AI 활용 시 활용 작업·검증 방법·직접 판단해 바꾼 부분
 - [x] **R-079** **선택**: 3분 이내 시연 영상
-- [ ] **R-080** GitHub 저장소명·설명·문서 등 저장소 콘텐츠에 회사명 미포함
+- [x] **R-080** GitHub 저장소명·설명·문서 등 저장소 콘텐츠에 회사명 미포함
 
 ### 추가 보안·재현성 검증
 
@@ -280,13 +280,13 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-071 | 구현 완료 | 통과 | `FavoriteWriterTest` 화면 취소 후 완료·직렬 실행, TC-71 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음(정책) |
 | R-072 | 구현 완료 | 통과 | 2026-10-08 `scripts/make-submission-zip.sh`로 만든 `book-search-android.zip`(약 22MB). 작업 트리가 깨끗하고 키가 있을 때만 만들며, `assembleDebug` 후 저장소를 복사해 압축 | 제출 직전 마지막 커밋으로 다시 생성 |
 | R-073 | 구현 완료 | 통과 | ZIP에 `.git` 포함. 압축을 푼 폴더에서 `git log`가 최신 커밋을 가리키고 `git status`에 변경 없음, `git fsck` 오류 없음 | 없음 |
-| R-074 | 구현 완료 | 통과 | `local.properties`에서 키를 읽고 Git에서는 제외(`.gitignore`). ZIP 루트에 `local.properties` 포함. 압축을 푼 폴더에서 키 값은 `local.properties`와 APK에만 있고 `.git` 객체에는 0건(값은 출력하지 않음) | `local.properties`의 `sdk.dir`은 제출자 경로이므로 다른 환경에서는 Android Studio가 고치거나 직접 수정 |
+| R-074 | 구현 완료 | 통과 | `local.properties`에서 키를 읽고 Git에서는 제외(`.gitignore`). ZIP 루트에 `local.properties` 포함. 압축을 푼 폴더에서 키 값은 `local.properties`와 APK에만 있고 `.git` 객체에는 0건(값은 출력하지 않음) | 없음. ZIP의 `local.properties`에는 `sdk.dir`을 빼서 제출자 경로가 다른 환경의 SDK 탐색을 막지 않게 함(`sdk.dir` 없이 `ANDROID_HOME`만으로 빌드 성공 확인) |
 | R-075 | 해당 없음 | 미검증 | 없음 | 사용자 확인 |
 | R-076 | 구현 완료 | 통과 | `unzip -l`에서 `build/`·`.gradle/`·`.kotlin/`·`.idea/` 경로 0건. 압축을 푼 폴더에서도 해당 디렉터리 없음 | 없음 |
 | R-077 | 구현 완료 | 통과 | ZIP 루트에 `app-debug.apk` 포함. 이 APK를 실기기에 설치해 검색 요청이 200으로 응답하고 결과가 표시됨 | 없음 |
 | R-078 | 진행 | 미검증 | README 갱신(2026-10-08) | 최종 제출 전 사용자 검토 |
 | R-079 | 구현 완료 | 통과 | `demo.mp4`, 1분 42초(`ffprobe` 101.7초), 720x1560 H.264, 약 4MB. 2026-10-08 SM-S936N에서 `adb shell screenrecord`로 녹화. 커밋 `71cdf67` debug 빌드. 검색·페이지네이션·정렬, 즐겨찾기 추가·해제, 즐겨찾기 정렬·검색·가격 필터, 오프라인 오류와 재시도, 회전, 다크 모드 포함 | 저장소에는 넣지 않고(`.gitignore`) 제출 ZIP 루트에 넣음(R-072 ZIP에서 확인) |
-| R-080 | 진행 | 미검증 | 저장소명 `book-search-android` | 회사명 포함 여부는 사용자 확인 |
+| R-080 | 구현 완료 | 통과 | 2026-10-08 지원 회사의 국문·영문 이름, 띄어쓰기 변형, 법인명·옛 법인명, 서비스 도메인으로 추적 파일, 파일 이름, 전체 이력의 diff·커밋 메시지, 브랜치·태그 이름, `local.properties`를 검색해 0건. GitHub 저장소명 `book-search-android`, 설명·홈페이지·토픽 비어 있음, PR·이슈 없음. 검색어는 이 문서에 적지 않음 | 스크린샷·영상은 앱 화면만 담아 텍스트 검색 대상에서 제외 |
 | R-081 | 해당 없음 | 통과 | 2026-10-08 `local.properties`의 키 값으로 `git log -p --all`과 `git grep`, 문서를 검색해 0건(값은 출력하지 않음). OkHttp 로그는 Authorization을 가림 | 제출 직전 다시 확인 |
 | R-082 | 해당 없음 | 미검증 | `git remote -v`가 자격증명 없는 HTTPS URL임을 확인. `.git/config`에 credential·token·extraheader 항목 없음, `.git/hooks`에는 기본 sample만 있음 | 사용자 확인 |
 | R-083 | 해당 없음 | 미검증 | 없음 | 사용자 확인 |
