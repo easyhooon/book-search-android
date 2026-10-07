@@ -10,7 +10,7 @@ import org.gradle.kotlin.dsl.dependencies
 
 /**
  * 화면 모듈 공통 설정입니다. feature는 core:model·core:data·core:ui만 보고,
- * Retrofit·Room 타입은 core:data 뒤에 숨겨 둡니다.
+ * Retrofit·Room 타입은 core:data 뒤에 숨겨 둡니다. NavKey 직렬화를 위해 serialization 플러그인을 씁니다.
  */
 internal class AndroidFeatureConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
@@ -18,6 +18,7 @@ internal class AndroidFeatureConventionPlugin : Plugin<Project> {
             applyPlugins(
                 "booksearch.android.library.compose",
                 Plugins.METRO,
+                Plugins.KOTLINX_SERIALIZATION,
             )
 
             dependencies {
@@ -30,6 +31,7 @@ internal class AndroidFeatureConventionPlugin : Plugin<Project> {
                 implementation(libs.androidx.navigation3.runtime)
                 implementation(libs.kotlinx.coroutines.core)
 
+                testImplementation(project(path = ":core:testing"))
                 testImplementation(libs.molecule.runtime)
                 testImplementation(libs.soil.query.test)
                 testImplementation(libs.robolectric)

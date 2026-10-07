@@ -32,6 +32,7 @@ include(
     ":core:database",
     ":core:data",
     ":core:ui",
+    ":core:testing",
 
     ":feature:search",
     ":feature:favorites",
