@@ -244,7 +244,8 @@ DroidKaigi 2026의 탭 처리(`remove` + `add`)에는 같은 탭 재선택 시 �
 | --- | --- |
 | 다른 탭 선택 | 현재 탭 위의 상세를 모두 pop하고, 대상 탭 루트를 맨 위로 옮김(없으면 추가). 두 탭 루트는 pop하지 않으므로 목록 상태가 retain으로 유지됨 |
 | 같은 탭 재선택 | 상세가 있으면 탭 루트까지 pop. 루트에서는 아무것도 하지 않음 |
-| 카드 선택 | 맨 위가 상세면 무시하고, 아니면 상세를 push. 상세에는 다른 도서로 가는 경로가 없으므로, 두 카드를 동시에 누르거나 전환 중에 다른 카드를 눌러도 상세는 하나만 쌓임 |
+| 카드 선택(1-pane) | 맨 위가 상세면 무시하고, 아니면 상세를 push. 상세에는 다른 도서로 가는 경로가 없으므로, 두 카드를 동시에 누르거나 전환 중에 다른 카드를 눌러도 상세는 하나만 쌓임 |
+| 카드 선택(2-pane) | 맨 위가 같은 도서의 상세면 무시. 다른 도서의 상세면 그 상세를 pop하고 새 상세를 push(교체). 상세가 없으면 push. 어느 경우에도 상세는 하나만 쌓임 |
 | 뒤로 가기(상세) | 상세 pop |
 | 뒤로 가기(즐겨찾기 루트) | 검색 탭 선택과 같은 동작(즐겨찾기 루트는 유지) |
 | 뒤로 가기(검색 루트) | 앱 종료(Activity finish) |
@@ -302,10 +303,23 @@ Room Entity는 `id`(PK), 원본 `isbn`, 5절의 도서 필드, `savedAt`으로 �
 
 ## 10. 적응형 레이아웃
 
-- 탐색 UI는 `NavigationSuiteScaffold`를 씁니다. compact에서는 하단 바, medium·expanded에서는 내비게이션 레일로 바뀝니다. 상세가 맨 위면 `layoutType = NavigationSuiteType.None`으로 탐색 UI를 숨깁니다.
+- 탐색 UI는 `NavigationSuiteScaffold`를 씁니다. compact에서는 하단 바, medium·expanded에서는 내비게이션 레일로 바뀝니다. 1-pane에서 상세가 맨 위면 `layoutType = NavigationSuiteType.None`으로 탐색 UI를 숨깁니다. 2-pane에서는 목록이 함께 보이므로 레일을 유지합니다.
 - 목록은 `LazyVerticalGrid(GridCells.Adaptive(minSize = 360.dp))`로 구성합니다. compact에서는 1열이고 넓은 창에서는 2~3열이 됩니다. 검색창과 필터 영역은 최대 너비를 제한합니다.
-- list-detail 2-pane은 구현하지 않습니다(제품 정책 5번). 이유와 영향은 README에 적습니다.
 - 회전·창 크기 변경 후에도 입력값, 확정 조건, 스크롤 위치, 상세 엔트리가 유지되는지 확인합니다.
+
+### list-detail 2-pane (2026-10-08 추가)
+
+제품 정책 5번은 처음에 2-pane을 후순위로 두었습니다. 1-pane과 크기 변경 대응의 구현·검증을 마친 뒤 일정이 남아 2-pane을 추가합니다. 1-pane 동작과 백스택 형태는 바꾸지 않습니다.
+
+- 조건: 창 너비가 expanded(840dp 이상)일 때만 2-pane입니다. 판단은 `currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(WIDTH_DP_EXPANDED_LOWER_BOUND)`로 합니다. compact·medium은 지금처럼 1-pane입니다.
+- 배치: 왼쪽에 활성 탭 루트(목록)를 고정 너비 400dp로, 오른쪽에 상세를 나머지 너비로 둡니다. 400dp에서 목록 그리드는 1열입니다. 상세가 없으면 오른쪽에 "도서를 선택하세요" 안내를 보여 줍니다.
+- 구현: Navigation 3의 `SceneStrategy`를 앱에서 직접 구현합니다(`ListDetailSceneStrategy`). 각 엔트리의 metadata에 목록·상세 역할을 표시하고, 전략은 화면에 넘긴 엔트리가 `[목록]` 또는 `[목록, 상세]`일 때 두 칸 장면을 만듭니다. 그 밖의 경우와 1-pane에서는 `null`을 돌려 기본 단일 장면을 씁니다.
+- 직접 구현하는 이유: Material의 `material3-adaptive-navigation3`(1.3.0, 1.4.0-alpha02)는 `navigation3-ui` 1.0.0 기준으로 빌드되어 이 앱의 1.2.0 `SceneStrategy`(`SceneStrategyScope` 수신 함수)와 맞지 않습니다. 버전을 낮추거나 충돌을 숨기지 않기 위해 필요한 부분만 만듭니다.
+- 장면 key는 목록 엔트리의 contentKey로 둡니다. 상세를 열고 닫거나 교체해도 장면이 같아 목록이 다시 그려지지 않고, 오른쪽 칸만 바뀝니다. 탭을 바꾸면 목록이 달라지므로 장면 전환 애니메이션이 일어납니다.
+- 카드 선택: 2-pane에서 다른 도서를 누르면 상세를 교체합니다(7절 표). 교체된 상세는 pop되므로 retain 값이 은퇴합니다. 선택된 도서의 카드는 강조해 오른쪽 상세와 연결해 보여 줍니다. 1-pane에서는 강조하지 않습니다.
+- 뒤로 가기: `[목록, 상세]` 장면의 `previousEntries`는 `[목록]`입니다. 뒤로 가기나 상세의 뒤로 버튼은 상세를 닫고 안내 칸을 보여 줍니다. 그다음 뒤로 가기는 1-pane과 같습니다(즐겨찾기 루트→검색 탭, 검색 루트→종료).
+- 크기 변경: 백스택은 그대로이고 장면만 다시 계산합니다. 2-pane에서 상세가 열린 채 창이 좁아지면 상세가 전체 화면으로 보이고 탐색 UI가 숨겨집니다. 반대로 넓어지면 목록과 상세가 나란히 보입니다.
+- 테스트: `BookSearchBackStackTest`에 교체 규칙을, `BookSearchNavHostTest`에 넓은 창(Robolectric qualifier) 기준 두 칸 표시·레일 유지·교체 시 retain 은퇴·뒤로 가기 후 안내 칸·크기 변경을 추가합니다. 실기기 태블릿에서 수동 확인합니다.
 
 ## 11. 테스트 환경
 
@@ -342,3 +356,4 @@ Robolectric 4.17은 SDK 37을 지원하지 않습니다. 그래서 Robolectric�
 | 3. Soil 재시도 판정 함수 | `QueryOptions.shouldRetry: (Throwable) -> Boolean`. key의 `onConfigureOptions`에서 `options.copy(...)`로 지정 |
 | 4. Robolectric 지원 SDK 최댓값 | 4.17 기준 36. JDK 21과 `--add-exports` 인자가 필요함(11절) |
 | 5. 상세에서 탐색 UI를 숨기는 방법 | `NavigationSuiteScaffold(layoutType = NavigationSuiteType.None)` |
+| 6. list-detail 장면 구성 방법 | `material3-adaptive-navigation3`는 navigation3-ui 1.0.0 기준이라 1.2.0과 API가 맞지 않음. `SceneStrategy`를 직접 구현(10절) |
