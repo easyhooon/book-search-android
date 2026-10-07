@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import io.github.easyhooon.booksearch.core.model.Book
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -85,5 +86,27 @@ class FavoriteBookDaoTest {
     fun `없는 ID 삭제는 아무 일도 하지 않는다`() = runTest {
         dao.deleteById("missing")
         dao.observeIds().test { assertEquals(emptyList<String>(), awaitItem()) }
+    }
+
+    @Test
+    fun `파일 DB를 닫았다 다시 열어도 저장한 도서가 남아 있다`() = runTest {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val name = "reopen-test.db"
+        context.deleteDatabase(name)
+        fun open() = Room.databaseBuilder(context, BookSearchDatabase::class.java, name)
+            .allowMainThreadQueries()
+            .build()
+
+        val first = open()
+        first.favoriteBookDao().upsert(book("a").toFavoriteEntity(savedAt = 1L))
+        first.close()
+
+        val reopened = open()
+        try {
+            assertEquals(book("a"), reopened.favoriteBookDao().observeById("a").first()?.toBook())
+        } finally {
+            reopened.close()
+            context.deleteDatabase(name)
+        }
     }
 }
