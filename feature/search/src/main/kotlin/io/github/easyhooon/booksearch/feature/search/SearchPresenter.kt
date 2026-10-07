@@ -2,11 +2,14 @@ package io.github.easyhooon.booksearch.feature.search
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.retain.RetainObserver
+import androidx.compose.runtime.retain.retain
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import io.github.easyhooon.booksearch.core.data.SearchBooksQueryKeyFactory
@@ -17,13 +20,17 @@ import io.github.easyhooon.booksearch.core.model.SearchSort
 import io.github.easyhooon.booksearch.core.ui.ErrorMessage
 import io.github.easyhooon.booksearch.core.ui.retainFavoriteToggler
 import kotlinx.coroutines.launch
+import soil.query.InfiniteQueryId
+import soil.query.InfiniteQueryKey
 import soil.query.MutationKey
+import soil.query.QueryClient
 import soil.query.QueryFetchStatus
 import soil.query.compose.InfiniteQueryLoadingErrorObject
 import soil.query.compose.InfiniteQueryLoadingObject
 import soil.query.compose.InfiniteQueryObject
 import soil.query.compose.InfiniteQueryRefreshErrorObject
 import soil.query.compose.InfiniteQuerySuccessObject
+import soil.query.compose.LocalQueryClient
 import soil.query.compose.rememberInfiniteQuery
 
 @Immutable
@@ -79,17 +86,22 @@ fun searchPresenter(
     var sort by rememberSaveable { mutableStateOf(SearchSort.Accuracy) }
     val favoriteToggler = retainFavoriteToggler(favoriteMutationKey)
     val scope = rememberCoroutineScope()
+    val queryHolder = retain { SearchQueryHolder() }
+    val queryClient = LocalQueryClient.current
 
     val query: InfiniteQueryObject<List<Book>, Int>? = if (submittedQuery.isEmpty()) {
         null
     } else {
         val queryKey = remember(submittedQuery, sort) { queryKeyFactory.create(submittedQuery, sort) }
+        SideEffect { queryHolder.hold(queryClient, queryKey) }
         // Soil의 기본 수집은 key 없는 collectAsState라서 조건이 바뀐 첫 프레임에 이전 결과를 돌려줍니다.
         // 조건별로 그룹을 나눠 새 조건은 항상 자기 상태에서 시작하게 합니다.
         key(queryKey.id) {
             rememberInfiniteQuery(queryKey, select = { chunks -> SearchPaging.merge(chunks.map { it.data }) })
         }
     }
+
+    if (query == null) SideEffect { queryHolder.release() }
 
     fun retry() {
         when (query) {
@@ -134,6 +146,42 @@ fun searchPresenter(
             SearchEvent.UserMessageShown -> favoriteToggler.consumeFailure()
         }
     }
+}
+
+/**
+ * 검색 루트가 백스택에 있는 동안 확정 조건의 쿼리를 Soil에 붙여 둡니다.
+ *
+ * Soil은 구독이 모두 끊기고 keepAliveTime(기본 5초)이 지나면 쿼리를 내리면서 성공 상태만 캐시에 남깁니다.
+ * 즐겨찾기 탭으로 가면 검색 루트는 컴포지션에서 빠지므로, 추가 로딩이 실패한 목록은 돌아왔을 때 지워져
+ * 1페이지부터 다시 받게 됩니다. 엔트리 범위로 retain한 참조를 따로 붙잡아 이를 막고, 조건이 바뀌거나
+ * 검색어를 비우거나 엔트리가 은퇴하면 놓습니다. 놓은 쿼리는 Soil의 기본 정책대로 정리됩니다.
+ */
+private class SearchQueryHolder : RetainObserver {
+    private var ref: AutoCloseable? = null
+    private var id: InfiniteQueryId<*, *>? = null
+
+    fun <T, S> hold(client: QueryClient, key: InfiniteQueryKey<T, S>) {
+        if (key.id == id) return
+        release()
+        ref = client.getInfiniteQuery(key)
+        id = key.id
+    }
+
+    fun release() {
+        ref?.close()
+        ref = null
+        id = null
+    }
+
+    override fun onRetained() = Unit
+
+    override fun onEnteredComposition() = Unit
+
+    override fun onExitedComposition() = Unit
+
+    override fun onRetired() = release()
+
+    override fun onUnused() = release()
 }
 
 /** 재시도 중(Fetching)에는 직전 오류를 지우고 로딩으로 보여 줍니다. */
