@@ -177,12 +177,12 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 
 마감: **2026-10-10(토) 14:30 KST**. 아래는 제출 준비 체크입니다. 제출 자체는 사용자가 합니다.
 
-- [ ] **R-072** 소스 코드 ZIP
-- [ ] **R-073** ZIP 안에 `.git` 포함
-- [ ] **R-074** API 키를 `local.properties`에서 읽도록 구성하고, 제출 ZIP에도 해당 파일 포함
+- [x] **R-072** 소스 코드 ZIP
+- [x] **R-073** ZIP 안에 `.git` 포함
+- [x] **R-074** API 키를 `local.properties`에서 읽도록 구성하고, 제출 ZIP에도 해당 파일 포함
 - [ ] **R-075** 제출에 사용한 API 키를 전형 종료 전까지 폐기하지 않음
-- [ ] **R-076** ZIP에서 모든 `build/`, `.gradle/` 제외
-- [ ] **R-077** APK 포함. Debug APK 허용
+- [x] **R-076** ZIP에서 모든 `build/`, `.gradle/` 제외
+- [x] **R-077** APK 포함. Debug APK 허용
 - [ ] **R-078** README 포함: 빌드 방법, 사용 프레임워크, 구조, 주요 구현 포인트(원문 요구), 선택 이유·실제 검증 결과·한계, AI 활용 시 활용 작업·검증 방법·직접 판단해 바꾼 부분
 - [x] **R-079** **선택**: 3분 이내 시연 영상
 - [ ] **R-080** GitHub 저장소명·설명·문서 등 저장소 콘텐츠에 회사명 미포함
@@ -192,7 +192,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [x] **R-081** 실제 API 키가 Git 현재 파일·전체 이력·문서·로그에 없는지 확인
 - [ ] **R-082** ZIP에 포함될 `.git/config` 및 remote URL에 자격증명이 없는지 사용자 확인
 - [ ] **R-083** 최종 키 설정·민감정보 포함 여부·제출 대상은 사용자가 직접 확인
-- [ ] **R-084** 압축을 새 디렉터리에 풀고 빌드 및 APK 설치 확인
+- [x] **R-084** 압축을 새 디렉터리에 풀고 빌드 및 APK 설치 확인
 
 비공개 저장소도 비밀정보 저장소가 아닙니다. local.properties는 Git에서 제외하되, 제출용 ZIP에는 요구에 맞게 별도로 넣습니다. 일반 `git archive`만으로는 `.git`이나 무시된 local.properties가 포함되지 않으므로 제출 형식 검증이 필요합니다.
 
@@ -278,19 +278,19 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-069 | 구현 완료 | 통과 | `BookSearchNavHostTest` retain 은퇴 3건, `SearchQueryRetentionTest`, TC-40b·85 | 없음 |
 | R-070 | 구현 완료 | 통과 | TC-70a·70b(미저장 도서), TC-32(저장 도서) | 없음 |
 | R-071 | 구현 완료 | 통과 | `FavoriteWriterTest` 화면 취소 후 완료·직렬 실행, TC-71 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음(정책) |
-| R-072 | 미착수 | 미검증 | 없음 | 제출 ZIP 생성 |
-| R-073 | 미착수 | 미검증 | 없음 | 제출 ZIP 생성 후 확인 |
-| R-074 | 구현 완료 | 미검증 | `local.properties`에서 키를 읽고 Git에서는 제외(`.gitignore`) | 제출 ZIP에 포함됐는지 확인 |
+| R-072 | 구현 완료 | 통과 | 2026-10-08 `scripts/make-submission-zip.sh`로 만든 `book-search-android.zip`(약 22MB). 작업 트리가 깨끗하고 키가 있을 때만 만들며, `assembleDebug` 후 저장소를 복사해 압축 | 제출 직전 마지막 커밋으로 다시 생성 |
+| R-073 | 구현 완료 | 통과 | ZIP에 `.git` 포함. 압축을 푼 폴더에서 `git log`가 최신 커밋을 가리키고 `git status`에 변경 없음, `git fsck` 오류 없음 | 없음 |
+| R-074 | 구현 완료 | 통과 | `local.properties`에서 키를 읽고 Git에서는 제외(`.gitignore`). ZIP 루트에 `local.properties` 포함. 압축을 푼 폴더에서 키 값은 `local.properties`와 APK에만 있고 `.git` 객체에는 0건(값은 출력하지 않음) | `local.properties`의 `sdk.dir`은 제출자 경로이므로 다른 환경에서는 Android Studio가 고치거나 직접 수정 |
 | R-075 | 해당 없음 | 미검증 | 없음 | 사용자 확인 |
-| R-076 | 미착수 | 미검증 | 없음 | 제출 ZIP 생성 후 확인 |
-| R-077 | 미착수 | 미검증 | `assembleDebug` 성공 | 제출 ZIP에 APK 포함 |
+| R-076 | 구현 완료 | 통과 | `unzip -l`에서 `build/`·`.gradle/`·`.kotlin/`·`.idea/` 경로 0건. 압축을 푼 폴더에서도 해당 디렉터리 없음 | 없음 |
+| R-077 | 구현 완료 | 통과 | ZIP 루트에 `app-debug.apk` 포함. 이 APK를 실기기에 설치해 검색 요청이 200으로 응답하고 결과가 표시됨 | 없음 |
 | R-078 | 진행 | 미검증 | README 갱신(2026-10-08) | 최종 제출 전 사용자 검토 |
-| R-079 | 구현 완료 | 통과 | `demo.mp4`, 1분 42초(`ffprobe` 101.7초), 720x1560 H.264, 약 4MB. 2026-10-08 SM-S936N에서 `adb shell screenrecord`로 녹화. 커밋 `71cdf67` debug 빌드. 검색·페이지네이션·정렬, 즐겨찾기 추가·해제, 즐겨찾기 정렬·검색·가격 필터, 오프라인 오류와 재시도, 회전, 다크 모드 포함 | 저장소에는 넣지 않고(`.gitignore`) 제출 ZIP 루트에 넣음. ZIP 포함 확인은 R-072와 함께 |
+| R-079 | 구현 완료 | 통과 | `demo.mp4`, 1분 42초(`ffprobe` 101.7초), 720x1560 H.264, 약 4MB. 2026-10-08 SM-S936N에서 `adb shell screenrecord`로 녹화. 커밋 `71cdf67` debug 빌드. 검색·페이지네이션·정렬, 즐겨찾기 추가·해제, 즐겨찾기 정렬·검색·가격 필터, 오프라인 오류와 재시도, 회전, 다크 모드 포함 | 저장소에는 넣지 않고(`.gitignore`) 제출 ZIP 루트에 넣음(R-072 ZIP에서 확인) |
 | R-080 | 진행 | 미검증 | 저장소명 `book-search-android` | 회사명 포함 여부는 사용자 확인 |
 | R-081 | 해당 없음 | 통과 | 2026-10-08 `local.properties`의 키 값으로 `git log -p --all`과 `git grep`, 문서를 검색해 0건(값은 출력하지 않음). OkHttp 로그는 Authorization을 가림 | 제출 직전 다시 확인 |
-| R-082 | 해당 없음 | 미검증 | `git remote -v`가 자격증명 없는 HTTPS URL임을 확인 | 사용자 확인 |
+| R-082 | 해당 없음 | 미검증 | `git remote -v`가 자격증명 없는 HTTPS URL임을 확인. `.git/config`에 credential·token·extraheader 항목 없음, `.git/hooks`에는 기본 sample만 있음 | 사용자 확인 |
 | R-083 | 해당 없음 | 미검증 | 없음 | 사용자 확인 |
-| R-084 | 미착수 | 미검증 | 없음 | ZIP 압축 해제 후 빌드·설치 |
+| R-084 | 구현 완료 | 통과 | 새 디렉터리에 압축을 풀고 Launcher JVM 17로 `./gradlew --no-build-cache --no-configuration-cache assembleDebug` 성공(작업 271개 모두 실행). ZIP의 APK를 SM-S936N에 설치해 실행·검색 확인 | 없음 |
 | R-085 | 구현 완료 | 통과 | `BookSearchBackStackTest` 6건, `BookSearchNavHostTest`(두 손가락 동시 탭 포함), TC-18·85 | 없음 |
 | R-086 | 구현 완료 | 통과 | TC-86(키 없는 worktree 빌드·설치, 키 미설정 안내, 요청 0건, 즐겨찾기 정상), `KakaoBookServiceTest` 키 누락 | 없음 |
 | R-087 | 구현 완료 | 통과 | TC-09, `BookDetailPresenterTest` | 없음 |

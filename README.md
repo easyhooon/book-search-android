@@ -29,6 +29,14 @@ Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하�
 
 키가 없어도 빌드와 설치는 됩니다. 이때 검색 화면은 키 설정 안내를 보여 주고 요청을 보내지 않으며, 즐겨찾기는 그대로 동작합니다.
 
+### 제출 ZIP 구성
+
+`scripts/make-submission-zip.sh`로 만듭니다. 저장소 전체와 `.git`에 더해, Git에서 제외한 다음 파일이 루트에 들어 있습니다. `build/`·`.gradle/` 등 빌드 산출물은 넣지 않았습니다.
+
+- `local.properties`: 제출용 API 키. `sdk.dir`은 제출자 환경의 경로라서, 다른 경로라면 Android Studio에서 프로젝트를 열 때 바뀌거나 직접 고쳐야 합니다.
+- `app-debug.apk`: debug APK. `adb install app-debug.apk`로 바로 설치할 수 있습니다.
+- `demo.mp4`: 시연 영상(1분 42초)
+
 ### 빌드 환경
 
 | 항목 | 버전 |
