@@ -70,16 +70,39 @@ ViewModel·Repository·UseCase 계층은 두지 않았습니다. 화면 상태�
 ## 구조
 
 ```text
-app                 Activity, Metro AppGraph, Navigation 3 백스택·탭, retain 엔트리 decorator
-core:model          도서 모델, ID 규칙, 페이징 규칙, 가격 필터, 즐겨찾기 정렬 (순수 Kotlin)
-core:network        Retrofit 서비스, 인증 interceptor, DTO
-core:database       Room DB, 즐겨찾기 DAO·엔티티
-core:data           Soil key(검색 InfiniteQuery, 즐겨찾기 Subscription), 즐겨찾기 쓰기, 오류 분류
-core:ui             테마, 도서 카드·표지·상태 컴포넌트, 검색어 입력·정렬 메뉴, 즐겨찾기 토글
-core:testing        Presenter 테스트 도구 (테스트 전용)
-feature:search      검색 화면과 Presenter
-feature:favorites   즐겨찾기 화면과 Presenter
-feature:detail      상세 화면과 Presenter
+book-search-android
+├── app                          Activity, Metro AppGraph, Navigation 3 백스택·탭, retain 엔트리 decorator
+│   ├── MainActivity.kt
+│   ├── AppGraph.kt              앱 의존성 그래프 (Soil 클라이언트, 이미지 로더)
+│   ├── initializer/             App Startup으로 debug 빌드에만 Timber 등록
+│   └── navigation/
+│       ├── BookSearchNavHost.kt                 탭·백스택과 NavDisplay 연결
+│       ├── BookSearchBackStack.kt               두 탭 루트를 유지하는 백스택 규칙
+│       ├── ListDetailSceneStrategy.kt           840dp 이상 2-pane
+│       └── RetainedValuesStoreNavEntryDecorator.kt  엔트리 단위 retain 수명
+├── core
+│   ├── model                    도서 모델, ID 규칙, 페이징 규칙, 가격 필터, 즐겨찾기 정렬 (순수 Kotlin)
+│   ├── network                  Retrofit 서비스, 인증 interceptor, DTO
+│   ├── database                 Room DB, 즐겨찾기 DAO·엔티티
+│   ├── data                     Soil key와 즐겨찾기 쓰기, 오류 분류
+│   │   ├── SearchBooksQueryKey.kt         검색 InfiniteQuery
+│   │   ├── FavoriteSubscriptionKeys.kt    즐겨찾기 Room Subscription
+│   │   ├── FavoriteMutationKey.kt         화면별 즐겨찾기 Mutation
+│   │   └── FavoriteWriter.kt              앱 범위 직렬 쓰기
+│   ├── ui                       테마, 도서 카드·표지·상태 컴포넌트, 검색어 입력·정렬 메뉴, 즐겨찾기 토글
+│   └── testing                  Presenter 테스트 도구 (테스트 전용)
+├── feature                      화면마다 같은 구성
+│   ├── search                   검색 (+ SearchQueryHolder: 다른 탭에 있는 동안 쿼리 유지)
+│   ├── favorites                즐겨찾기 (+ PriceFilterSheet: 가격 필터)
+│   └── detail                   상세
+│       ├── *NavKey.kt           직렬화되는 내비게이션 키
+│       ├── *ScreenGraph.kt      엔트리 단위 Metro 그래프 (retain)
+│       ├── *ScreenRoot.kt       엔트리 등록, Soil·Room 값을 Presenter에 연결
+│       ├── *Presenter.kt        화면 상태와 이벤트 처리 (@Composable)
+│       └── *Screen.kt           UI
+├── build-logic                  모듈 공통 Gradle convention 플러그인
+├── docs                         요구사항, 구현 사양, 아키텍처, QA, AI 활용 기록
+└── scripts                      제출 ZIP 생성 스크립트
 ```
 
 모듈 의존 방향과 데이터 흐름은 [아키텍처](docs/ARCHITECTURE.md)에 그림으로 정리했습니다.
