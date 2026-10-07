@@ -33,6 +33,8 @@ internal class AndroidFeatureConventionPlugin : Plugin<Project> {
                 testImplementation(libs.molecule.runtime)
                 testImplementation(libs.soil.query.test)
                 testImplementation(libs.robolectric)
+                testImplementation(libs.androidx.compose.ui.test.junit4)
+                testImplementation(libs.androidx.compose.ui.test.manifest)
             }
         }
     }
