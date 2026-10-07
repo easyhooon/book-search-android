@@ -51,16 +51,21 @@ class BookSearchBackStackTest {
     }
 
     @Test
-    fun `맨 위가 같은 도서의 상세면 다시 쌓지 않는다`() {
+    fun `맨 위가 상세면 같은 도서든 다른 도서든 다시 쌓지 않는다`() {
         val stack = stackOf(SearchNavKey)
 
         stack.openDetail(bookA)
         stack.openDetail(bookA)
         assertEquals(listOf(SearchNavKey, BookDetailNavKey(bookA)), stack)
 
+        // 두 카드를 동시에 누른 경우입니다.
         stack.openDetail(bookB)
-        assertEquals(listOf(SearchNavKey, BookDetailNavKey(bookA), BookDetailNavKey(bookB)), stack)
+        assertEquals(listOf(SearchNavKey, BookDetailNavKey(bookA)), stack)
         assertTrue(stack.isDetailOnTop)
+
+        stack.navigateBack()
+        stack.openDetail(bookB)
+        assertEquals(listOf(SearchNavKey, BookDetailNavKey(bookB)), stack)
     }
 
     @Test

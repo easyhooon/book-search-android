@@ -36,10 +36,12 @@ fun MutableList<NavKey>.selectTab(tab: TopLevelTab) {
     add(tab.rootKey)
 }
 
-/** 같은 도서의 상세가 이미 맨 위에 있으면 중복 진입을 막습니다. */
+/**
+ * 상세는 목록에서만 엽니다. 상세 화면에는 다른 도서로 가는 경로가 없으므로, 맨 위가 이미 상세면
+ * 두 손가락으로 두 카드를 동시에 눌렀거나 전환 중에 다른 카드를 누른 경우로 보고 무시합니다.
+ */
 fun MutableList<NavKey>.openDetail(book: Book) {
-    val top = lastOrNull()
-    if (top is BookDetailNavKey && top.book.id == book.id) return
+    if (isDetailOnTop) return
     add(BookDetailNavKey(book))
 }
 

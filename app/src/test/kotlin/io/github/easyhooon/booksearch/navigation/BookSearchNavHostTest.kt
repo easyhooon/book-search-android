@@ -17,6 +17,7 @@ import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -64,12 +65,19 @@ class BookSearchNavHostTest {
     }
 
     @Composable
-    private fun TrackedScreen(name: String, onOpenDetail: (() -> Unit)? = null) {
+    private fun TrackedScreen(
+        name: String,
+        onOpenOther: (() -> Unit)? = null,
+        onOpenDetail: (() -> Unit)? = null,
+    ) {
         retain(name) { Tracked(name) }
         Column(Modifier.testTag(name)) {
             Text(name)
             if (onOpenDetail != null) {
                 Button(onClick = onOpenDetail, modifier = Modifier.testTag("$name-open")) { Text("open") }
+            }
+            if (onOpenOther != null) {
+                Button(onClick = onOpenOther, modifier = Modifier.testTag("$name-open-other")) { Text("other") }
             }
         }
     }
@@ -81,7 +89,12 @@ class BookSearchNavHostTest {
                 BookSearchNavHost(
                     backStack = backStack,
                     entryProvider = entryProvider<NavKey> {
-                        entry<SearchNavKey> { TrackedScreen("search") { backStack.openDetail(testBook("a")) } }
+                        entry<SearchNavKey> {
+                            TrackedScreen(
+                                name = "search",
+                                onOpenOther = { backStack.openDetail(testBook("c")) },
+                            ) { backStack.openDetail(testBook("a")) }
+                        }
                         entry<FavoritesNavKey> { TrackedScreen("favorites") { backStack.openDetail(testBook("b")) } }
                         entry<BookDetailNavKey>(clazzContentKey = { it.book.id }) { TrackedScreen("detail-${it.book.id}") }
                     },
@@ -128,6 +141,24 @@ class BookSearchNavHostTest {
         composeRule.onNodeWithTag("search").assertIsDisplayed()
         assertEquals(listOf("search", "favorites"), created)
         assertEquals(emptyList<String>(), retired)
+    }
+
+    @Test
+    fun `두 카드를 두 손가락으로 동시에 누르면 먼저 뗀 쪽의 상세 하나만 쌓인다`() {
+        launch()
+        val first = composeRule.onNodeWithTag("search-open").fetchSemanticsNode().boundsInRoot.center
+        val second = composeRule.onNodeWithTag("search-open-other").fetchSemanticsNode().boundsInRoot.center
+
+        composeRule.onRoot().performTouchInput {
+            down(0, first)
+            down(1, second)
+            up(0)
+            up(1)
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(listOf(SearchNavKey, BookDetailNavKey(testBook("a"))), backStack.toList())
+        assertEquals(listOf("search", "detail-a"), created)
     }
 
     @Test
