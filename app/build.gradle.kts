@@ -8,6 +8,15 @@ plugins {
 android {
     defaultConfig {
         applicationId = "io.github.easyhooon.booksearch"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // 키가 없어도 빌드는 성공해야 하므로 빈 문자열을 넣고, 검색 화면에서 키 없음 상태로 안내합니다.
+        val kakaoRestApiKey = localProperty("KAKAO_REST_API_KEY").orEmpty()
+        buildConfigField("String", "KAKAO_REST_API_KEY", "\"$kakaoRestApiKey\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -32,11 +41,14 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
+    implementation(libs.androidx.compose.material.icons.core)
+    implementation(libs.androidx.compose.runtime.retain)
     implementation(libs.soil.query.core)
     implementation(libs.soil.query.compose)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
 
+    testImplementation(projects.core.testing)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose 테마가 화면을 그리기 전 창 배경만 맞춥니다. -->
+    <style name="Theme.BookSearch" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
