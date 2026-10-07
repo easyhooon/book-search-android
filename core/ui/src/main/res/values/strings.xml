@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="info_unavailable">정보 없음</string>
+    <string name="title_unavailable">제목 없음</string>
+    <string name="price_unavailable">가격 정보 없음</string>
+    <string name="no_discount">할인 없음</string>
+    <string name="favorite_add">즐겨찾기 추가</string>
+    <string name="favorite_remove">즐겨찾기 해제</string>
+    <string name="book_cover_description">%1$s 표지</string>
+    <string name="cover_unavailable">표지 없음</string>
+    <string name="retry">다시 시도</string>
+    <string name="error_missing_api_key">API 키가 설정되지 않았습니다. local.properties의 KAKAO_REST_API_KEY를 확인해 주세요.</string>
+    <string name="error_unauthorized">API 키 인증에 실패했습니다. 키가 올바른지 확인해 주세요.</string>
+    <string name="error_network">네트워크 연결을 확인한 뒤 다시 시도해 주세요.</string>
+    <string name="error_temporary">서버가 일시적으로 응답하지 않습니다. 잠시 후 다시 시도해 주세요.</string>
+    <string name="error_generic">요청을 처리하지 못했습니다.</string>
+    <string name="error_favorite_write">즐겨찾기를 저장하지 못했습니다.</string>
+</resources>
