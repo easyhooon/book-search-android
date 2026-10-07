@@ -278,7 +278,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 | R-069 | 구현 완료 | 통과 | `BookSearchNavHostTest` retain 은퇴 3건, `SearchQueryRetentionTest`, TC-40b·85 | 없음 |
 | R-070 | 구현 완료 | 통과 | TC-70a·70b(미저장 도서), TC-32(저장 도서) | 없음 |
 | R-071 | 구현 완료 | 통과 | `FavoriteWriterTest` 화면 취소 후 완료·직렬 실행, TC-71 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음(정책) |
-| R-072 | 구현 완료 | 통과 | 2026-10-08 `scripts/make-submission-zip.sh`로 만든 `book-search-android.zip`(약 22MB). 작업 트리가 깨끗하고 키가 있을 때만 만들며, `assembleDebug` 후 저장소를 복사해 압축 | 제출 직전 마지막 커밋으로 다시 생성 |
+| R-072 | 구현 완료 | 통과 | 2026-10-08 `scripts/make-submission-zip.sh`로 만든 `book-search-android.zip`(약 24.7MB: debug APK 13.7MB, 시연 영상 2개 5.7MB, `.git` 3.4MB, 나머지 소스·문서). 작업 트리가 깨끗하고 키가 있을 때만 만들며, `assembleDebug` 후 저장소를 복사해 압축 | 제출 직전 마지막 커밋으로 다시 생성. Gmail 직접 첨부 한도(인코딩 포함 25MB, 파일 약 18MB)를 넘어 Drive 링크로 보냄. 링크 공유 권한은 제출자가 확인 |
 | R-073 | 구현 완료 | 통과 | ZIP에 `.git` 포함. 압축을 푼 폴더에서 `git log`가 최신 커밋을 가리키고 `git status`에 변경 없음, `git fsck` 오류 없음 | 없음 |
 | R-074 | 구현 완료 | 통과 | `local.properties`에서 키를 읽고 Git에서는 제외(`.gitignore`). ZIP 루트에 `local.properties` 포함. 압축을 푼 폴더에서 키 값은 `local.properties`와 APK에만 있고 `.git` 객체에는 0건(값은 출력하지 않음) | 없음. ZIP의 `local.properties`에는 `sdk.dir`을 빼서 제출자 경로가 다른 환경의 SDK 탐색을 막지 않게 함(`sdk.dir` 없이 `ANDROID_HOME`만으로 빌드 성공 확인) |
 | R-075 | 해당 없음 | 미검증 | 없음 | 사용자 확인 |
