@@ -165,7 +165,7 @@ Presenter는 `rememberInfiniteQuery`를 `key(queryKey.id)` 그룹 안에서 호�
 
 1. 화면이 `setFavorite(book, favorite)`로 도서와 목표 상태를 전달합니다. upsert에 도서 정보 전체가 필요하므로 ID만 넘기지 않습니다.
 2. Mutation이 앱 싱글턴 `FavoriteWriter`를 호출해 Room에 저장/삭제합니다. 해당 도서 버튼만 비활성화하고 명령 순서를 보장합니다.
-3. Subscription이 Room Flow를 관찰해 검색·즐겨찾기·상세가 같은 확정 상태를 반영합니다.
+3. Subscription이 Room Flow를 관찰해 검색·즐겨찾기·상세가 같은 확정 상태를 반영합니다. Soil은 구독자가 없는 keepAliveTime 동안 받은 값을 버리므로 즐겨찾기 Subscription key는 keepAliveTime을 0으로 두어, 화면에 돌아올 때 Room이 현재 값부터 다시 내보내게 합니다([SPEC](SPEC.md) 8절).
 4. 실패하면 성공 안내 없이 기존 확정 상태를 유지합니다.
 
 Soil Mutation의 scope는 마지막 구독자가 사라지고 keepAliveTime(기본 5초)이 지나면 취소됩니다. 그래서 실제 쓰기는 Metro 앱 그래프가 소유한 `ApplicationScope`(SupervisorJob)에서 `async`로 시작하고 하나의 `Mutex`로 직렬화하며, Mutation은 결과를 기다리기만 합니다. 화면 이동은 허용합니다. 근거는 [SPEC](SPEC.md) 8절에 있습니다.

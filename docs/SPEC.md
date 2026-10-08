@@ -243,6 +243,7 @@ Soil 1.0.0-alpha15 소스 기준입니다.
 - `MutationRef.mutate`는 랑데부 채널로 명령을 보냅니다. actor가 앞 명령을 처리 중이면 send가 대기하고, 그동안 호출 코루틴이 취소되면 명령은 전달되지 않습니다.
 - actor는 명령을 하나씩 처리하므로 같은 Mutation key 안에서는 순서가 보장됩니다.
 - 마지막 구독자가 사라지면 `keepAliveTime`(기본 5초) 뒤 Mutation의 scope가 취소됩니다. Mutation 안에서 직접 DB에 쓰면 화면 pop 후 완료 보장은 약 5초뿐입니다.
+- Subscription의 Flow는 replay 없이 `shareIn(WhileSubscribed(keepAliveTime))`으로 공유됩니다. 구독자가 없는 keepAliveTime 동안에도 Flow를 수집하지만 그 사이 값은 버리고, 그 안에 다시 구독하면 이미 도는 Flow에 붙어 새 값이 오지 않습니다.
 
 ### 결정
 
@@ -258,6 +259,7 @@ Soil 1.0.0-alpha15 소스 기준입니다.
 - `FavoriteIdsSubscriptionKey`: `Flow<Set<String>>`, 검색 카드 하트
 - `FavoriteBooksSubscriptionKey`: `Flow<List<Book>>`, 즐겨찾기 탭
 - `FavoriteBookSubscriptionKey(id)`: `Flow<Book?>`, 상세
+- 세 key 모두 `keepAliveTime = 0`으로 둡니다. 화면이 구독을 놓으면 Room Flow 수집도 멈추고, 다시 구독하면 Room이 현재 값부터 내보냅니다. 기본값이면 상세에 들어간 직후 저장하고 돌아온 목록이 저장 전 하트로 남습니다(`FavoriteSubscriptionKeysTest`, TC-71). 비용은 돌아올 때마다 Room을 한 번 다시 조회하는 것입니다.
 
 Room Entity는 `id`(PK), 원본 `isbn`, 5절의 도서 필드, `savedAt`으로 구성합니다. 목록 필드는 TypeConverter로 저장합니다. DB 버전은 1이고 `exportSchema = true`로 스키마 JSON을 저장소에 둡니다.
 
