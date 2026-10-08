@@ -85,7 +85,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 
 - [x] **R-031** 목록과 상세의 즐겨찾기 변경 결과 일치
 - [x] **R-032** 저장된 도서는 네트워크 없이도 로컬 정보로 상세 표시
-- [ ] **R-033** 누락된 표지·저자·날짜·가격 등으로 화면이 깨지지 않음
+- [x] **R-033** 누락된 표지·저자·날짜·가격 등으로 화면이 깨지지 않음
 - [x] **R-087** 상세에서 즐겨찾기를 해제해도 표시 중인 도서 정보가 사라지지 않음
 
 오프라인에서 텍스트 정보는 DB로 보장하고, 이미지 캐시가 없으면 대체 이미지를 보여 줍니다. 원본 표지까지 보장하려면 이미지 파일 저장을 추가 설계해야 합니다.
@@ -95,7 +95,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 ### 원문에 명시된 요구
 
 - [x] **R-034** 불안정한 네트워크에서도 앱 사용 가능
-- [ ] **R-035** 태블릿·폴더블 대응
+- [x] **R-035** 태블릿·폴더블 대응
 - [x] **R-036** 대규모 앱의 기능 중 하나라는 전제로 구조 설계
 - [x] **R-037** 여러 개발자가 확장할 수 있는 책임·의존성 경계 설명
 - [x] **R-038** 구현한 설계의 선택 이유와 단점 설명
@@ -162,7 +162,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [x] **R-065** 가격 경계값, 0원/가격 없음, 잘못된 범위, 필터 결과 0개
 - [x] **R-066** 오프라인 즐겨찾기·상세 및 앱 재시작 후 복원
 - [x] **R-067** Room 쓰기 실패, 즐겨찾기 연타, 쓰기 중 뒤로 가기
-- [ ] **R-068** 화면 회전, 창 크기 변경, 폴더블 펼침·접힘
+- [x] **R-068** 화면 회전, 창 크기 변경, 폴더블 펼침·접힘
 - [x] **R-069** 상세 진입·복귀 시 상태 유지, 백스택 제거 시 작업 정리
 - [x] **R-070** 시스템 프로세스 재생성 후 최소 상태 복원, 저장·미저장 도서 모두 상세를 네트워크 없이 다시 표시
 - [x] **R-071** 저장 중 화면 pop 이후 쓰기 완료·도서별 순서 확인. 프로세스 종료 시 미완료 쓰기 보장과 구분
@@ -194,8 +194,8 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 
 공통 증거는 아래 두 가지이며 표에서는 이름만 적습니다.
 
-- **자동 테스트**: 2026-10-08, 커밋 `71cdf67`, macOS 26.3.1, Launcher JVM 17.0.10, Gradle daemon JVM 21. `./gradlew assembleDebug testDebugUnitTest test --continue` 성공, 110개 통과(실패·오류·건너뜀 0). 표의 테스트 클래스 이름은 이 실행에 포함됩니다.
-- **TC-NN**: [QA](QA.md)의 실기기 시나리오. SM-S936N, Android 17(API 37), 커밋 `22855b3` debug 빌드, 2026-10-07~08. 이후 커밋 `71cdf67`은 테스트만 추가해 앱 동작이 같습니다.
+- **자동 테스트**: 2026-10-08, 커밋 `fe1b21d`, macOS 27.0.1, Launcher JVM 21.0.10, Gradle daemon JVM 21. `./gradlew assembleDebug testDebugUnitTest test --continue` 성공, 121개 통과(실패·오류·건너뜀 0). 표의 테스트 클래스 이름은 이 실행에 포함됩니다.
+- **TC-NN**: [QA](QA.md)의 실기기 시나리오. 2026-10-08, 휴대폰 SM-S936N(Android 17), 태블릿 SM-X236N(Android 16), 폴더블 Galaxy Z Fold2 SM-F916N(Android 13)에서 커밋 `e52f12c`·`fe1b21d` debug 빌드로 실행. 시나리오별 빌드는 QA 실행 환경에 있습니다.
 
 "부분 통과"·"조건부"는 요구 전체를 확인하지 못해 체크하지 않은 항목입니다.
 
@@ -233,15 +233,15 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-030 | 구현 완료 | 통과 | TC-08·09·71, `BookDetailPresenterTest` | 없음 |
 | R-031 | 구현 완료 | 통과 | TC-09(상세 해제 후 목록 반영) | 없음 |
 | R-032 | 구현 완료 | 통과 | TC-32(비행기 모드) | 없음 |
-| R-033 | 구현 완료 | 부분 통과 | `BookMapperTest`(누락·음수 가격, 빈 문자열), `BookFormattersTest`(빈 값 null), 표지 없음 대체 이미지 | 필드가 빠진 실제 도서를 기기에서 확인 못 함 |
+| R-033 | 구현 완료 | 통과 | TC-33(실제 도서: 저자·출판사·출간일·소개·표지 없음, 정가 0·판매가 -1), `BookMapperTest`(누락·음수 가격, 빈 문자열), `BookFormattersTest`(빈 값 null) | 정가 0원은 정책상 유효 가격으로 "0원" 표시(QA 제약) |
 | R-034 | 구현 완료 | 통과 | TC-20·40·40b·42·32·70a | 재연결 시 자동 재요청 없음, 재시도 버튼으로 복구([SPEC](SPEC.md) 9절) |
-| R-035 | 구현 완료 | 부분 통과 | TC-35(1600x2560·320dpi, 레일·다열 그리드), TC-68c(창 크기 변경), 태블릿 SM-X710 2-pane TC-90~94, `BookSearchNavHostTest` 좁은/넓은 창·2-pane | 폴더블 기기·AVD 접힘·펼침 미실행 |
+| R-035 | 구현 완료 | 통과 | 태블릿 SM-X236N TC-35(세로 레일)·TC-90~94(가로 2-pane), Galaxy Z Fold2 TC-68d~68h(접힘·펼침·중간 접힘), `BookSearchNavHostTest` 좁은/넓은 창·2-pane | Fold2 안쪽 화면은 compact 너비라 폴더블 2-pane은 없음. 테이블톱 전용 배치 없음 |
 | R-036 | 구현 완료 | 통과 | 9개 모듈 구성과 빌드, [ARCHITECTURE](ARCHITECTURE.md) 8절 | 없음 |
 | R-037 | 구현 완료 | 통과 | [ARCHITECTURE](ARCHITECTURE.md) 8절, [SPEC](SPEC.md) 2절 모듈 책임 | 없음 |
 | R-038 | 구현 완료 | 통과 | [ARCHITECTURE](ARCHITECTURE.md) 9절(선택 이유와 비용) | 없음 |
 | R-039 | 구현 완료 | 통과 | [ARCHITECTURE](ARCHITECTURE.md) 9절 미채택 대안(ViewModel, Repository, Paging 3) | 없음 |
 | R-040 | 구현 완료 | 통과 | TC-40·40b·42, `SearchPresenterTest` 추가 오류 후 재시도 | 없음 |
-| R-041 | 구현 완료 | 통과 | TC-41·68a·68c·94, `BookSearchNavHostTest` 구성 변경·2-pane↔1-pane, `FavoritesScreenTest` | 없음 |
+| R-041 | 구현 완료 | 통과 | TC-41·68a·68e·68f·94, `BookSearchNavHostTest` 구성 변경·2-pane↔1-pane, `FavoritesScreenTest` | 없음 |
 | R-042 | 구현 완료 | 통과 | `RetainedValuesStoreNavEntryDecorator`, `BookSearchNavHostTest` retain 수명 4건 | 없음 |
 | R-043 | 구현 완료 | 통과 | `FavoriteBookDaoTest`, TC-26 | 없음 |
 | R-044 | 구현 완료 | 통과 | `FavoriteSubscriptionKeysTest`, TC-27 | 없음 |
@@ -251,7 +251,7 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-048 | 구현 완료 | 통과 | Metro 1.4.5 그래프 빌드, Coil 3.6.3 표지 표시(TC-02) | 없음 |
 | R-049 | 구현 완료 | 통과 | Kotlin 2.4.0 + Metro 1.4.5 빌드. 이미지 로더는 인증 interceptor 없는 클라이언트(`AppGraph.provideImageLoader`), interceptor는 API 클라이언트에만(`NetworkFactory`). 로그는 Authorization을 가림 | 없음 |
 | R-050 | 구현 완료 | 통과 | `SearchBooksQueryKeyTest`, `SearchPagingTest`, `SearchPresenterTest` | 없음 |
-| R-051 | 구현 완료 | 통과 | `FavoriteSubscriptionKeysTest`, `FavoriteWriterTest`, Presenter 테스트 | 없음 |
+| R-051 | 구현 완료 | 통과 | `FavoriteSubscriptionKeysTest`(구독을 놓은 사이의 쓰기가 재구독 때 반영됨 포함), `FavoriteWriterTest`, Presenter 테스트, TC-71 | 없음 |
 | R-052 | 구현 완료 | 통과 | `ErrorKindTest`, `KakaoBookServiceTest`, `FavoriteTogglerTest`(취소를 실패로 알리지 않음) | 없음 |
 | R-053 | 구현 완료 | 통과 | `settings.gradle.kts`의 9개 모듈 + 테스트 전용 `core:testing` | 없음 |
 | R-054 | 구현 완료 | 통과 | TC-54·70b(`am kill` 후 복원) | 실제 메모리 압박으로 인한 종료는 만들지 않음 |
@@ -259,7 +259,7 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-056 | 구현 완료 | 통과 | `SearchPagingTest`, `SearchPresenterTest`(20개 마지막 페이지, 같은 페이지 재시도, 중복 ID) | 없음 |
 | R-057 | 구현 완료 | 통과 | `FavoriteBookDaoTest` 4건(파일 DB 재열기 포함), 쓰기 실패는 `FavoriteWriterTest`·Fake 주입 | 없음 |
 | R-058 | 구현 완료 | 통과 | `BookSearchNavHostTest` 9건, `FavoritesScreenTest`, `SearchQueryRetentionTest` | 없음 |
-| R-059 | 구현 완료 | 통과 | [QA](QA.md)에 실기기 시나리오와 자동 테스트를 나눠 기록 | 폴더블 고유 상태는 미실행(R-035, R-068) |
+| R-059 | 구현 완료 | 통과 | [QA](QA.md)에 실기기 시나리오와 자동 테스트를 나눠 기록. 회전·폴더블·프로세스 종료는 실기기(TC-41·68a~68h·70b) | 실제 메모리 압박 종료는 만들지 않음 |
 | R-060 | 구현 완료 | 통과 | [QA](QA.md) 자동 테스트 절, [ARCHITECTURE](ARCHITECTURE.md) 10절 | 없음 |
 | R-061 | 구현 완료 | 통과 | `SearchPresenterTest`, TC-06·19 | 없음 |
 | R-062 | 구현 완료 | 통과 | `SearchPresenterTest`(20개 + is_end), `SearchPagingTest` | 없음 |
@@ -268,10 +268,10 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-065 | 구현 완료 | 통과 | `PriceFilterTest`, `PriceInputTest`, `FavoritesPresenterTest`, TC-13 | 없음 |
 | R-066 | 구현 완료 | 통과 | TC-26·32·70a·70b | 없음 |
 | R-067 | 구현 완료 | 통과 | 쓰기 실패: Fake 주입. 연타: TC-67, `FavoriteTogglerTest`. 쓰기 중 뒤로: TC-71, `FavoriteWriterTest` | 기기 Room 쓰기 실패는 미재현 |
-| R-068 | 구현 완료 | 부분 통과 | 회전 TC-41·68a·94(태블릿 2-pane↔1-pane), 창 크기 변경 TC-68c, 다크 모드 TC-68b | 폴더블 접힘·펼침 미실행 |
+| R-068 | 구현 완료 | 통과 | 회전 TC-41·68a·94(태블릿 2-pane↔1-pane), 폴더블 접힘·펼침·중간 접힘 TC-68d~68g(`cmd device_state`), 손으로 접고 펴기 TC-68h, 다크 모드 TC-68b | 중간 접힘은 adb로만 확인 |
 | R-069 | 구현 완료 | 통과 | `BookSearchNavHostTest` retain 은퇴 3건, `SearchQueryRetentionTest`, TC-40b·85 | 없음 |
 | R-070 | 구현 완료 | 통과 | TC-70a·70b(미저장 도서), TC-32(저장 도서) | 없음 |
-| R-071 | 구현 완료 | 통과 | `FavoriteWriterTest` 화면 취소 후 완료·직렬 실행, TC-71 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음(정책) |
+| R-071 | 구현 완료 | 통과 | `FavoriteWriterTest` 화면 취소 후 완료·직렬 실행, `FavoriteSubscriptionKeysTest` 재구독 반영, TC-71 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음(정책) |
 | R-072 | 구현 완료 | 통과 | 2026-10-08 `scripts/make-submission-zip.sh`로 `book-search-android.zip`(약 24.8MiB: APK 13.1MiB, 영상 2개 5.4MiB, `.git` 3.3MiB) 생성. 깨끗한 작업 트리·키 있을 때만 생성 | 제출 직전 마지막 커밋으로 재생성. 메일 첨부 한도 초과로 Drive 링크 전달, 공유 권한은 제출자 확인 |
 | R-073 | 구현 완료 | 통과 | 압축 푼 폴더에서 `git log` 최신 커밋, `git status` 변경 없음, `git fsck` 오류 없음 | 없음 |
 | R-074 | 구현 완료 | 통과 | 키는 `local.properties`에서 읽고 `.gitignore`로 제외, ZIP 루트에 포함. 키 값은 `local.properties`·APK에만 있고 `.git` 객체 0건. ZIP의 파일에는 `sdk.dir` 없음(`ANDROID_HOME`만으로 빌드 확인) | 없음 |

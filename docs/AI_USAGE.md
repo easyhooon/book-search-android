@@ -10,7 +10,7 @@
 | 사양 확정 | Claude Code (Claude Opus 5.5) | 설계 문서의 암묵지 검토, 원문 재량 영역의 기본안을 [SPEC](SPEC.md)으로 정리, 모듈 분리·Soil–Retrofit 연결 확인 |
 | 구현·검증 | Claude Code (Claude Opus 5.5) | 개발자의 명시적 요청으로 맡음. 지정 버전 호환성 확인과 멀티 모듈 Gradle 구성, 9개 모듈의 코드와 테스트, 요구사항 기반 실기기 QA(adb 조작), 시연 영상 녹화·편집, 제출 ZIP 스크립트, 검증 문서·README·이 문서 작성 |
 
-개발자는 기술 선택과 제품 정책 결정, AI 결과 검토와 수정 지시, 실제 키 설정과 최종 제출 패키지 확인을 맡았습니다. 실제 폴더블 기기 확인은 아직 하지 않았습니다.
+개발자는 기술 선택과 제품 정책 결정, AI 결과 검토와 수정 지시, 실제 키 설정과 최종 제출 패키지 확인을 맡았습니다. 폴더블 확인에는 개발자가 Galaxy Z Fold2 실기기를 연결하고 직접 접고 폈습니다.
 
 작업 원칙은 다음과 같습니다.
 
@@ -73,6 +73,7 @@
 | 상세 중복 진입 | 흔치 않은 경우로 보고 우선순위를 낮춤 | 두 손가락 동시 탭으로 상세가 두 번 쌓인 이전 경험을 근거로 대응 요청 | Compose 테스트로 동시 탭 확인 |
 | QA | 자동 테스트와 일부 기기 확인으로 완료 판단 | 요구사항 기반 QA 시나리오를 실기기에서 전부 실행해 통과시킬 것 | [QA](QA.md) |
 | 2-pane | 선택 항목이라 미구현 | 남은 일정에 구현하고 태블릿 실기기 확인과 시연 영상 추가 요청 | [SPEC](SPEC.md) 10절, [QA](QA.md) TC-90~94, `demo-tablet.mp4` |
+| 폴더블 확인 | 폴더블 에뮬레이터(Pixel Fold AVD)로 확인 | 실제 Galaxy Z Fold2로 확인하고, 직접 접고 펴기도 포함 | [QA](QA.md) TC-68d~68h |
 | 화면 상태 구조 | 공식 retain 문서의 저장·retain 데이터 분리 기준을 정리하고, 화면 Store 계층은 간접 경로와 코드량을 늘린다고 검토해 보고 | 서버 상태(Soil·Room)와 화면 상태를 나누되 Store 없이 Presenter가 공식 문서 방식대로 직접 소유. 읽기 쉬운 코드를 우선 | [ARCHITECTURE](ARCHITECTURE.md) "화면 상태 소유", `SearchStateRestorationTest`, `FavoritesStateLifecycleTest` |
 
 ## 단계 요약
@@ -86,7 +87,7 @@
 | 2-pane | list-detail 구현, 태블릿 실기기 QA, 시연 영상 | 남은 일정에 구현 요청 | [SPEC](SPEC.md) 10절, [QA](QA.md) TC-90~94 |
 | 제출 준비 | R-ID별 검증 기록, README, 시연 영상, 제출 ZIP 스크립트 | ZIP에 `.git`·`local.properties`·APK·영상 포함, 최종 패키지 직접 확인 | [REQUIREMENTS](REQUIREMENTS.md) 9절, R-072~077·084 |
 
-제출 전 AI가 실행한 실기기 QA로 문제를 찾았고, 회귀 테스트(`SearchQueryRetentionTest`, `FavoritesScreenTest`)를 추가했습니다. 자동 테스트 결과와 QA 결과는 [README](../README.md) 검증 결과 절과 [QA](QA.md)에 있습니다.
+제출 전 AI가 실행한 실기기 QA로 문제를 찾았고, 회귀 테스트(`SearchQueryRetentionTest`, `FavoritesScreenTest`, `FavoriteSubscriptionKeysTest`의 재구독 반영)를 추가했습니다. 자동 테스트 결과와 QA 결과는 [README](../README.md) 검증 결과 절과 [QA](QA.md)에 있습니다.
 
 ## 참고 코드와 보안
 
