@@ -28,6 +28,7 @@ import soil.query.core.Marker
 import soil.query.core.getOrThrow
 import soil.query.core.isNone
 import java.time.LocalDate
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Room → Subscription key → Soil 클라이언트 연결을 확인합니다.
@@ -55,6 +56,9 @@ class FavoriteSubscriptionKeysTest {
     }
 
     private val dao get() = database.favoriteBookDao()
+
+    // Room Flow는 실제 스레드에서 방출되므로 Turbine의 실제 시간 대기(기본 3초)가 Robolectric 첫 초기화에 걸리지 않게 늘립니다.
+    private val ROOM_TIMEOUT = 30.seconds
 
     private fun book(id: String, title: String = "제목 $id") = Book(
         id = id,
@@ -92,7 +96,7 @@ class FavoriteSubscriptionKeysTest {
     @Test
     fun `ID 구독은 빈 집합에서 시작해 추가와 해제를 반영한다`() = runTest {
         val writer = writer()
-        subscribe(DefaultFavoriteIdsSubscriptionKey(dao)).test {
+        subscribe(DefaultFavoriteIdsSubscriptionKey(dao)).test(timeout = ROOM_TIMEOUT) {
             assertEquals(emptySet<String>(), awaitItem())
 
             writer.write(FavoriteCommand(book("a"), favorite = true))
@@ -109,7 +113,7 @@ class FavoriteSubscriptionKeysTest {
     fun `목록 구독은 저장한 도서를 같은 값으로 돌려준다`() = runTest {
         val writer = writer()
         val saved = book("a", title = "코틀린 인 액션")
-        subscribe(DefaultFavoriteBooksSubscriptionKey(dao)).test {
+        subscribe(DefaultFavoriteBooksSubscriptionKey(dao)).test(timeout = ROOM_TIMEOUT) {
             assertEquals(emptyList<Book>(), awaitItem())
 
             writer.write(FavoriteCommand(saved, favorite = true))
@@ -124,7 +128,7 @@ class FavoriteSubscriptionKeysTest {
     fun `상세 구독은 해당 도서만 따라가고 해제하면 null이 된다`() = runTest {
         val writer = writer()
         val target = book("a")
-        subscribe(DefaultFavoriteBookSubscriptionKeyFactory(dao).create("a")).test {
+        subscribe(DefaultFavoriteBookSubscriptionKeyFactory(dao).create("a")).test(timeout = ROOM_TIMEOUT) {
             assertNull(awaitItem())
 
             writer.write(FavoriteCommand(book("b"), favorite = true))
@@ -148,7 +152,7 @@ class FavoriteSubscriptionKeysTest {
             backgroundScope.launch { ref.join() }
         }
 
-        second.state.filterNot { it.reply.isNone }.map { it.reply.getOrThrow() }.test {
+        second.state.filterNot { it.reply.isNone }.map { it.reply.getOrThrow() }.test(timeout = ROOM_TIMEOUT) {
             assertEquals(emptySet<String>(), awaitItem())
             writer.write(FavoriteCommand(book("a"), favorite = true))
             awaitValue(setOf("a"))
@@ -156,4 +160,5 @@ class FavoriteSubscriptionKeysTest {
             cancelAndIgnoreRemainingEvents()
         }
     }
+
 }
