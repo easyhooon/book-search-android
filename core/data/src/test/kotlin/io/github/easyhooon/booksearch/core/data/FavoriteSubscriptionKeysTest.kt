@@ -9,10 +9,17 @@ import app.cash.turbine.test
 import io.github.easyhooon.booksearch.core.database.BookSearchDatabase
 import io.github.easyhooon.booksearch.core.model.Book
 import io.github.easyhooon.booksearch.core.model.FavoriteCommand
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNot
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -161,4 +168,33 @@ class FavoriteSubscriptionKeysTest {
         }
     }
 
+    @Test
+    fun `구독을 놓은 사이의 쓰기는 다시 구독할 때 반영된다`() = runBlocking {
+        // Soil은 구독자가 없어도 keepAliveTime 동안 Flow를 수집하면서 그 값을 버립니다. 이 시간은 실제 시간으로 흐르므로
+        // 가상 시간이 바로 지나가는 runTest 대신 실제 시간 scope에서, keepAliveTime 기본값(5초)보다 짧게 기다립니다.
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val client = SwrCachePlus(scope)
+            val writer = FavoriteWriter(dao, ApplicationCoroutineScope(scope))
+            val key = DefaultFavoriteIdsSubscriptionKey(dao)
+
+            // 검색 화면이 구독하다가 상세로 이동하며 구독을 놓습니다.
+            val leaving = client.getSubscription(key, Marker.None)
+            val collecting = scope.launch { leaving.resume() }
+            withTimeout(ROOM_TIMEOUT) { leaving.state.first { !it.reply.isNone } }
+            collecting.cancel()
+            leaving.close()
+
+            // 상세에서 저장한 뒤 곧바로 돌아와 다시 구독합니다.
+            writer.write(FavoriteCommand(book("a"), favorite = true))
+            val returning = client.getSubscription(key, Marker.None)
+            scope.launch { returning.resume() }
+            withTimeout(2.seconds) {
+                returning.state.first { !it.reply.isNone && it.reply.getOrThrow() == setOf("a") }
+            }
+            returning.close()
+        } finally {
+            scope.cancel()
+        }
+    }
 }
