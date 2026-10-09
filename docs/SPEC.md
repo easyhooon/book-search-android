@@ -287,8 +287,8 @@ Room Entity는 `id`(PK), 분리된 `isbn10`·`isbn13`, 그 밖의 도서 필드,
 
 ## 10. 적응형 레이아웃
 
-- 탐색 UI는 `NavigationSuiteScaffold`를 씁니다. compact에서는 하단 바, medium·expanded에서는 내비게이션 레일입니다. 1-pane에서 상세가 맨 위면 `layoutType = NavigationSuiteType.None`으로 탐색 UI를 숨깁니다. 2-pane에서는 목록이 함께 보이므로 레일을 유지합니다.
-- 목록은 `LazyVerticalGrid(GridCells.Adaptive(minSize = 360.dp))`로 구성합니다. compact에서는 1열이고 넓은 창에서는 2~3열이 됩니다. 검색창과 필터 영역은 최대 너비를 제한합니다.
+- 탐색 UI는 `NavigationSuiteScaffold`의 기본 적응형 규칙을 따릅니다. 창 너비나 높이가 compact이거나 테이블톱 자세이면 하단 바, 그 밖에는 내비게이션 레일입니다. 1-pane에서 상세가 맨 위면 `layoutType = NavigationSuiteType.None`으로 탐색 UI를 숨깁니다. 2-pane에서는 목록이 함께 보이므로 탐색 UI를 유지합니다.
+- 목록은 `LazyVerticalGrid(GridCells.Adaptive(minSize = 360.dp))`로 구성합니다. 좌우 패딩 각 16dp와 열 간격 12dp를 포함하면 그리드에 주어진 폭이 약 764dp 이상일 때 2열이 됩니다. 너비 compact 창과 아래의 400dp 목록 칸은 1열입니다. 720~839dp 창도 레일이 있으면 남는 폭이 부족해 1열이지만, 높이가 compact이거나 테이블톱 자세여서 하단 바가 표시되고 추가 가로 inset을 뺀 목록 폭이 충분하면 2열이 가능합니다. 840dp 이상에서는 2-pane의 목록 폭을 400dp로 제한하므로 현재 앱 경로에서는 3열로 늘어나지 않습니다. 검색창과 필터 영역은 최대 너비를 제한합니다.
 - 회전·창 크기 변경 후에도 입력값, 확정 조건, 스크롤 위치, 상세 엔트리가 유지됩니다.
 
 ### list-detail 2-pane
