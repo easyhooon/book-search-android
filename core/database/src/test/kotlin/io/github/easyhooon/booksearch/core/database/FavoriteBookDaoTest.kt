@@ -6,6 +6,9 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.cash.turbine.test
 import io.github.easyhooon.booksearch.core.model.Book
+import io.github.easyhooon.booksearch.core.model.FavoriteListRules
+import io.github.easyhooon.booksearch.core.model.FavoriteSort
+import io.github.easyhooon.booksearch.core.model.PriceFilter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -64,6 +67,30 @@ class FavoriteBookDaoTest {
             dao.deleteById("isbn10:8996991341")
             assertNull(awaitItem())
         }
+    }
+
+    @Test
+    fun `기존 저장 정가를 보존하면서 가격 필터 적용 여부에 따라 도서를 유지하거나 제외한다`() = runTest {
+        val prices = listOf(null, Int.MIN_VALUE, -1, 0, 1, Int.MAX_VALUE)
+        prices.forEachIndexed { index, price ->
+            // 기존 DB에 이미 존재하는 값을 API 매핑 없이 직접 넣어 읽기 경로를 검증합니다.
+            dao.upsert(book(index.toString()).toFavoriteEntity(savedAt = index.toLong()).copy(price = price))
+        }
+        val restored = dao.observeAll().first().map { it.toBook() }
+        assertEquals(prices.size, restored.size)
+        restored.forEach { book ->
+            val originalPrice = prices[book.id.toInt()]
+            assertEquals(originalPrice, book.price)
+            assertEquals(originalPrice?.takeIf { it > 0 }, book.availablePrice)
+            assertEquals(originalPrice, book.toFavoriteEntity(savedAt = 0L).price)
+        }
+        val unfiltered = FavoriteListRules.apply(restored, "", FavoriteSort.TitleAscending, PriceFilter.None)
+        assertEquals(prices.indices.map(Int::toString).toSet(), unfiltered.map { it.id }.toSet())
+        val filtered = FavoriteListRules.apply(restored, "", FavoriteSort.TitleAscending, PriceFilter(min = 0))
+        assertEquals(setOf("4", "5"), filtered.map { it.id }.toSet())
+        val zeroOnly = FavoriteListRules.apply(restored, "", FavoriteSort.TitleAscending, PriceFilter(max = 0))
+        assertEquals(emptyList<Book>(), zeroOnly)
+        assertEquals(prices.size, dao.observeAll().first().size)
     }
 
     @Test

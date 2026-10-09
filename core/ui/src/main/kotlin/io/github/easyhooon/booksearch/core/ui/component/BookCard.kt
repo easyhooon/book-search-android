@@ -44,6 +44,7 @@ fun BookCard(
     selected: Boolean = false,
 ) {
     val unavailable = stringResource(R.string.info_unavailable)
+
     Card(
         onClick = onClick,
         modifier = modifier
@@ -100,7 +101,8 @@ private fun InfoLine(text: String) {
 /** 정가를 기본으로 보여 주고, 할인 판매가가 있으면 정가에 취소선을 긋고 함께 표시합니다. */
 @Composable
 fun PriceLine(book: Book, modifier: Modifier = Modifier) {
-    val price = book.price
+    val price = book.availablePrice
+
     if (price == null) {
         Text(
             text = stringResource(R.string.price_unavailable),
@@ -110,7 +112,9 @@ fun PriceLine(book: Book, modifier: Modifier = Modifier) {
         )
         return
     }
+
     val discounted = book.discountedPrice
+
     Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = BookFormatters.price(price),

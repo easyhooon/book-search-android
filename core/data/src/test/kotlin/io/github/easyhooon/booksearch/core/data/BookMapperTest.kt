@@ -9,10 +9,19 @@ import java.time.LocalDate
 class BookMapperTest {
 
     @Test
-    fun `음수 가격은 가격 정보 없음이고 0은 유지한다`() {
-        val book = DocumentResponse(price = -1, salePrice = 0, isbn = "9788996991342").toBook()
-        assertNull(book.price)
-        assertEquals(0, book.salePrice)
+    fun `정가 원본을 보존하고 양수만 표시 가능한 가격으로 구분한다`() {
+        for (price in listOf(null, Int.MIN_VALUE, -1, 0, 1, Int.MAX_VALUE)) {
+            val book = DocumentResponse(price = price, isbn = "9788996991342").toBook()
+            assertEquals(price, book.price)
+            assertEquals(price?.takeIf { it > 0 }, book.availablePrice)
+        }
+    }
+
+    @Test
+    fun `판매가 매핑은 기존 정책을 유지한다`() {
+        assertEquals(0, DocumentResponse(price = 10_000, salePrice = 0).toBook().salePrice)
+        assertNull(DocumentResponse(price = 10_000, salePrice = -1).toBook().salePrice)
+        assertNull(DocumentResponse(price = 10_000).toBook().salePrice)
     }
 
     @Test

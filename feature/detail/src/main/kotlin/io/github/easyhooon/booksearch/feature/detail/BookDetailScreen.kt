@@ -54,13 +54,14 @@ fun BookDetailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val userMessage = uiState.userMessage?.let { stringResource(it.resId) }
     val eventSink by rememberUpdatedState(uiState.eventSink)
+    val book = uiState.book
+
     LaunchedEffect(userMessage) {
         if (userMessage != null) {
             snackbarHostState.showSnackbar(userMessage)
             eventSink(BookDetailEvent.UserMessageShown)
         }
     }
-    val book = uiState.book
 
     Scaffold(
         modifier = modifier,
@@ -111,6 +112,7 @@ fun BookDetailScreen(
 @Composable
 private fun BookDetailBody(book: Book, modifier: Modifier = Modifier) {
     val unavailable = stringResource(CoreUiR.string.info_unavailable)
+
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         BookCover(
             thumbnailUrl = book.thumbnailUrl,
@@ -132,7 +134,7 @@ private fun BookDetailBody(book: Book, modifier: Modifier = Modifier) {
         InfoRow(stringResource(R.string.detail_isbn), listOfNotNull(book.isbn13, book.isbn10).joinToString(" / ").ifBlank { unavailable })
         InfoRow(
             stringResource(R.string.detail_price),
-            book.price?.let(BookFormatters::price) ?: stringResource(CoreUiR.string.price_unavailable),
+            book.availablePrice?.let(BookFormatters::price) ?: stringResource(CoreUiR.string.price_unavailable),
         )
         InfoRow(
             stringResource(R.string.detail_sale_price),

@@ -33,8 +33,8 @@ internal fun DocumentResponse.toBook(): Book {
         translators = translators.map { it.trim() }.filter { it.isNotEmpty() },
         publisher = publisher.trim(),
         publishedDate = parsePublishedDate(datetime),
-        // 누락·음수는 가격 정보 없음으로 보고, 0은 유효한 가격으로 유지합니다.
-        price = price?.takeIf { it >= 0 },
+        // 원본 정가를 보존하고 표시·필터에서 0 이하를 가격 정보 없음으로 다룹니다.
+        price = price,
         salePrice = salePrice?.takeIf { it >= 0 },
         thumbnailUrl = thumbnail.trim(),
         contents = contents.trim(),

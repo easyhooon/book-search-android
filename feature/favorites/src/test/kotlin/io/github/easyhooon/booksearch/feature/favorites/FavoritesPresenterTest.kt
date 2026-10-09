@@ -124,7 +124,7 @@ class FavoritesPresenterTest {
             awaitIds(listOf("a", "k"))
 
             send(FavoritesEvent.PriceFilterApplied(PriceFilter(min = 0, max = null)))
-            awaitIds(listOf("c", "a", "k"))
+            awaitIds(listOf("a", "k"))
 
             send(FavoritesEvent.PriceFilterCleared)
             val cleared = awaitIds(listOf("c", "g", "a", "k"))
