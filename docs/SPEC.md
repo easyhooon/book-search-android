@@ -42,7 +42,7 @@ feature끼리는 서로 참조하지 않습니다. feature는 `onBookClick(book)
 
 ### 의존성 버전
 
-지정 빌드 조합(Gradle 9.4.1, AGP 9.2.1, Kotlin 2.4.0, KSP 2.3.10, compileSdk 37)에서 `./gradlew assembleDebug testDebugUnitTest`가 성공하는 버전으로 고정했습니다. 참고 조합은 DroidKaigi 2026(`300a81bc`)이며, Android 전용이므로 JetBrains Compose Multiplatform 대신 AndroidX 아티팩트를 씁니다.
+빌드 조합은 Gradle 9.4.1, AGP 9.2.1, Kotlin 2.4.0, KSP 2.3.10, compileSdk 37로 고정합니다. daemon JDK 21에서 APK 빌드와 자동 테스트 통과([QA](QA.md)). 참고 조합은 DroidKaigi 2026이며, Android 전용 AndroidX 아티팩트를 사용합니다. 참고 코드의 고정 버전은 [ARCHITECTURE](ARCHITECTURE.md) 9절에 있습니다.
 
 | 라이브러리 | 고정 버전 |
 | --- | --- |
@@ -72,7 +72,7 @@ feature끼리는 서로 참조하지 않습니다. feature는 `onBookClick(book)
 
 ## 3. API 키와 빌드 구성
 
-- Android SDK Platform 37을 설치하고 `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`로 SDK 위치를 설정해야 합니다. ZIP에는 개인 기기의 SDK 경로를 포함하지 않습니다. SDK 위치가 없는 명령줄 환경에서는 빌드가 실패합니다. Android Studio는 프로젝트를 열 때 `sdk.dir`를 생성할 수 있지만, 최종 ZIP의 새 프로젝트 열기·Sync는 아직 검증하지 않았습니다.
+- Android SDK Platform 37을 설치하고 `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`로 SDK 위치를 설정해야 합니다. ZIP에는 개인 기기의 SDK 경로를 포함하지 않습니다. SDK 위치가 없는 명령줄 환경에서는 빌드가 실패합니다. 설치된 SDK 37·JDK 21과 캐시가 있는 환경에서 ZIP을 새 폴더에 풀어 Android Studio의 `sdk.dir` 자동 생성·Sync·APK 빌드 확인 완료. 새 PC의 JDK 자동 설치와 캐시 없는 빌드는 미검증입니다.
 - 키 이름은 `local.properties`의 `KAKAO_REST_API_KEY`입니다.
 - `app/build.gradle.kts`가 `local.properties`를 읽어 `BuildConfig.KAKAO_REST_API_KEY`로 주입합니다(`buildFeatures.buildConfig = true`).
 - 키가 없어도 빌드는 성공합니다. 빈 문자열을 주입하고, 검색 시 "API 키가 설정되지 않았습니다" 상태를 보여 줍니다. 즐겨찾기는 키 없이 동작합니다.
@@ -160,7 +160,7 @@ UI 가이드를 기준으로 Material 3 기본 컴포넌트로 구성합니다.
 - 정렬 규칙: 제목을 앞뒤 공백 제거 후 `java.text.Collator(Locale.KOREAN)`으로 비교합니다. 제목이 같으면 ID로 비교해 순서를 고정합니다. SQLite 기본 정렬은 쓰지 않습니다.
 - 가격 필터는 바텀시트에서 최소·최대 정가를 입력하고 "적용"으로 확정합니다. 세부 규칙은 [REQUIREMENTS](REQUIREMENTS.md)의 제품 정책 2번을 따릅니다. 입력은 숫자 키패드·숫자만·최대 9자리(Int 범위)입니다. 적용 중이면 필터 버튼에 표시하고 "초기화"를 제공합니다.
 - 이 탭에서 해제한 카드는 Room 반영과 동시에 목록에서 사라집니다. 실행 취소는 없습니다.
-- 검색·정렬·필터는 Room에서 읽은 전체 즐겨찾기 목록을 메모리에서 순수 함수로 처리합니다. 즐겨찾기는 많아야 수백 건이라고 보고 한국어 정렬과 테스트 용이성을 우선했습니다. 수천 건 이상이면 DB 질의로 옮겨야 하며 README 한계에 적습니다.
+- 검색·정렬·필터는 Room에서 읽은 전체 즐겨찾기 목록을 메모리에서 순수 함수로 처리합니다. 수백 건을 가정한 구성으로 한국어 정렬과 테스트 용이성을 우선합니다. 대량 데이터 성능은 미측정이며, 규모가 커지면 DB 질의 전환을 검토합니다.
 - 빈 상태: 즐겨찾기가 없으면 "즐겨찾기한 도서가 없습니다", 조건에 맞는 도서가 없으면 "조건에 맞는 도서가 없습니다".
 
 ### 상세 화면
@@ -303,7 +303,7 @@ Room Entity는 `id`(PK), 분리된 `isbn10`·`isbn13`, 그 밖의 도서 필드,
 - 카드 선택: 다른 도서를 누르면 상세를 교체하고(7절 표), 교체된 상세의 retain 값은 은퇴합니다. 선택된 카드는 2-pane에서만 강조합니다.
 - 뒤로 가기: `[목록, 상세]` 장면의 `previousEntries`는 `[목록]`입니다. 뒤로 가기는 상세를 닫고 안내 칸을 보여 주며, 그다음은 1-pane과 같습니다.
 - 크기 변경: 백스택은 그대로이고 장면만 다시 계산합니다. 상세가 열린 채 좁아지면 상세가 전체 화면이 되고 탐색 UI가 숨겨지며, 넓어지면 목록과 나란히 보입니다.
-- 테스트: `BookSearchBackStackTest`(교체 규칙), `BookSearchNavHostTest`(넓은 창 qualifier에서 두 칸·레일·retain 은퇴·안내 칸·크기 변경), 실기기 태블릿 수동 확인.
+- 테스트: `BookSearchBackStackTest`(교체 규칙), `BookSearchNavHostTest`(넓은 창 qualifier에서 두 칸·레일·retain 은퇴·안내 칸·크기 변경) 통과. 태블릿 수동 QA는 이전 빌드의 참고 결과이며 현재 APK 재검증은 미실행.
 
 ## 11. 테스트 환경
 
@@ -317,13 +317,13 @@ Room Entity는 `id`(PK), 분리된 `isbn10`·`isbn13`, 그 밖의 도서 필드,
 | Compose 내비게이션·적응형·retain 수명 | Robolectric Compose UI 테스트 | JVM 단위 테스트 |
 | 프로세스 재생성·폴더블·실제 API | 실기기 QA | 기기·절차·확인 한계를 기록 |
 
-Robolectric을 쓰는 7개 모듈의 `robolectric.properties`는 현재 `sdk=36`을 사용합니다. SDK 36 이상은 JDK 21에서만 실행되고, 테스트 JVM에 `--add-exports=java.base/jdk.internal.access=ALL-UNNAMED`가 없으면 `IllegalAccessException ... does not export jdk.internal.access`로 실패하므로 convention plugin의 `unitTests.all`에서 넣습니다.
+Robolectric을 쓰는 7개 모듈의 `robolectric.properties`는 현재 `sdk=36`을 사용합니다. SDK 36 테스트는 JDK 21을 요구합니다. convention plugin의 `unitTests.all`에서 테스트 JVM에 `--add-exports=java.base/jdk.internal.access=ALL-UNNAMED`를 전달합니다.
 
 실행 명령은 `./gradlew testDebugUnitTest test`(Android 모듈과 순수 Kotlin `core:model`)입니다.
 
 ## 12. 제출 패키지
 
-- ZIP 기본 파일명은 `book-search-android.zip`이며, 내부 APK 이름은 `app-debug.apk`입니다.
-- ZIP에는 `.git`과 `local.properties`를 포함하고, 모든 `build/`, `.gradle/`, `.idea/`, `.kotlin/` 디렉터리를 제외합니다. 생성 스크립트는 `scripts/make-submission-zip.sh`입니다.
-- APK는 사용자 키로 빌드한 `./gradlew assembleDebug` 산출물입니다. ZIP을 새 디렉터리에 풀어 `assembleDebug`가 다시 성공하는지 확인합니다.
+- 현재 제출 ZIP 이름은 `book-search-android-submission.zip`이며, 내부 APK 이름은 `app-debug.apk`입니다. 생성 스크립트의 기본 출력 이름은 `book-search-android.zip`입니다.
+- ZIP에는 `.git`과 `local.properties`를 포함하고, 모든 `build/`, `.gradle/`, `.idea/`, `.kotlin/` 디렉터리를 제외합니다. `scripts/make-submission-zip.sh`는 패키지 생성 도구이며, 실행 전 포함할 APK·영상이 제출 대상 파일인지 별도로 확인해야 합니다.
+- APK는 Kakao API 키가 설정된 debug 빌드의 `./gradlew assembleDebug` 산출물입니다. 압축 해제본의 Studio APK 빌드와 포함 APK의 Galaxy 설치·실행을 확인했으며, 환경과 범위는 [QA](QA.md)에 기록합니다.
 - 메일 발송, 실제 키 확인, 최종 첨부는 사용자가 합니다.

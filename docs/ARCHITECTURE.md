@@ -41,7 +41,7 @@ Metro는 의존성을 연결할 뿐 화면 상태나 데이터의 기준을 대�
 
 ### Metro factory와 retain 연결
 
-DroidKaigi 2026의 `TimetableScreenGraph`·`TimetableNavEntryProvider`를 참고했습니다. `@GraphExtension.Factory`의 구현은 Metro 컴파일러가 생성하고, 엔트리는 factory로 만든 그래프를 retain으로 유지합니다.
+DroidKaigi 2026의 `TimetableScreenGraph`·`TimetableNavEntryProvider`를 참고합니다. `@GraphExtension.Factory`의 구현은 Metro 컴파일러가 생성하고, 엔트리는 factory로 만든 그래프를 retain으로 유지합니다.
 
 ```kotlin
 entry<BookDetailNavKey>(clazzContentKey = { it.book.id }) { key ->
@@ -58,8 +58,8 @@ entry<BookDetailNavKey>(clazzContentKey = { it.book.id }) { key ->
 
 다섯 정책은 사용자의 도서 앱 사례 참고 방향에 따라 정했으며, 공개 자료로 확인한 범위만 근거로 씁니다.
 
-- [교보문고 웹 검색](https://search.kyobobook.co.kr/search?keyword=Search&pbcm=Search): 가격 범위 입력·적용 UI를 참고했습니다. 정가/판매가 기준은 확인하지 않았고, 정가 기준과 0 이하·누락 정가를 정보 없음으로 처리하는 규칙은 이 앱의 방어적 정책입니다. [Kakao 가격 필드](https://developers.kakao.com/docs/ko/daum-search/dev-guide#search-book)가 0을 무료 또는 정보 없음으로 정의한다고 단정하지 않습니다.
-- [리디 위시리스트 안내](https://ridihelp.ridibooks.com/support/solutions/articles/154000207731): 상세에서 관심 도서를 추가하고 MY에서 확인하는 흐름만 참고했습니다. DB 쓰기 scope·순서·pop 처리의 근거는 아닙니다.
+- [교보문고 웹 검색](https://search.kyobobook.co.kr/search?keyword=Search&pbcm=Search): 가격 범위 입력·적용 UI를 참고합니다. 외부 서비스의 정가/판매가 기준은 미확인이며, 정가 기준과 0 이하·누락 정가를 정보 없음으로 처리하는 규칙은 이 앱의 방어적 정책입니다. [Kakao 가격 필드](https://developers.kakao.com/docs/ko/daum-search/dev-guide#search-book)가 0을 무료 또는 정보 없음으로 정의한다고 단정하지 않습니다.
+- [리디 위시리스트 안내](https://ridihelp.ridibooks.com/support/solutions/articles/154000207731): 상세에서 관심 도서를 추가하고 MY에서 확인하는 흐름을 참고합니다. DB 쓰기 scope·순서·pop 처리의 근거는 아닙니다.
 - 검색 버튼/IME 확정은 설계 선택이고, 복원 범위는 [Android 상태 저장 지침](https://developer.android.com/develop/ui/compose/state-saving)에 맞춘 기술 정책입니다. 다른 앱의 검색 트리거나 프로세스 종료 동작을 확인한 결과가 아닙니다.
 - 2-pane은 [list-detail 가이드](https://developer.android.com/develop/ui/compose/layouts/adaptive/list-detail)의 가능한 패턴이며 필수 레이아웃이 아닙니다.
 
@@ -73,7 +73,7 @@ entry<BookDetailNavKey>(clazzContentKey = { it.book.id }) { key ->
 
 ### retain 엔트리 수명
 
-Navigation 3 1.2.0에는 retain용 엔트리 decorator가 없어 `RetainedValuesStoreNavEntryDecorator`를 직접 만들었습니다.
+Navigation 3 1.2.0의 엔트리에 retain을 연결하기 위해 `RetainedValuesStoreNavEntryDecorator`를 직접 구현합니다.
 
 - `retainRetainedValuesStoreRegistry()`의 `LocalRetainedValuesStoreProvider(entry.contentKey)`로 엔트리마다 retain 저장소를 나눕니다.
 - 엔트리가 pop되면 `registry.clearChild(contentKey)`로 저장소를 비우고, retain한 객체의 `RetainObserver.onRetired`가 불립니다.
@@ -109,7 +109,7 @@ retain은 구성 변경(회전, 다크 모드, 창 크기 변경)에서 객체�
 | 하단 바/레일, 그리드 열 수, 1-pane/2-pane | `currentWindowAdaptiveInfo()`·`GridCells.Adaptive`를 매번 계산. 2-pane은 장면 전략만 바꾸고 백스택은 유지 | 새 크기에 맞춤. 열린 상세 유지 | 같음 |
 | 키보드 표시 중 레이아웃 | `windowSoftInputMode="adjustResize"` | 해당 없음 | 해당 없음 |
 
-자동 테스트는 `BookSearchNavHostTest`의 "구성 변경으로 Activity가 다시 만들어져도 백스택과 retain 값이 유지된다"이고, 실기기 확인은 [QA](QA.md)의 TC-41·68(회전, 다크 모드, 창 크기)과 TC-54·70(`am kill` 후 복원)입니다.
+구성 변경 시 백스택·retain 유지는 `BookSearchNavHostTest`로 확인합니다. [QA](QA.md)의 TC-41·68(회전·다크 모드·창 크기), TC-54·70(`am kill` 후 복원)은 기존 빌드의 관찰이며 현재 APK 재검증은 미실행입니다.
 
 ### 화면 이벤트 전달
 
@@ -211,7 +211,7 @@ Soil에는 Retrofit 전용 모듈이 없지만, 범용 key의 suspend fetch에�
 | Presenter | Molecule + Turbine + coroutines-test(`core:testing`) | 상태 방출·이벤트·경합 |
 | 실제 호스트와 UI | Compose/내비게이션·기기 검증 | retain 수명, pop 정리, 회전·크기 변화·프로세스 복원 |
 
-Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행합니다. `MainDispatcherRule`로 Main 디스패처를 교체하고 Fake `FavoriteWriter`와 테스트용 Soil key를 `SwrClientPlus`에 연결합니다. ViewModel과 SavedStateHandle은 사용하지 않습니다. Molecule 테스트는 호스트의 retained store나 백스택 수명을 증명하지 않으므로, retain 수명은 `BookSearchNavHostTest`가 Robolectric `ActivityScenario`로 앱 NavHost를 띄워 확인합니다. Activity 재생성 확인을 프로세스 종료 복원 검증으로 표현하지 않으며, 후자는 실기기 `am kill`로 확인합니다([QA](QA.md)).
+Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행합니다. `MainDispatcherRule`로 Main 디스패처를 교체하고 Fake `FavoriteWriter`와 테스트용 Soil key를 `SwrClientPlus`에 연결합니다. ViewModel과 SavedStateHandle은 사용하지 않습니다. Molecule 테스트는 호스트의 retained store나 백스택 수명을 증명하지 않으므로, retain 수명은 `BookSearchNavHostTest`가 Robolectric `ActivityScenario`로 앱 NavHost를 띄워 확인합니다. Activity 재생성·saveable 복원과 실제 프로세스 종료를 구분합니다. `am kill`을 사용하는 기기 복원 절차는 [QA](QA.md)에 있으며 현재 APK 재검증은 미실행입니다.
 
 ## 8. 코드 경계와 확장
 
@@ -265,7 +265,7 @@ Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행
 
 [Soil 공식 동기](https://docs.soil-kt.com/guide/what-is-soil#motivation)(Compose-first 데이터 접근, 서버 상태, stale-while-revalidate)를 ViewModel 부정이나 모든 앱의 Repository 제거 근거로 쓰지 않습니다.
 
-[사용자의 Soil 적용 글](https://velog.io/@mraz3068/Soil-Apply)에서 Ktor로 바꾼 것은 그 구현의 선택이라 이번 Retrofit 선택을 뒤집지 않습니다. 그 글의 로컬 Mutation/Subscription을 Repository로 되돌린 경험은, DroidKaigi 2026으로 우려가 해소되었다는 사용자 판단에 따라 선택을 뒤집는 조건이 아니라 Room 단일 기준·구독 수명·반영 순서 테스트에 활용합니다. 당시의 느린 반영을 Soil 결함으로 단정하지 않습니다. [DroidKaigi 비교 글](https://velog.io/@mraz3068/Same-Soil-Different-Architecture-DroidKaigi-2025-2026-App-Comparison)은 Root/Presenter 분리의 참고이며 Presenter를 단순 전달 계층으로 만들라는 규칙이 아닙니다. [retain 글](https://velog.io/@mraz3068/Compose-Retain-API)은 유지와 프로세스 복원의 구분을 참고하되 당시 preview 용어를 현재 API 계약으로 쓰지 않습니다.
+[Soil 적용 글](https://velog.io/@mraz3068/Soil-Apply)은 데이터 연결과 구독 수명의 검토 자료, [DroidKaigi 비교 글](https://velog.io/@mraz3068/Same-Soil-Different-Architecture-DroidKaigi-2025-2026-App-Comparison)은 Root/Presenter 분리의 참고 자료입니다. 이 앱은 Retrofit·Room 단일 상태 기준을 유지하고 구독 수명·반영 순서를 테스트합니다. [retain 글](https://velog.io/@mraz3068/Compose-Retain-API)은 객체 유지와 프로세스 복원의 구분을 참고하며, 사용 중인 API의 계약은 실제 버전 소스로 확인합니다.
 
 ### 참고 저장소에서 가져온 것과 가져오지 않은 것
 
@@ -280,7 +280,7 @@ Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행
 | DroidKaigi/conference-app-2025 ([`07b46e65`](https://github.com/DroidKaigi/conference-app-2025/tree/07b46e65)) | Soil typed-key·Mutation key·Presenter 방향 교차 확인 | Rin `rememberRetained`, Navigation 3 alpha, Ktor + Ktorfit, 커스텀 KSP 생성기 |
 | 사용자의 retain PoC | 없음(코드 미확인) | 구현 근거로 쓰지 않음 |
 
-참고 앱의 패턴을 이 앱의 라이브러리 버전과 데이터 수명에 맞춰 검증했습니다. retain decorator는 Navigation 3 1.2.0과 `compose-runtime-retain` 1.12.1 API로 다시 작성해 `BookSearchNavHostTest`로 확인하고, 탭 전환·상세 중복은 [SPEC](SPEC.md) 7절 규칙과 `BookSearchBackStackTest`로 막습니다. 두 DroidKaigi 앱 모두 즐겨찾기를 Room에 두지 않으므로 Soil과 Room의 연결은 이 앱이 직접 확장해 테스트한 부분입니다.
+retain decorator는 Navigation 3 1.2.0과 `compose-runtime-retain` 1.12.1 API를 사용하며 `BookSearchNavHostTest`로 검증합니다. 탭 전환·상세 중복은 [SPEC](SPEC.md) 7절 규칙과 `BookSearchBackStackTest`로 막습니다. Soil과 Room의 연결은 이 앱에서 직접 구현·테스트한 부분입니다.
 
 ### 참고한 공식 문서
 
@@ -288,8 +288,8 @@ Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행
 
 ## 10. 빌드 조합과 검증 결과
 
-지정된 Gradle 9.4.1 / AGP 9.2.1 / Kotlin 2.4.0 / KSP 2.3.10 / compileSdk 37을 그대로 씁니다. 의존성 버전은 [SPEC](SPEC.md) 2절에 고정했습니다.
+지정된 Gradle 9.4.1 / AGP 9.2.1 / Kotlin 2.4.0 / KSP 2.3.10 / compileSdk 37을 그대로 씁니다. 의존성 버전은 [SPEC](SPEC.md) 2절 기준입니다.
 
-앱의 `sourceCompatibility`·`targetCompatibility`·`jvmTarget`은 17이지만, Gradle daemon은 21입니다. Metro 1.4.5 플러그인의 실행 JVM 요구 때문에 `gradle/gradle-daemon-jvm.properties`로 21을 선택했습니다. JDK 17로 Wrapper를 실행하는 것과 전체 빌드가 JDK 17에서 실행되는 것은 다르며, 원문의 JDK 17 조건과 차이가 남습니다([SPEC](SPEC.md) 2절 "JDK 기준").
+앱의 `sourceCompatibility`·`targetCompatibility`·`jvmTarget`은 17이지만, Gradle daemon은 21입니다. Metro 1.4.5 플러그인의 실행 JVM 요구에 따라 `gradle/gradle-daemon-jvm.properties`가 21을 선택합니다. JDK 17로 Wrapper를 실행하는 것과 전체 빌드가 JDK 17에서 실행되는 것은 다르며, 원문의 JDK 17 조건과 차이가 남습니다([SPEC](SPEC.md) 2절 "JDK 기준").
 
 검증 범위·재현 절차·남은 확인은 [QA](QA.md)와 [요구사항 검증 상태](REQUIREMENTS.md)에 정리합니다. Android 모듈과 순수 JVM 모듈을 모두 확인하려면 `./gradlew assembleDebug testDebugUnitTest test --continue`로 실행합니다.

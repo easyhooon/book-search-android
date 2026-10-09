@@ -1,6 +1,6 @@
 # 요구사항 체크리스트
 
-현재 코드의 소스 확인, 자동 테스트, 실기기 검증을 구분합니다. APK 빌드·자동 테스트 140개 새 실행과 Android Studio 새 폴더 가져오기·빌드는 통과했습니다. 실기기는 확인한 범위만 기록하며, ZIP 구성·무결성·압축 해제본의 Studio 빌드도 확인했습니다.
+소스 확인·자동 테스트·실기기 검증을 구분합니다. APK 빌드·자동 테스트 140개 새 실행, ZIP 구성·무결성·압축 해제본의 Android Studio 빌드 통과. 실기기는 현재 APK에서 확인한 범위만 반영하며, 미검증·부분 확인·미충족은 따로 표시합니다.
 
 - **원문 필수**: 제공된 과제에 명시된 조건
 - **사용자 추가 필수**: 사용자가 원 과제 조건에 추가한 완료 기준
@@ -33,7 +33,7 @@
 - [ ] **R-010** 별도 설명 없이도 재현 가능한 `./gradlew assembleDebug` 성공
 - [x] **R-011** **추가 검증**: 요청 버전 조합의 호환성 확인. 충돌 시 임의 변경하지 않고 실패 로그·공식 근거·대안 기록
 
-minSdk 26, targetSdk 37과 현재 라이브러리 버전은 [구현 사양](SPEC.md) 2절에 고정했습니다.
+minSdk 26, targetSdk 37과 라이브러리 버전은 [구현 사양](SPEC.md) 2절 기준입니다.
 
 ## 2. 원격 도서 검색
 
@@ -120,9 +120,9 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [x] **R-043** **사용자 선택**: Room으로 영속 저장. 원 과제에서 Room 라이브러리를 지정한 것은 아님
 - [x] **R-044** **사용자 선택**: Room Flow를 즐겨찾기의 단일 상태 기준으로 사용
 - [x] **R-045** **사용자 선택**: 원격 통신은 Retrofit + OkHttp + kotlinx.serialization 사용
-- [x] **R-046** **권장**: MockWebServer API 계층 테스트. 구체적인 의존성 버전은 검증 후 확정
+- [x] **R-046** **권장**: MockWebServer API 계층 테스트. 의존성 버전은 [구현 사양](SPEC.md) 2절 기준
 - [x] **R-047** **사용자 선택**: Soil typed-key + InfiniteQuery로 데이터 접근·페이지네이션 구성, 단순 위임 Repository 생략
-- [x] **R-048** **사용자 선택**: Metro 의존성 주입, Coil 이미지 로딩. Coil 3는 현재 권장안
+- [x] **R-048** **사용자 선택**: Metro 의존성 주입, Coil 3.6.3 이미지 로딩
 - [x] **R-049** **설계 검증**: Metro/Kotlin 컴파일러 호환, API와 이미지 네트워크 인증 설정 분리. 구체적인 구조는 [아키텍처](ARCHITECTURE.md) 참고
 - [x] **R-050** **설계 검증**: query/sort별 key, size=20, 페이지 메타데이터·is_end 유지, 로딩·취소·재시도 동작을 테스트로 확인. 커스텀 페이지네이션과 Paging 3는 미채택 대안
 - [x] **R-051** **로컬 연결 검증**: 선택한 Soil Subscription→Room Flow / Mutation→Room 쓰기에서 Room 단일 상태 기준, 반영 순서·지연, 구독 수명·재구독을 테스트
@@ -132,7 +132,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 
 ### 제품 선택 5개의 현재 정책
 
-사용자의 도서 앱 사례 참고 방향에 따라 정했습니다. 모두 특정 앱에서 직접 관찰한 것은 아니며, 확인된 UI 사례와 이 앱의 기술 정책을 구분합니다. 근거와 한계는 [ARCHITECTURE](ARCHITECTURE.md) 9절에 있습니다.
+도서 앱의 UI 사례를 참고한 제품 정책입니다. 직접 확인한 외부 UI 사례와 이 앱의 기술 정책을 구분합니다. 근거와 한계는 [ARCHITECTURE](ARCHITECTURE.md) 9절에 있습니다.
 
 1. 검색 실행 시점: 검색 버튼 또는 키보드 IME 제출로 확정합니다. 로컬 검색에도 같은 방식을 적용합니다.
 2. 가격 필터: 정가 최소·최대 금액, 양끝 포함, 적용 버튼. 빈칸은 제한 없음, 최소 > 최대는 적용 금지. 0 이하·누락 정가는 정보 없음으로 표시하고 범위 적용 시 제외하며, 미적용 시 도서를 유지합니다. API가 0의 의미를 보장한다고 보지 않는 방어적 앱 정책입니다.
@@ -226,16 +226,16 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-023 | 구현 완료 | 기기 확인 | Galaxy 제목 오름차순·내림차순 확인, FavoritesPresenterTest·FavoriteListRulesTest | 없음 |
 | R-024 | 구현 완료 | 기기 확인 | Galaxy 최대 38,000/36,000원 적용: 범위 밖 제외·동등 경계 포함·정가0 제외. PriceFilterTest | 잘못된 최소·최대 및 빈 범위는 자동 테스트 |
 | R-025 | 구현 완료 | 기기 확인 | Galaxy 즐겨찾기 목록에서 정가 정보 없음 도서의 상세 진입 | 없음 |
-| R-026 | 구현 완료 | 최종 재검증 대기 | TC-26(`am force-stop` 후 재실행), `FavoriteBookDaoTest` 파일 DB 재열기 | 최종 검증 필요 |
+| R-026 | 구현 완료 | 부분 확인 | 복원한 기존 DB의 즐겨찾기를 Galaxy 재실행 후 표시 확인. `FavoriteBookDaoTest` 파일 DB 재열기 통과 | 새 저장→종료→재실행(TC-26)은 현재 APK 미실행 |
 | R-027 | 구현 완료 | 기기 확인 | Galaxy 검색·상세에서 추가, 즐겨찾기에서 해제 후 검색 카드 하트 동기화. FavoriteSubscriptionKeysTest | 상세 해제 경로의 기기 확인은 미실행 |
-| R-028 | 구현 완료 | 자동 테스트 통과 | `FavoriteWriterTest`(실패 전파), `FavoriteTogglerTest`, 세 Presenter 테스트의 쓰기 실패 | 기기 Room 쓰기 실패는 Fake 주입으로만 확인 |
+| R-028 | 구현 완료 | 자동 테스트 통과 | `FavoriteWriterTest`(실패 전파), `FavoriteTogglerTest`, 세 Presenter 테스트의 쓰기 실패 | 실제 기기의 Room 쓰기 실패는 미재현. 실패 주입 자동 테스트로 확인 |
 | R-029 | 구현 완료 | 기기 확인 | Galaxy 상세의 제목·저자·출판사·날짜·ISBN·정가·할인가 표시 | 없음 |
 | R-030 | 구현 완료 | 자동 테스트 통과 | TC-08·09·71, `BookDetailPresenterTest` | 상세 저장은 기기 확인, 상세 해제는 Presenter 자동 테스트 |
 | R-031 | 구현 완료 | 기기 확인 | Galaxy 상세에서 저장 후 즐겨찾기 목록 반영, 즐겨찾기 해제 후 검색 카드 반영 | 상세에서 해제한 뒤의 기기 확인은 미실행 |
 | R-032 | 구현 완료 | 최종 재검증 대기 | TC-32(비행기 모드) | 최종 검증 필요 |
 | R-033 | 구현 완료 | 부분 확인 | 모델·mapper·Room·카드·상세의 정가 자동 테스트 통과. Galaxy API 정가0 도서의 정보 없음 표시·필터 확인 | 다른 누락 필드의 현재 APK 기기 재검증은 미실행 |
 | R-034 | 구현 완료 | 최종 재검증 대기 | TC-20·40·40b·42·32·70a | 조건부 재연결 재조회·버튼 재시도 제공. 현재 APK의 네트워크 오류·복구 기기 검증은 미실행([SPEC](SPEC.md) 9절) |
-| R-035 | 구현 완료 | 최종 재검증 대기 | 태블릿 SM-X236N TC-35(세로 레일)·TC-90~94(가로 2-pane), Galaxy Z Fold2 TC-68d~68h(접힘·펼침·중간 접힘), `BookSearchNavHostTest` 좁은/넓은 창·2-pane | Fold2 안쪽 화면은 compact 너비라 폴더블 2-pane은 없음. 테이블톱 전용 배치 없음 |
+| R-035 | 구현 완료 | 최종 재검증 대기 | 태블릿 SM-X236N TC-35(세로 레일)·TC-90~94(가로 2-pane), Galaxy Z Fold2 TC-68d~68h(접힘·펼침·중간 접힘), `BookSearchNavHostTest` 좁은/넓은 창·2-pane | 현재 APK의 태블릿·폴더블 QA는 미실행. 기존 관찰은 QA 참고. Fold2 안쪽은 compact 너비이며 테이블톱 전용 배치는 없음 |
 | R-036 | 구현 완료 | 소스 확인 | 앱 코드 9개 모듈과 테스트 전용 `core:testing`, [ARCHITECTURE](ARCHITECTURE.md) | 없음 |
 | R-037 | 구현 완료 | 소스 확인 | [ARCHITECTURE](ARCHITECTURE.md) 8절, [SPEC](SPEC.md) 2절 모듈 책임 | 없음 |
 | R-038 | 구현 완료 | 소스 확인 | [ARCHITECTURE](ARCHITECTURE.md) 9절(선택 이유와 비용) | 없음 |
@@ -248,10 +248,10 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-045 | 구현 완료 | 소스 확인 | Retrofit·OkHttp·kotlinx.serialization 서비스 구성 | API 실행 검증은 R-046 |
 | R-046 | 구현 완료 | 자동 테스트 통과 | `KakaoBookServiceTest`(MockWebServer) | 기기 결과는 QA의 현재 검증 범위와 구분 |
 | R-047 | 구현 완료 | 소스 확인 | Soil typed-key·InfiniteQuery 구성. 단순 위임 Repository 없음 | 페이지네이션 실행 검증은 R-050 |
-| R-048 | 구현 완료 | 소스 확인 | Metro 1.4.5 그래프와 Coil 3.6.3 이미지 로더 구성 | Metro의 JDK 조건은 R-006, 표지 표시 최종 기기 확인 필요 |
+| R-048 | 구현 완료 | 소스 확인 | Metro 1.4.5 그래프와 Coil 3.6.3 이미지 로더 구성 | Metro의 JDK 조건은 R-006. 표지 표시는 Galaxy 확인, 이미지 인증 분리는 소스 확인 |
 | R-049 | 구현 완료 | 자동 테스트 통과 | Metro/Kotlin 구성. `AppGraph.provideImageLoader`는 인증 interceptor 없는 클라이언트, `NetworkFactory`는 API 인증 설정 | 최종 APK 빌드 및 API 테스트 통과, 이미지 인증 분리는 소스 확인. JDK 조건은 R-006 |
 | R-050 | 구현 완료 | 자동 테스트 통과 | `SearchBooksQueryKeyTest`, `SearchPagingTest`, `SearchPresenterTest`, `SearchRetryTest` | 기기 결과는 QA의 현재 검증 범위와 구분 |
-| R-051 | 구현 완료 | 자동 테스트 통과 | `FavoriteSubscriptionKeysTest`, `FavoriteWriterTest`, `FavoriteMutationLifecycleTest`(대기 명령 완료·순서·실패 격리·참조 정리), Presenter 테스트 | 현재 통합 검증은 Fake DAO 기반 |
+| R-051 | 구현 완료 | 자동 테스트 통과 | `FavoriteSubscriptionKeysTest`, `FavoriteWriterTest`, `FavoriteMutationLifecycleTest`(대기 명령 완료·순서·실패 격리·참조 정리), Presenter 테스트 | Room→Soil 구독은 in-memory Room 통합 테스트. 지연·실패·pop 경합은 Fake DAO 기반 |
 | R-052 | 구현 완료 | 자동 테스트 통과 | `ErrorKindTest`, `SearchBooksQueryKeyTest`(실패 페이지·원인 보존, 취소 예외 동일 인스턴스), `FavoriteTogglerTest`(취소 전파) | 기기 결과는 QA의 현재 검증 범위와 구분 |
 | R-053 | 구현 완료 | 소스 확인 | `settings.gradle.kts`의 9개 모듈 + 테스트 전용 `core:testing` | 없음 |
 | R-054 | 구현 완료 | 최종 재검증 대기 | 내비게이션 키의 상세 스냅샷, saveable 최소 상태; TC-54·70b | 실제 메모리 압박으로 인한 종료는 재현하지 않음. 최종 기기 확인 필요 |
@@ -266,14 +266,14 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-063 | 구현 완료 | 자동 테스트 통과 | `SearchPresenterTest`, TC-40(오류 뒤 스크롤 요청 0건)·40b | 기기 결과는 QA의 현재 검증 범위와 구분 |
 | R-064 | 구현 완료 | 자동 테스트 통과 | `SearchPagingTest`, `SearchPresenterTest` 중복 ID | 기기 결과는 QA의 현재 검증 범위와 구분 |
 | R-065 | 구현 완료 | 자동 테스트 통과 | BookPricePolicyTest·PriceFilterTest·FavoriteBookDaoTest·PriceLineTest·BookDetailPriceTest·PriceInputTest·FavoritesPresenterTest 및 Galaxy 가격 필터 | 실기기에서는 최대 금액·동등 경계·정가0 확인, 다른 경계는 자동 테스트 |
-| R-066 | 구현 완료 | 최종 재검증 대기 | TC-26·32·70a·70b | 최종 검증 필요 |
+| R-066 | 구현 완료 | 부분 확인 | 복원한 기존 DB의 즐겨찾기 재실행 표시 확인. 오프라인 상세는 TC-32 | 현재 APK의 오프라인·새 저장 후 재시작 시나리오는 미실행 |
 | R-067 | 구현 완료 | 자동 테스트 통과 | `FavoriteTogglerTest`, `FavoriteMutationLifecycleTest`: 저장 실패·연타·화면 종료 중 접수 명령 처리; TC-67·71 | Room 지연·실패는 Fake DAO 기반으로 주입. 실제 기기 장애 재현과 구분 |
-| R-068 | 구현 완료 | 최종 재검증 대기 | 회전 TC-41·68a·94(태블릿 2-pane↔1-pane), 폴더블 접힘·펼침·중간 접힘 TC-68d~68g(`cmd device_state`), 손으로 접고 펴기 TC-68h, 다크 모드 TC-68b | 중간 접힘은 adb로만 확인 |
+| R-068 | 구현 완료 | 최종 재검증 대기 | 회전 TC-41·68a·94(태블릿 2-pane↔1-pane), 폴더블 접힘·펼침·중간 접힘 TC-68d~68g(`cmd device_state`), 손으로 접고 펴기 TC-68h, 다크 모드 TC-68b | 현재 APK의 회전·폴더블 QA는 미실행. 기존 중간 접힘 관찰은 adb 기반 |
 | R-069 | 구현 완료 | 자동 테스트 통과 | `BookSearchNavHostTest`, `SearchQueryRetentionTest`; TC-40b·85 | retain 정리·구성 변경과 검색 상태 수명 자동 검증 |
 | R-070 | 구현 완료 | 최종 재검증 대기 | TC-70a·70b(미저장 도서), TC-32(저장 도서) | 최종 검증 필요 |
 | R-071 | 구현 완료 | 자동 테스트 통과 | `FavoriteMutationLifecycleTest`: 실제 retain·Soil·Writer + Fake DAO로 명령 완료·순서·실패 격리·참조 해제 검증 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음 |
-| R-072 | 구현 완료 | 통과 | 제출 커밋의 소스·문서를 포함한 ZIP 생성. CRC·압축 해제 해시 대조 통과 | 기존 ZIP 별도 보존 |
-| R-073 | 구현 완료 | 통과 | ZIP의 .git 포함 및 원본과 압축 해제 파일 해시 일치 | 제출 커밋까지의 Git 이력과 소스 포함 |
+| R-072 | 구현 완료 | 통과 | 제출 커밋의 소스·문서를 포함한 ZIP 생성. CRC·압축 해제 해시 대조 통과 | 없음 |
+| R-073 | 구현 완료 | 통과 | ZIP의 .git 포함, 압축 해제본의 main HEAD·추적 파일 일치 | 제출 커밋까지의 Git 이력과 소스 포함 |
 | R-074 | 구현 완료 | 통과 | Git에서 제외한 local.properties를 ZIP에 포함. API 키 포함·sdk.dir 제외 확인, 동일 APK의 검색 동작 확인 | 키 값은 기록하지 않음. 키 유지 기간은 R-075 |
 | R-075 | 진행 | 미검증 | 없음 | 사용자 확인 |
 | R-076 | 구현 완료 | 통과 | ZIP에 build/·.gradle/ 등 제외 대상 디렉터리가 없음을 확인 | 없음 |

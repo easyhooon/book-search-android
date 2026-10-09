@@ -10,9 +10,9 @@
 | 태블릿 | Samsung SM-X236N, Android 16(API 36), 1200x1920, density 240. 세로 800dp(레일, 1-pane), 가로 1280dp(2-pane). TC-35, TC-90~94에 사용 |
 | 폴더블 | Samsung Galaxy Z Fold2(SM-F916N), Android 13(API 33). 안쪽 화면 1768x2208(약 589x736dp, compact 너비), 바깥 화면 816x2260(약 272x753dp), density 480. 기기 상태 CLOSE·HALF_FOLDED·OPEN. TC-33(일부), TC-68d~68h에 사용 |
 | 대상 | 최종 debug APK를 Galaxy SM-S936N에 설치. 태블릿·폴더블 정보는 기존 QA 환경 |
-| 조작 | `adb shell input`(tap·swipe·text·keyevent). 폴더블 접힘·펼침은 `cmd device_state state 0/2/3`과 손으로 직접 접고 펴기(TC-68h) |
+| 조작 | 최신 Galaxy는 `adb shell input` 기반. 폴더블의 `cmd device_state state 0/2/3`과 손으로 접고 펴기(TC-68h)는 기존 QA 절차 |
 | 판정 근거 | `screencap`, `uiautomator dump` 화면 텍스트, OkHttp 로그의 `--> GET` 요청 수, `pidof`(프로세스 유지·교체), `dumpsys`(활성 Activity·키보드·기기 상태) |
-| 기기 설정 | 회전·다크 모드·비행기 모드를 바꾼 뒤 복원(자동 회전 켬, 라이트 모드, 비행기 모드 끔). 폴더블은 이 앱의 "커버 화면에서 앱 계속 사용"을 켜고, 기기 상태 강제값을 `cmd device_state state reset`으로 해제 |
+| 기기 설정 | 최신 Galaxy 검증에서는 설정 변경 없음. 기존 QA는 회전·다크 모드·비행기 모드 변경 후 복원, 폴더블의 커버 화면 계속 사용 및 기기 상태 강제값 해제 절차 포함 |
 
 스크린샷은 [qa/](qa/)에 있고, 파일 이름의 `tcNN`이 TC 번호입니다.
 
@@ -39,7 +39,7 @@
 - `.git`·`local.properties`·APK·시연 영상 2개·다이어그램 원본과 이미지 포함, `build/`·`.gradle/` 등 제외 확인.
 - API 키 포함 여부만 확인하고 값은 기록하지 않음. 개인 `sdk.dir`는 제외.
 - CRC 및 압축 해제 파일 해시 대조 통과. ZIP APK와 Galaxy에 설치한 APK의 해시 일치.
-- 제출 커밋의 소스·문서와 `.git`을 포함하며 기존 ZIP은 별도 보존.
+- 제출 커밋의 소스·문서와 `.git` 포함.
 
 ## 현재 APK의 Galaxy 확인 범위
 
@@ -49,10 +49,10 @@
 | 상세 | 검색·즐겨찾기에서 진입, 제목·저자·출판사·출간일·ISBN·정가·할인가 표시 |
 | 즐겨찾기 | 검색 카드·상세에서 추가, 즐겨찾기 목록에서 해제, 검색 카드 하트 동기화 |
 | 정렬·검색 | 제목 오름차순·내림차순 전환, 로컬 검색어 `with`로 제목 필터링 |
-| 가격 범위 | 최대 38,000원에서 40,000원 도서 제외·36,000원 도서 유지. 최대 36,000원에서 같은 금액 포함 |
+| 가격 범위 | 최대 38,000원에서 40,000원 도서 제외·36,000원 도서 유지. 최대 36,000원에서 같은 금액 포함. 초기화 후 정가 정보 없음 도서 복귀 |
 | 정가 정보 없음 | API 정가 0인 `Mastering Kotlin Multiplatform`의 카드·상세에 "가격 정보 없음". 저장 후 무필터 목록에 유지, 금액 필터 적용 시 제외 |
 
-네트워크 오류·페이지네이션, 앱 종료 후 복원, 태블릿·폴더블의 현재 APK 재검증은 미실행입니다. 아래 표의 부분 확인은 해당 절차 중 확인한 범위만 뜻하며, 참고 화면은 기존 QA 자료입니다.
+복원한 기존 DB의 즐겨찾기 2건은 앱 재실행 후 표시 확인. 새 저장→앱 종료→재실행, 네트워크 오류·페이지네이션, 시스템 프로세스 복원, 태블릿·폴더블의 현재 APK 검증은 미실행입니다. 아래 표의 부분 확인은 해당 절차 중 확인한 범위만 뜻하며, 참고 화면은 기존 QA 자료입니다.
 
 ## 실기기 시나리오
 
@@ -90,7 +90,7 @@
 | 13 | R-024, R-065 | 가격 필터: 36000~40000 적용 → 최소 50000·최대 40000 입력 → 최소 70000만 적용 → 초기화 | 범위 적용, 잘못된 범위 적용 불가, 0건 안내, 초기화 시 전체 | 칩 "36,000원 ~ 40,000원"으로 3권(정가 36,000·40,000·36,000원). 잘못된 범위는 "최소 금액이 최대 금액보다 클 수 없습니다"·적용 버튼 비활성. "70,000원 이상"은 "조건에 맞는 도서가 없습니다". 초기화 후 칩 "가격 필터"·전체 목록 | 부분 확인: 최대 38,000/36,000원·동등 경계. 최소·잘못된 범위 미실행 | [시트](qa/tc13_sheet.jpg), [입력](qa/tc13_sheet_filled.jpg), [적용](qa/tc13_filtered.jpg), [잘못된 범위](qa/tc13_invalid.jpg), [0건](qa/tc13_no_match.jpg), [초기화](qa/tc13_cleared.jpg) |
 | 27 | R-027 | 즐겨찾기 목록에서 하트 해제 → 검색 탭 확인 | 목록에서 빠지고 검색 카드도 해제 | 목록에서 사라지고 검색 카드가 빈 하트 | 통과 | [목록](qa/tc27_fav_removed.jpg), [검색](qa/tc27_search_synced.jpg) |
 | 67 | R-067 | 검색 카드의 하트를 한 번의 셸 호출로 6회 연속 탭 | 쓰기 중인 카드는 비활성. 최종 상태가 검색·즐겨찾기 탭에서 일치 | 최종 상태 미저장, 즐겨찾기 목록에도 없어 두 탭 일치 | 미검증 | [검색](qa/tc67_rapid_toggle_search.jpg), [목록](qa/tc67_rapid_toggle_fav.jpg) |
-| 26 | R-026 | `am force-stop` 후 재실행 → 즐겨찾기 탭 | 저장한 도서 유지 | 4권 그대로 표시 | 미검증 | [tc26](qa/tc26_after_force_stop.jpg) |
+| 26 | R-026 | `am force-stop` 후 재실행 → 즐겨찾기 탭 | 저장한 도서 유지 | 4권 그대로 표시 | 부분 확인: 기존 DB 복원 뒤 재실행 표시. 새 저장 후 강제 종료는 미실행 | [tc26](qa/tc26_after_force_stop.jpg) |
 
 ### 상세와 탐색
 
@@ -161,7 +161,7 @@ expanded 너비(840dp 이상)에서 목록과 상세를 나란히 보여 줍니�
 
 ## 자동 테스트
 
-APK 빌드 성공. 테스트 140개 모두 새로 실행해 실패·오류·건너뜀 0, 이전 테스트 결과 재사용 0. 아래 명령으로 Android·순수 JVM 모듈을 함께 검증했습니다.
+APK 빌드·테스트 140개 새 실행 통과. 실패·오류·건너뜀 0, 이전 결과 재사용 0. Android·순수 JVM 모듈 검증 명령:
 
 ```sh
 ./gradlew assembleDebug testDebugUnitTest test --continue --offline --rerun-tasks
@@ -177,14 +177,14 @@ APK 빌드 성공. 테스트 140개 모두 새로 실행해 실패·오류·건�
 | 데이터 | `BookMapperTest`, `ErrorKindTest`, `SearchBooksQueryKeyTest`, `FavoriteWriterTest` | 누락 필드·정가 원본 보존, 오류 분류·실패 페이지와 원인 보존, 취소 예외 전파, writer의 직렬 실행·호출자 취소 뒤 완료 |
 | UI 공통 | `BookFormattersTest`, `FavoriteTogglerTest`, `FavoriteMutationLifecycleTest`, `PriceLineTest` | 카드의 0 이하·누락 정가 표시. 실제 retain·Soil·Writer와 Fake DAO로 대기 명령의 화면 종료 후 완료·접수 순서·종료 후 신규 요청 차단·실패 격리·참조 해제 |
 | Presenter | `SearchPresenterTest`, `SearchRetryTest`, `FavoritesPresenterTest`, `BookDetailPresenterTest`, `PriceInputTest` | 검색 경합·추가 로딩 중복 차단, 실제 검색 key factory·Soil·Presenter와 Fake API로 첫·복수 페이지 재조회와 추가 로딩 재시도 구분, 쓰기 실패 메시지 |
-| 화면 상태 | `BookDetailPriceTest`, `SearchQueryRetentionTest`, `SearchStateRestorationTest`, `FavoritesStateLifecycleTest`, `FavoritesScreenTest` | 상세의 0 이하·누락 정가 표시, 다른 탭에서 돌아와도 추가 로딩 실패 상태 유지(TC-40b), 프로세스 재생성 뒤 입력·확정 조건 복원, 쓰기 중 컴포지션 이탈·복귀 시 진행 상태 유지와 pop 후 정리, 즐겨찾기 검색어·정렬·가격 필터 변경 시 맨 위부터·조건이 같으면 위치 유지(TC-12b), 2-pane 선택 카드 강조 |
+| 화면 상태 | `BookDetailPriceTest`, `SearchQueryRetentionTest`, `SearchStateRestorationTest`, `FavoritesStateLifecycleTest`, `FavoritesScreenTest` | 상세의 0 이하·누락 정가 표시, 다른 탭에서 돌아와도 추가 로딩 실패 상태 유지(TC-40b), `StateRestorationTester`의 saveable 저장·복원 뒤 입력·확정 조건 유지, 쓰기 중 컴포지션 이탈·복귀 시 진행 상태 유지와 pop 후 정리, 즐겨찾기 검색어·정렬·가격 필터 변경 시 맨 위부터·조건이 같으면 위치 유지(TC-12b), 2-pane 선택 카드 강조 |
 | 내비게이션 | `BookSearchBackStackTest`, `BookSearchNavHostTest` | 탭·백스택 규칙, 상세 중복 방지, retain 수명(R-058, R-069), 2-pane 장면·상세 교체 시 retain 정리·창 크기 변경 |
 
 ## Compose 컴파일러 정적 진단
 
-Kotlin 2.4.0의 기존 Compose compiler에 보고서 출력 경로만 외부 임시 설정으로 지정해 컴파일했습니다. 앱 코드·의존성·안정성 annotation은 변경하지 않았습니다.
+Kotlin 2.4.0 Compose compiler 보고서 기준의 정적 진단입니다. 앱 코드·의존성·안정성 annotation 변경 없이 외부 출력 경로만 지정한 결과입니다.
 
-- SearchScreen·FavoritesScreen·BookDetailScreen·BookCard·PriceLine·BookDetailBody는 `restartable skippable`로 판정됐습니다.
+- SearchScreen·FavoritesScreen·BookDetailScreen·BookCard·PriceLine·BookDetailBody는 `restartable skippable` 판정입니다.
 - Book·PriceFilter 인자는 `unstable`이지만 관련 UI는 skippable입니다. 세 UiState의 stable 판정은 기존 `@Immutable` 계약을 반영합니다.
 - Strong skipping이 켜진 환경의 정적 판정이며, 실제 재구성·skip 횟수나 프레임 성능을 입증하지 않습니다.
 
