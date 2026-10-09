@@ -1,31 +1,33 @@
 # QA 절차와 검증 범위
 
-[요구사항](REQUIREMENTS.md)의 R-ID별 재현 절차와 현재 기대 결과입니다. **APK 빌드·자동 테스트와 Android Studio 새 폴더 가져오기는 통과했으며, 현재 APK의 Galaxy 확인 범위는 아래에 구분**합니다. 표의 "기존 QA 결과"와 화면 자료는 이전 빌드에서 관찰한 참고 기록이며, 현재 코드의 통과 근거가 아닙니다.
+[요구사항](REQUIREMENTS.md)의 R-ID별 재현 절차와 기대 결과입니다. **수동 DI·JDK 17 비교 브랜치의 APK 빌드와 자동 테스트 144개가 통과**했습니다. Robolectric SDK는 35이며 compileSdk·targetSdk는 37입니다. 이 브랜치의 API 36·37 실기기, 새 ZIP의 Studio 가져오기, 새 PC 빌드, 동적 재구성 측정은 미실행입니다.
 
-## 기기 검증 환경
+main의 Metro·daemon JDK 21·Robolectric SDK 36 구성에서 확인한 140개 테스트와 Studio·Galaxy·ZIP 결과는 아래 비교 기준으로 남깁니다. 기기 사진·영상과 "기존 QA 결과"는 이 브랜치의 실기기 통과 근거가 아닙니다.
+
+## main 기기 검증 환경(참고)
 
 | 항목 | 값 |
 |---|---|
 | 휴대폰 | Samsung SM-S936N, Android 17(API 37), 1080x2340, density 450 |
 | 태블릿 | Samsung SM-X236N, Android 16(API 36), 1200x1920, density 240. 세로 800dp(레일, 1-pane), 가로 1280dp(2-pane). TC-35, TC-90~94에 사용 |
 | 폴더블 | Samsung Galaxy Z Fold2(SM-F916N), Android 13(API 33). 안쪽 화면 1768x2208(약 589x736dp, compact 너비), 바깥 화면 816x2260(약 272x753dp), density 480. 기기 상태 CLOSE·HALF_FOLDED·OPEN. TC-33(일부), TC-68d~68h에 사용 |
-| 대상 | 최종 debug APK를 Galaxy SM-S936N에 설치. 태블릿·폴더블 정보는 기존 QA 환경 |
+| 대상 | main debug APK를 Galaxy SM-S936N에 설치. 태블릿·폴더블 정보는 기존 QA 환경 |
 | 조작 | `adb shell input`(tap·swipe·text·keyevent). 폴더블 접힘·펼침은 `cmd device_state state 0/2/3`과 손으로 직접 접고 펴기(TC-68h) |
 | 판정 근거 | `screencap`, `uiautomator dump` 화면 텍스트, OkHttp 로그의 `--> GET` 요청 수, `pidof`(프로세스 유지·교체), `dumpsys`(활성 Activity·키보드·기기 상태) |
 | 기기 설정 | 회전·다크 모드·비행기 모드를 바꾼 뒤 복원(자동 회전 켬, 라이트 모드, 비행기 모드 끔). 폴더블은 이 앱의 "커버 화면에서 앱 계속 사용"을 켜고, 기기 상태 강제값을 `cmd device_state state reset`으로 해제 |
 
 스크린샷은 [qa/](qa/)에 있고, 파일 이름의 `tcNN`이 TC 번호입니다.
 
-## 최종 검증 상태
+## main 검증 상태(비교 기준)
 
 | 범위 | 상태 |
 |---|---|
-| 자동 테스트·APK 빌드 | 140개 모두 새 실행, 실패·오류·건너뜀 0. APK 빌드 성공 |
+| 자동 테스트·APK 빌드 | Metro·daemon JDK 21·Robolectric SDK 36에서 140개 모두 새 실행, 실패·오류·건너뜀 0. APK 빌드 성공 |
 | Android Studio ZIP 가져오기 | SDK 경로 자동 생성·Sync·IDE APK 빌드 성공. 설치된 SDK·JDK·캐시 사용 |
 | 실기기 | Galaxy 설치·검색·상세·즐겨찾기·정렬·로컬 검색·가격 필터 확인. 아래 미실행 항목과 기존 QA 결과는 구분 |
 | 제출 ZIP | 구성·CRC·압축 해제 파일 해시·Studio 빌드 통과. 포함 APK는 Galaxy 검증 APK와 동일 |
 
-## Android Studio 확인
+## main Android Studio 확인
 
 | 항목 | 확인 범위·결과 |
 |---|---|
@@ -34,14 +36,14 @@
 | 결과 | 수동 SDK·JDK 설정 없이 SDK 경로 자동 생성, Gradle Sync 및 IDE `assembleDebug` 성공 |
 | 한계 | 이미 설치된 SDK 37·JDK 21 및 사용자 캐시 사용. 새 PC의 JDK 자동 다운로드·캐시 없는 빌드는 미검증 |
 
-## 제출 패키지 확인
+## main 제출 패키지 확인
 
 - `.git`·`local.properties`·APK·시연 영상 2개·다이어그램 원본과 이미지 포함, `build/`·`.gradle/` 등 제외 확인.
 - API 키 포함 여부만 확인하고 값은 기록하지 않음. 개인 `sdk.dir`는 제외.
 - CRC 및 압축 해제 파일 해시 대조 통과. ZIP APK와 Galaxy에 설치한 APK의 해시 일치.
 - 제출 커밋의 소스·문서와 `.git`을 포함하며 기존 ZIP은 별도 보존.
 
-## 현재 APK의 Galaxy 확인 범위
+## main APK의 Galaxy 확인 범위
 
 | 범위 | 확인 결과 |
 |---|---|
@@ -52,13 +54,13 @@
 | 가격 범위 | 최대 38,000원에서 40,000원 도서 제외·36,000원 도서 유지. 최대 36,000원에서 같은 금액 포함 |
 | 정가 정보 없음 | API 정가 0인 `Mastering Kotlin Multiplatform`의 카드·상세에 "가격 정보 없음". 저장 후 무필터 목록에 유지, 금액 필터 적용 시 제외 |
 
-네트워크 오류·페이지네이션, 앱 종료 후 복원, 태블릿·폴더블의 현재 APK 재검증은 미실행입니다. 아래 표의 부분 확인은 해당 절차 중 확인한 범위만 뜻하며, 참고 화면은 기존 QA 자료입니다.
+네트워크 오류·페이지네이션, 앱 종료 후 복원, 태블릿·폴더블의 main APK 재검증은 미실행입니다. 아래 표의 부분 확인은 해당 절차 중 확인한 범위만 뜻하며, 참고 화면은 기존 QA 자료입니다.
 
-## 실기기 시나리오
+## main 실기기 시나리오(참고)
 
 ### 검색
 
-| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | main APK 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
 | 01 | R-012 | 앱을 새로 설치하고 첫 실행 | 검색 탭, 하단 탭 2개, 검색 전 안내 | "도서를 검색해 보세요"와 검색·즐겨찾기 탭 | 통과 | [tc01](qa/tc01_launch.jpg) |
 | 02 | R-013, R-016 | "kotlin" 입력 후 키보드 검색 키로 확정 | 카드에 표지·제목·저자·출판사·출판일·가격 | `query=kotlin&sort=accuracy&page=1&size=20` 요청 1건, 필드 모두 표시 | 통과 | [tc02](qa/tc02_search.jpg) |
@@ -70,7 +72,7 @@
 
 ### 오류와 네트워크
 
-| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | main APK 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
 | 20 | R-020, R-034 | 비행기 모드에서 새 검색어("swift") 확정 | 최초 오류 화면과 재시도 버튼 | 요청 4건(자동 재시도 포함, SPEC 9절) 뒤 "네트워크 연결을 확인한 뒤 다시 시도해 주세요."와 "다시 시도" 표시 | 미검증 | [tc20](qa/tc20_initial_error.jpg) |
 | 40 | R-040, R-063 | 온라인에서 재시도 → 오프라인 전환 → 끝까지 스크롤 → 오류 뒤 더 스크롤 | 목록 유지, 끝에 추가 로딩 오류·재시도. 오류 뒤 중복 요청 없음 | 재시도 요청 1건으로 결과 표시. 추가 로딩은 `page=2` 4건(자동 재시도 포함) 뒤 실패, 목록 유지·끝에 오류와 재시도. 이후 스크롤 요청 0건 | 미검증 | [재시도](qa/tc40_retry_ok.jpg), [추가 오류](qa/tc40_more_error.jpg) |
@@ -80,7 +82,7 @@
 
 ### 즐겨찾기
 
-| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | main APK 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
 | 07 | R-017, R-021 | 검색 결과 카드 3개의 하트 누르기 | 즐겨찾기 상태로 바뀜 | 3개 모두 "즐겨찾기 해제" 상태 | 부분 확인: 검색 카드·상세에서 추가 | [tc07](qa/tc07_fav_added.jpg) |
 | 10 | R-021, R-023 | 2개를 더 추가한 뒤 즐겨찾기 탭 열기 | 저장한 도서가 제목 오름차순 | 5권 모두 제목 오름차순(한글 우선) | 부분 확인: 2권 제목 오름차순 | [tc10](qa/tc10_fav_list.jpg) |
@@ -94,7 +96,7 @@
 
 ### 상세와 탐색
 
-| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | main APK 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
 | 08/09 | R-018, R-029, R-030, R-031, R-087 | 저장한 도서 상세 열기 → 상세에서 하트 해제 → 뒤로 | 상세 표시. 해제해도 정보가 남고 목록에 반영 | 표지·제목·저자·출판사·출간일·ISBN·정가·할인가·소개 표시. 해제 후 정보 유지, 목록에서 빠짐 | 부분 확인: 상세 필드·추가. 상세 해제 미실행 | [상세](qa/tc08_detail.jpg), [해제](qa/tc09_detail_unfav.jpg), [목록](qa/tc09_list_synced.jpg) |
 | 25 | R-025 | 즐겨찾기 목록에서 카드 선택 | 상세로 이동 | 해당 도서 상세 표시 | 통과: 즐겨찾기에서 정가 정보 없음 도서 상세 진입 | [tc25](qa/tc25_detail_from_fav.jpg) |
@@ -104,7 +106,7 @@
 
 ### 누락 필드
 
-| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | main APK 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
 | 33 | R-033 | 누락 필드 및 정가 0 이하·null 도서의 카드·상세 확인 → 즐겨찾기 저장 → 금액 필터 적용·초기화 | 누락 필드 대체 표시. 0 이하·null 정가는 "가격 정보 없음". 금액 필터 적용 시 제외, 미적용 시 도서 유지 | 기존 화면은 누락 필드 표시 참고용. 현재 정가 정책 결과는 위 Galaxy 확인 범위에 기록 | 부분 확인: 실제 정가 0의 표시·필터. 음수·null은 자동 테스트 | [저자 없음 카드](qa/tc33_missing_author_card.jpg), [저자 없음 상세](qa/tc33_missing_author_detail.jpg), [출판사 없음 상세](qa/tc33_missing_publisher_detail.jpg), [표지 없음](qa/tc33_fold_missing_cover.jpg), [표지 없음 상세](qa/tc33_fold_missing_cover_detail.jpg), [출간일 없음](qa/tc33_fold_missing_date.jpg) |
 
@@ -112,7 +114,7 @@
 
 expanded 너비(840dp 이상)에서 목록과 상세를 나란히 보여 줍니다([SPEC](SPEC.md) 10절). TC-90~94는 태블릿 가로(1280dp) 기준의 재현 절차입니다.
 
-| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | main APK 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
 | 35 | R-035 | 세로(800dp)에서 검색 → 상세 | medium 너비에서 레일, 상세는 탐색 UI 숨김 | 레일 + 1열 목록, 검색창 폭 제한. 상세에서는 레일 숨김 | 미검증 | [검색](qa/tc35_tablet_port_search.jpg), [상세](qa/tc35_tablet_port_detail.jpg) |
 | 90 | R-035 | 가로에서 앱 데이터를 지우고 실행 → "kotlin" 검색 → 첫 카드 선택 | 왼쪽 레일·목록(400dp)과 오른쪽 안내 칸. 선택하면 오른쪽에 상세 | 오른쪽에 "도서를 선택하면 상세 정보가 여기에 표시됩니다.", 레일 유지. 선택 시 오른쪽에 상세, 목록 유지 | 미검증 | [안내](qa/tc90_two_pane_placeholder.jpg), [상세](qa/tc90_two_pane_detail.jpg) |
@@ -125,7 +127,7 @@ expanded 너비(840dp 이상)에서 목록과 상세를 나란히 보여 줍니�
 
 목록·상세 배치는 창 너비로 정하고, 탐색 UI는 창 크기·테이블톱 자세를 반영하는 기본 적응형 규칙을 따릅니다. 접힘·펼침·중간 접힘에서 배치와 상태 유지 여부를 확인합니다. 펼친 안쪽 화면도 compact 너비(약 589dp)라 하단 바와 1열 목록입니다. 테이블톱처럼 화면을 위아래로 나누는 배치는 구현 범위가 아닙니다.
 
-| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | main APK 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
 | 68d | R-035, R-068 | 펼친 화면에서 "compose" 결과를 스크롤 → 접힘(state 0) → 펼침(state 3) | 바깥 화면에서도 같은 검색어·정렬·목록 위치, 재요청 없음 | 같은 프로세스(pid 유지)로 바깥 화면에 하단 바 배치, 검색어·정렬·목록 위치 유지. 펼쳐도 동일. 요청 0건 | 미검증 | [펼침](qa/tc68d_open.jpg), [접힘](qa/tc68d_folded.jpg), [다시 펼침](qa/tc68d_unfolded.jpg) |
 | 68e | R-041, R-068 | 상세를 연 채 접힘 → 펼침 → 뒤로 | 상세 유지, 뒤로 가면 목록 위치 유지 | 바깥·안쪽 화면 모두 같은 상세, 뒤로 1번에 같은 위치의 목록. 요청 0건 | 미검증 | [접힘](qa/tc68e_detail_folded.jpg), [펼침](qa/tc68e_detail_unfolded.jpg) |
@@ -135,7 +137,7 @@ expanded 너비(840dp 이상)에서 목록과 상세를 나란히 보여 줍니�
 
 ### 오프라인 상세와 프로세스 재생성
 
-| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | main APK 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
 | 32 | R-032, R-066 | 비행기 모드에서 즐겨찾기 탭의 도서 상세 열기 | Room 정보로 상세 표시 | 저자·정가 등 표시, 하트는 해제 버튼 | 미검증 | [tc32](qa/tc32_offline_fav_detail.jpg) |
 | 70a | R-070 | 비행기 모드에서 검색 결과(미저장) 도서 상세 열기 | 백스택 엔트리의 도서 정보로 상세 표시 | 상세 표시, 하트는 추가 버튼 | 미검증 | [tc70](qa/tc70_offline_unsaved_detail.jpg) |
@@ -144,45 +146,47 @@ expanded 너비(840dp 이상)에서 목록과 상세를 나란히 보여 줍니�
 
 ### 회전·테마(휴대폰)
 
-| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | main APK 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
 | 41 | R-041, R-068 | 검색 목록을 스크롤한 상태로 가로 회전 | 검색어·정렬·목록 유지, 재요청 없음 | 같은 항목("Jetpack Compose")이 상단, 요청 0건 | 미검증 | [세로](qa/tc41_portrait.jpg), [가로](qa/tc41_landscape.jpg) |
 | 68a | R-068 | 상세에서 회전 후 뒤로 / 가격 필터 시트에 "300" 입력 중 회전 | 상세 유지, 시트와 입력값 유지 | 상세 유지, 목록 복귀 시 요청 0건. 시트와 "300" 유지 | 미검증 | [상세](qa/tc68_detail_landscape.jpg), [시트](qa/tc68_sheet_landscape.jpg) |
 | 68b | (추가 확인) | 다크 모드 전환 | 화면 깨짐 없음, 재요청 없음 | 즐겨찾기·검색 화면 정상, 요청 0건 | 미검증 | [즐겨찾기](qa/tc68_dark_fav.jpg), [검색](qa/tc68_dark_search.jpg) |
 
-## 제출 시연 영상
+## main 제출 시연 영상(참고)
 
 | 파일 | 길이 | 범위·구분 |
 |---|---|---|
-| `demo.mp4` | 47.5초 | 최종 APK의 검색 결과·상세·즐겨찾기 추가·목록 반영·가격 정보 없음 표시·제목 내림차순 정렬 |
+| `demo.mp4` | 47.5초 | main APK의 검색 결과·상세·즐겨찾기 추가·목록 반영·가격 정보 없음 표시·제목 내림차순 정렬 |
 | `demo-tablet.mp4` | 30.675초 | 기존 빌드의 2-pane 시연. 현재 코드의 검증 근거에서 제외 |
 
-합계 78.175초로 3분 이내입니다. 가격 필터 적용은 영상에 포함되지 않으며 위 Galaxy 기기 QA 결과와 구분합니다. 영상은 Git에서 제외하고 제출 ZIP에 포함합니다.
+합계 78.175초로 3분 이내입니다. 가격 필터 적용은 영상에 포함되지 않으며 위 Galaxy 기기 QA 결과와 구분합니다. 영상은 Git에서 제외하고 main 제출 ZIP에 포함합니다. 두 영상 모두 이 비교 브랜치의 검증 근거가 아닙니다.
 
-## 자동 테스트
+## 이 브랜치의 빌드·자동 테스트
 
-APK 빌드 성공. 테스트 140개 모두 새로 실행해 실패·오류·건너뜀 0, 이전 테스트 결과 재사용 0. 아래 명령으로 Android·순수 JVM 모듈을 함께 검증했습니다.
+기존 140개와 `ManualAppGraphTest` 4개를 합한 **144개 모두 새 실행**, 실패·오류·건너뜀 0입니다. XML 30개를 대조했으며, APK 빌드와 전체 테스트는 36초에 성공했고 Gradle 작업 395개를 모두 실행했습니다. 별도로 옵션 없는 `./gradlew assembleDebug`도 75초에 성공했습니다.
 
 ```sh
-./gradlew assembleDebug testDebugUnitTest test --continue --offline --rerun-tasks
+./gradlew assembleDebug testDebugUnitTest test --continue --offline --rerun-tasks \
+  --no-build-cache --no-configuration-cache -I "$JVM_VERIFICATION_INIT"
 ```
 
-실행 환경은 Launcher JVM 17 / Gradle daemon JVM 21. 순수 JVM 모듈 toolchain과 Android Java·Kotlin 컴파일 대상은 17이며, 빌드 실행 JDK 17을 뜻하지 않습니다.
+`JVM_VERIFICATION_INIT`은 저장소 밖의 JVM 확인용 init script 경로를 뜻합니다. 이 스크립트로 실제 Gradle daemon **Oracle JDK 17.0.10**과 9개 테스트 작업의 **JVM 17** 실행을 확인했습니다. Robolectric은 SDK 35, compileSdk·targetSdk와 설치된 Android SDK는 37입니다. 기존 의존성 캐시를 사용하는 오프라인 검증이며 새 PC의 의존성·JDK 다운로드는 확인하지 않았습니다.
 
 | 영역 | 테스트 클래스 | 기기 시나리오가 다루지 못하는 부분 |
 |---|---|---|
 | 순수 규칙 | `BookIdentityTest`, `PriceFilterTest`, `FavoriteListRulesTest`, `SearchPagingTest`, `BookTest`, `BookPricePolicyTest` | ID 정책, 가격 경계값·0 이하·가격 없음(R-065), 마지막 20개 + `is_end`(R-062), 페이지 간 중복 제거(R-064) |
 | API | `KakaoBookServiceTest` | 요청 파라미터, 인증 헤더, 키 누락, HTTP 오류 |
-| Room | `FavoriteBookDaoTest`, `FavoriteSubscriptionKeysTest` | 저장·삭제·Flow, 기존 정가 원본 보존·필터 정책, 파일 DB 재열기 후 영속성(R-057), Room → Soil Subscription 연결, 구독을 놓은 사이의 쓰기가 다시 구독할 때 반영됨(TC-71) |
+| Room | `FavoriteBookDaoTest`, `FavoriteSubscriptionKeysTest` | 실제 in-memory Room의 저장·삭제·Flow·Soil Subscription 연결, 구독을 놓은 사이의 쓰기가 재구독 시 반영됨(TC-71). 기존 정가 원본 보존·필터 정책과 별도 파일 DB 재열기 후 영속성(R-057) |
 | 데이터 | `BookMapperTest`, `ErrorKindTest`, `SearchBooksQueryKeyTest`, `FavoriteWriterTest` | 누락 필드·정가 원본 보존, 오류 분류·실패 페이지와 원인 보존, 취소 예외 전파, writer의 직렬 실행·호출자 취소 뒤 완료 |
 | UI 공통 | `BookFormattersTest`, `FavoriteTogglerTest`, `FavoriteMutationLifecycleTest`, `PriceLineTest` | 카드의 0 이하·누락 정가 표시. 실제 retain·Soil·Writer와 Fake DAO로 대기 명령의 화면 종료 후 완료·접수 순서·종료 후 신규 요청 차단·실패 격리·참조 해제 |
 | Presenter | `SearchPresenterTest`, `SearchRetryTest`, `FavoritesPresenterTest`, `BookDetailPresenterTest`, `PriceInputTest` | 검색 경합·추가 로딩 중복 차단, 실제 검색 key factory·Soil·Presenter와 Fake API로 첫·복수 페이지 재조회와 추가 로딩 재시도 구분, 쓰기 실패 메시지 |
-| 화면 상태 | `BookDetailPriceTest`, `SearchQueryRetentionTest`, `SearchStateRestorationTest`, `FavoritesStateLifecycleTest`, `FavoritesScreenTest` | 상세의 0 이하·누락 정가 표시, 다른 탭에서 돌아와도 추가 로딩 실패 상태 유지(TC-40b), 프로세스 재생성 뒤 입력·확정 조건 복원, 쓰기 중 컴포지션 이탈·복귀 시 진행 상태 유지와 pop 후 정리, 즐겨찾기 검색어·정렬·가격 필터 변경 시 맨 위부터·조건이 같으면 위치 유지(TC-12b), 2-pane 선택 카드 강조 |
+| 화면 상태 | `BookDetailPriceTest`, `SearchQueryRetentionTest`, `SearchStateRestorationTest`, `FavoritesStateLifecycleTest`, `FavoritesScreenTest` | 상세의 0 이하·누락 정가 표시, 다른 탭에서 돌아와도 추가 로딩 실패 상태 유지(TC-40b), `StateRestorationTester`의 저장 상태 복원 모사로 입력·확정 조건 확인(실제 프로세스 종료 아님), 쓰기 중 컴포지션 이탈·복귀 시 진행 상태 유지와 pop 후 정리, 즐겨찾기 검색어·정렬·가격 필터 변경 시 맨 위부터·조건이 같으면 위치 유지(TC-12b), 2-pane 선택 카드 강조 |
 | 내비게이션 | `BookSearchBackStackTest`, `BookSearchNavHostTest` | 탭·백스택 규칙, 상세 중복 방지, retain 수명(R-058, R-069), 2-pane 장면·상세 교체 시 retain 정리·창 크기 변경 |
+| 수동 DI | `ManualAppGraphTest`(4개) | 앱 그래프 안의 쿼리 클라이언트·이미지 로더 공유와 그래프 간 분리, 화면 context·factory 수명, 서로 다른 저장 key의 공통 Mutation ID, 세 화면이 실제 Room의 같은 데이터를 읽고 쓰는 연결. Soil actor 순서·수명은 기존 테스트로 별도 확인 |
 
-## Compose 컴파일러 정적 진단
+## main Compose 컴파일러 정적 진단(참고)
 
-Kotlin 2.4.0의 기존 Compose compiler에 보고서 출력 경로만 외부 임시 설정으로 지정해 컴파일했습니다. 앱 코드·의존성·안정성 annotation은 변경하지 않았습니다.
+main에서 Kotlin 2.4.0의 기존 Compose compiler에 보고서 출력 경로만 외부 임시 설정으로 지정해 컴파일했습니다. 앱 코드·의존성·안정성 annotation은 변경하지 않았습니다.
 
 - SearchScreen·FavoritesScreen·BookDetailScreen·BookCard·PriceLine·BookDetailBody는 `restartable skippable`로 판정됐습니다.
 - Book·PriceFilter 인자는 `unstable`이지만 관련 UI는 skippable입니다. 세 UiState의 stable 판정은 기존 `@Immutable` 계약을 반영합니다.
@@ -190,8 +194,9 @@ Kotlin 2.4.0의 기존 Compose compiler에 보고서 출력 경로만 외부 임
 
 ## 검증 한계
 
+- **이 브랜치의 미실행 범위:** API 36·37 실기기, 새 ZIP의 Studio 가져오기·빌드, 새 PC 빌드, 동적 재구성·skip 횟수 측정. SDK 35의 JVM 테스트 통과로 대체하지 않습니다.
 - **동시 입력·저장 경합:** 기존 adb 확인은 입력 간격과 실제 DB 지연을 통제하지 못함. 동시 탭·연타·대기 중 화면 종료·쓰기 실패는 자동 테스트에서 별도 확인.
 - **폴더블:** Fold2 안쪽 화면도 compact 너비이므로 2-pane 확인은 태블릿에서 수행. 힌지 자세별 테이블톱 배치는 구현 범위 밖.
-- **프로세스 복원:** `am kill` 후 저장 상태 복원을 확인하는 절차. 실제 메모리 압박과 프로세스 종료 중 미완료 쓰기까지 보장하지 않음.
-- **네트워크:** 조건부 재연결 재조회와 오류 버튼 재시도 제공([아키텍처](ARCHITECTURE.md#검색-캐시의-수명과-재조회)). TC-42는 기존 QA 관찰이며 현재 APK의 재연결 경로는 미검증. 표지는 캐시가 없으면 대체 이미지 표시.
-- **정가 정책:** 0 이하·null은 자동 테스트, API 정가 0은 Galaxy에서 확인. TC-33의 기존 화면은 새 정책의 증거에서 제외.
+- **프로세스 복원:** 이 브랜치의 자동 검증은 `StateRestorationTester`의 저장 상태 복원 모사입니다. 기존 기기 QA의 `am kill` 절차와 구분하며 실제 메모리 압박·종료 중 미완료 쓰기까지 보장하지 않습니다.
+- **네트워크:** 조건부 재연결 재조회와 오류 버튼 재시도 제공([아키텍처](ARCHITECTURE.md#검색-캐시의-수명과-재조회)). TC-42는 기존 QA 관찰이며 main APK의 재연결 경로는 미검증. 표지는 캐시가 없으면 대체 이미지 표시.
+- **정가 정책:** 0 이하·null은 이 브랜치의 자동 테스트로 확인. API 정가 0의 Galaxy 확인은 main 기준이며, TC-33의 기존 화면은 새 정책의 증거에서 제외.

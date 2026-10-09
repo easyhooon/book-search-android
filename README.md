@@ -2,6 +2,8 @@
 
 Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하는 Android 앱입니다.
 
+이 브랜치는 JDK 17 실행 조건을 맞추기 위한 수동 DI 비교안입니다. AppGraph·화면별 Factory 계약과 retain·Soil·기능 흐름을 유지하고 객체 조립만 직접 구현합니다. 실제 JDK 17에서 APK 빌드와 자동 테스트 144개를 통과했습니다.
+
 - **검색**: 검색어 확정, 정확도순·발간일순 정렬, 20개 단위 페이지네이션
 - **즐겨찾기**: 로컬 저장·검색, 제목 오름차순·내림차순, 정가 범위 필터
 - **상세**: 두 목록에서 공통으로 사용하며, 도서 정보와 즐겨찾기 상태 표시·변경
@@ -11,17 +13,16 @@ Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하�
 - **검색 상태**: Soil InfiniteQuery가 검색어·정렬별 캐시와 로딩·오류 상태를 맡습니다. 앱은 `is_end`·페이지 상한에 따른 종료와 중복 ID 제거를 맡고, 네트워크 오류·HTTP 5xx·429를 자동 재시도하도록 설정합니다. 실패 페이지를 보존해 기존 페이지 재조회 실패는 다시 조회하고, 추가 로딩 실패는 해당 페이지만 재시도합니다.
 - **즐겨찾기**: Room을 상태의 단일 기준으로 삼아 세 화면이 같은 저장 결과를 관찰합니다. 하나의 Mutation actor가 UI에서 접수한 명령을 순서대로 처리하고, `FavoriteWriter`가 앱 범위에서 Room에 씁니다. 화면을 닫으면 새 요청을 막고, 이미 접수한 요청의 완료 후 참조를 정리합니다. 진행·오류 표시는 화면별로 유지합니다.
 - **화면 수명**: Navigation 3 엔트리에 retain 저장소를 연결해 화면 전환·구성 변경 중 객체를 유지하고 pop 시 정리합니다. 입력·정렬·필터와 상세 스냅샷은 별도로 저장해 시스템 프로세스 재생성에 대응합니다. 이 연결을 위한 decorator와 수명 테스트를 직접 관리합니다.
-- **협업 경계**: 화면은 Root·Presenter·Screen으로 나누고, 원격·로컬 구현은 `core:data` 뒤에 둡니다. Metro가 객체 조립을 생성하지만 화면 그래프와 Soil key의 수명을 맞추는 책임은 앱에 남습니다.
+- **협업 경계**: 화면은 Root·Presenter·Screen으로 나누고, 원격·로컬 구현은 `core:data` 뒤에 둡니다. `ManualAppGraph`가 객체를 조립하며 앱 싱글턴과 화면별 객체의 생성·공유 범위를 직접 관리합니다.
 - **화면·네트워크**: 창 크기·자세에 따라 하단 바·레일을 전환하고, 840dp 이상에서는 목록과 상세를 나란히 표시합니다. 저장한 도서의 텍스트는 오프라인에서도 열리며, 표지는 캐시가 없으면 대체 이미지를 표시합니다. API 인증 interceptor는 이미지 요청에 전달하지 않습니다.
 
 선택 이유·비용과 데이터 흐름은 [아키텍처](docs/ARCHITECTURE.md), 세부 동작은 [구현 사양](docs/SPEC.md)에 있습니다.
 
 ## 검증 범위와 상태
 
-- **자동 테스트**: 140개 통과(실패·오류·건너뜀 0), APK 빌드 성공. 상세 범위는 [QA](docs/QA.md) 참고.
-- **Android Studio**: ZIP을 새 폴더에 풀어 수동 SDK·JDK 설정 없이 SDK 경로 자동 생성, Sync·APK 빌드 성공. 설치된 SDK 37·JDK 21과 캐시를 사용한 환경이며 새 PC의 JDK 자동 설치는 미검증.
-- **실기기 QA**: Galaxy SM-S936N에 최종 APK 설치 후 검색·상세, 즐겨찾기 추가·해제·동기화, 제목 정렬·로컬 검색·가격 필터 확인. API 정가 0의 정보 없음 표시와 필터 제외 확인. 네트워크 오류·페이지네이션·태블릿·폴더블은 현재 APK로 재실행하지 않음.
-- **검증 경계**: 검색은 실제 Soil·key factory·Presenter와 Fake API, 저장은 실제 retain·Soil·Writer와 Fake DAO로 경합·수명 확인. 절차·판정 기준·미실행 항목은 [QA](docs/QA.md)에 정리.
+- **이 브랜치의 빌드·테스트**: Gradle daemon Oracle JDK 17.0.10과 테스트 작업 9개의 JVM 17을 확인했습니다. 기존 140개와 수동 DI 4개를 모두 새로 실행해 144개 통과, 실패·오류·건너뜀 0입니다. APK 빌드와 별도 `./gradlew assembleDebug`도 성공했습니다.
+- **검증 경계**: Robolectric SDK 35, compileSdk·targetSdk 37입니다. 수동 DI 테스트는 객체 공유 범위와 실제 Room 쓰기·읽기 연결을 확인합니다. 검색은 실제 Soil·key factory·Presenter와 Fake API, 저장 수명·경합은 실제 retain·Soil·Writer와 Fake DAO로 확인했습니다.
+- **미실행**: 이 브랜치 APK의 API 36·37 실기기, 새 ZIP의 Studio 가져오기·설치, 새 PC 환경, 동적 재구성·skip 측정입니다. main의 Metro·JDK 21·Robolectric SDK 36 구성에서 확인한 Galaxy·Studio·ZIP 결과와 영상은 참고로만 구분합니다. 명령·증거·세부 범위는 [QA](docs/QA.md)에 있습니다.
 
 ## 빌드 방법
 
@@ -32,11 +33,11 @@ Android SDK Platform 37이 설치되어 있어야 합니다. 명령줄 빌드는
 | Gradle / AGP | 9.4.1(Wrapper 포함) / 9.2.1 |
 | Kotlin / KSP | 2.4.0 / 2.3.10 |
 | compileSdk / targetSdk / minSdk | 37 / 37 / 26 |
-| Gradle 실행 JDK(daemon) | 21 |
+| Gradle 실행 JDK(daemon) | 17 |
 | 순수 JVM 모듈(`core:model`) toolchain | 17 |
 | Android Java·Kotlin 컴파일 대상 | 17 |
 
-**JDK 조건 차이:** Metro 1.4.5의 플러그인·컴파일러가 JVM 21을 요구해 원문의 JDK 17 실행 조건은 미충족입니다. `gradle/gradle-daemon-jvm.properties`가 daemon 21을 선택하며, 컴파일 대상 17과 빌드 실행 JDK는 별개입니다. 근거는 [구현 사양](docs/SPEC.md) 2절에 있습니다.
+**JDK 17 비교안:** Metro 플러그인·컴파일러를 제거하고 Gradle daemon과 테스트를 JVM 17에서 실행합니다. Robolectric SDK 35 검증은 API 36·37 기기 검증을 대신하지 않습니다.
 
 1. 프로젝트 루트의 `local.properties`에 Kakao REST API 키를 설정합니다. 제출 ZIP에는 이 파일이 포함되며 Git에서는 제외됩니다.
 
@@ -59,11 +60,11 @@ Android SDK Platform 37이 설치되어 있어야 합니다. 명령줄 빌드는
 
 키가 없어도 빌드할 수 있습니다. 검색은 키 설정 안내를 표시하고 요청을 보내지 않으며, 로컬 즐겨찾기는 사용할 수 있습니다.
 
-### 제출 파일
+### main 제출 파일(참고)
 
-ZIP에는 제출 커밋의 소스·문서, `.git`, 개인 SDK 경로를 제외한 `local.properties`, `app-debug.apk`, 시연 영상 2개를 포함하고 `build/`·`.gradle/` 등은 제외합니다. 구성·CRC·압축 해제 파일 해시와 Studio 빌드 확인 완료. 포함 APK는 Galaxy에서 검증한 APK와 동일합니다.
+main ZIP에는 제출 커밋의 소스·문서, `.git`, 개인 SDK 경로를 제외한 `local.properties`, `app-debug.apk`, 시연 영상 2개를 포함하고 `build/`·`.gradle/` 등은 제외합니다. 구성·CRC·압축 해제 파일 해시와 Studio 빌드 확인 완료. 포함 APK는 Galaxy에서 검증한 APK와 동일합니다.
 
-`app-debug.apk`는 `adb install app-debug.apk`로 설치할 수 있습니다. 제출 영상은 최종 APK의 휴대폰 시연 `demo.mp4`(47.5초)와 기존 빌드의 태블릿 2-pane 시연 `demo-tablet.mp4`(30.675초)입니다. 합계 78.175초이며, 태블릿 영상은 현재 코드의 검증 근거로 사용하지 않습니다.
+`app-debug.apk`는 `adb install app-debug.apk`로 설치할 수 있습니다. main 제출 영상은 main APK의 휴대폰 시연 `demo.mp4`(47.5초)와 기존 빌드의 태블릿 2-pane 시연 `demo-tablet.mp4`(30.675초)입니다. 합계 78.175초이며, 두 영상 모두 이 비교 브랜치의 검증 근거로 사용하지 않습니다.
 
 ## 사용 기술 및 라이브러리
 
@@ -75,9 +76,9 @@ ZIP에는 제출 커밋의 소스·문서, `.git`, 개인 SDK 경로를 제외�
 | 비동기 상태 관리 | Soil 1.0.0-alpha15 |
 | HTTP 통신·직렬화 | Retrofit 3.0.0, OkHttp 5.5.0, kotlinx.serialization |
 | 로컬 저장 | Room 2.8.5 |
-| 의존성 주입 | Metro 1.4.5 |
+| 의존성 주입 | 수동 DI: AppGraph·화면 Factory 인터페이스 + ManualAppGraph |
 | 이미지 / 로그 | Coil 3.6.3 / Timber 5.0.1(debug 빌드에서만 Tree 등록) |
-| 테스트 | JUnit 4, Robolectric 4.17, Compose UI Test, Molecule, Turbine, MockWebServer |
+| 테스트 | JUnit 4, Robolectric 4.17(SDK 35), Compose UI Test, Molecule, Turbine, MockWebServer |
 
 Soil은 비동기 데이터의 조회·캐싱·갱신과 로딩·오류 상태를 관리합니다. 이 앱은 **InfiniteQuery → Retrofit 검색**, **Subscription → Room Flow**, **Mutation → Room 쓰기**를 연결하며, 독립적인 단건 Query는 사용하지 않습니다. HTTP 통신은 Retrofit·OkHttp가 담당합니다.
 
@@ -123,7 +124,7 @@ Soil은 비동기 데이터의 조회·캐싱·갱신과 로딩·오류 상태�
 | 화면·기기 검증 범위 | 동시 탭 대응과 태블릿·실제 폴더블 검증 포함 |
 | 가격 정보 처리 | 0 이하 정가는 정보 없음, 금액 필터 적용 시 제외·미적용 시 도서 유지 |
 
-Metro 유지로 daemon JVM 21을 선택한 판단과 그 제약을 포함한 상세 기록은 [AI 활용 기록](docs/AI_USAGE.md)에 있습니다.
+JDK 17 비교를 위한 수동 DI 선택과 객체 조립·수명 관리 비용은 [AI 활용 기록](docs/AI_USAGE.md)에 있습니다.
 
 ## 문서
 
