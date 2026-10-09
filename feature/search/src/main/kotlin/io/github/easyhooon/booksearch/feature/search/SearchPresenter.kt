@@ -11,6 +11,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSerializable
 import androidx.compose.runtime.setValue
 import io.github.easyhooon.booksearch.core.data.SearchBooksQueryKeyFactory
+import io.github.easyhooon.booksearch.core.data.SearchPageFetchException
 import io.github.easyhooon.booksearch.core.model.Book
 import io.github.easyhooon.booksearch.core.model.FavoriteCommand
 import io.github.easyhooon.booksearch.core.model.SearchPaging
@@ -113,7 +114,9 @@ fun searchPresenter(
             is InfiniteQueryLoadingErrorObject -> scope.launch { query.refresh() }
             is InfiniteQueryRefreshErrorObject -> {
                 val param = query.loadMoreParam
-                scope.launch { if (param != null) query.loadMore(param) else query.refresh() }
+                val failedPage = (query.error as? SearchPageFetchException)?.page
+                // 다음 페이지가 있어도 기존 페이지의 재조회가 실패했다면 refresh해야 합니다.
+                scope.launch { if (param != null && failedPage == param) query.loadMore(param) else query.refresh() }
             }
             else -> Unit
         }

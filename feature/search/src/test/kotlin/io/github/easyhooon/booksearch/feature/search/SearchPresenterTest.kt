@@ -8,6 +8,7 @@ import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import io.github.easyhooon.booksearch.core.data.SearchBooksQueryId
 import io.github.easyhooon.booksearch.core.data.SearchBooksQueryKeyFactory
+import io.github.easyhooon.booksearch.core.data.SearchPageFetchException
 import io.github.easyhooon.booksearch.core.model.Book
 import io.github.easyhooon.booksearch.core.model.FavoriteCommand
 import io.github.easyhooon.booksearch.core.model.SearchPage
@@ -19,6 +20,7 @@ import io.github.easyhooon.booksearch.core.testing.awaitItemMatching
 import io.github.easyhooon.booksearch.core.testing.presenterFlow
 import io.github.easyhooon.booksearch.core.testing.testBook
 import io.github.easyhooon.booksearch.core.ui.ErrorMessage
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.onEach
@@ -67,7 +69,13 @@ class SearchPresenterTest {
                     val request = Request(query, sort, page)
                     requests += request
                     started.trySend(request)
-                    respond(request)
+                    try {
+                        respond(request)
+                    } catch (error: CancellationException) {
+                        throw error
+                    } catch (error: Exception) {
+                        throw SearchPageFetchException(page, error)
+                    }
                 },
                 initialParam = { SearchPaging.FIRST_PAGE },
                 loadMoreParam = { chunks -> chunks.lastOrNull()?.data?.let(SearchPaging::nextPage) },

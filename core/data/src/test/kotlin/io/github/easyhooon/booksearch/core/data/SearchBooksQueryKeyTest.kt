@@ -1,9 +1,12 @@
 package io.github.easyhooon.booksearch.core.data
 
 import io.github.easyhooon.booksearch.core.model.SearchSort
+import io.github.easyhooon.booksearch.core.network.KakaoBookService
 import io.github.easyhooon.booksearch.core.network.NetworkConfig
+import io.github.easyhooon.booksearch.core.network.model.SearchBookResponse
 import io.github.easyhooon.booksearch.core.network.createBaseOkHttpClient
 import io.github.easyhooon.booksearch.core.network.createKakaoBookService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
@@ -11,6 +14,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -60,6 +64,31 @@ class SearchBooksQueryKeyTest {
         assertEquals(1, key.initialParam())
         assertEquals(4, key.loadMoreParam(listOf(QueryChunk(page, 3))))
         assertNull(key.loadMoreParam(listOf(QueryChunk(page.copy(isEnd = true), 3))))
+    }
+
+    @Test
+    fun `실패한 페이지와 원인을 보존한다`() = runTest {
+        server.enqueue(MockResponse.Builder().code(503).build())
+        val error = runCatching { key().fetch(QueryReceiver, 3) }.exceptionOrNull()
+
+        assertTrue(error is SearchPageFetchException)
+        assertEquals(3, (error as SearchPageFetchException).page)
+        assertEquals(ErrorKind.Server, error.toErrorKind())
+        assertTrue(key().onConfigureOptions()!!.invoke(QueryOptions).shouldRetry(error))
+    }
+
+    @Test
+    fun `요청 취소는 페이지 오류로 감싸지 않는다`() = runTest {
+        val cancellation = CancellationException("cancelled")
+        val service = object : KakaoBookService {
+            override suspend fun searchBooks(query: String, sort: String, page: Int, size: Int): SearchBookResponse =
+                throw cancellation
+        }
+        val key = DefaultSearchBooksQueryKeyFactory(service).create("코틀린", SearchSort.Accuracy)
+
+        val error = runCatching { key.fetch(QueryReceiver, 2) }.exceptionOrNull()
+
+        assertSame(cancellation, error)
     }
 
     @Test

@@ -16,6 +16,18 @@ class ErrorKindTest {
     private fun http(code: Int) = HttpException(Response.error<Any>(code, "".toResponseBody()))
 
     @Test
+    fun `페이지 정보로 감싼 오류도 원인의 분류와 재시도 정책을 유지한다`() {
+        listOf(
+            IOException(), MissingApiKeyException(), http(401), http(403), http(400),
+            http(429), http(500), SerializationException("x"), IllegalStateException(),
+        ).forEach { cause ->
+            val wrapped = SearchPageFetchException(page = 2, cause = cause)
+            assertEquals(cause.toErrorKind(), wrapped.toErrorKind())
+            assertEquals(cause.toErrorKind().isRetryable, wrapped.toErrorKind().isRetryable)
+        }
+    }
+
+    @Test
     fun `키 누락은 IOException 하위여도 재시도하지 않는다`() {
         val kind = MissingApiKeyException().toErrorKind()
         assertEquals(ErrorKind.MissingApiKey, kind)

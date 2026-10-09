@@ -26,6 +26,7 @@ enum class ErrorKind {
 }
 
 fun Throwable.toErrorKind(): ErrorKind = when (this) {
+    is SearchPageFetchException -> cause.toErrorKind()
     // IOException 하위이므로 네트워크 오류보다 먼저 판정합니다.
     is MissingApiKeyException -> ErrorKind.MissingApiKey
     is HttpException -> when (code()) {

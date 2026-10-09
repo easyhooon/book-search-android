@@ -7,6 +7,7 @@ import io.github.easyhooon.booksearch.core.model.SearchPage
 import io.github.easyhooon.booksearch.core.model.SearchPaging
 import io.github.easyhooon.booksearch.core.model.SearchSort
 import io.github.easyhooon.booksearch.core.network.KakaoBookService
+import kotlinx.coroutines.CancellationException
 import soil.query.InfiniteQueryId
 import soil.query.InfiniteQueryKey
 import soil.query.QueryOptionsOverride
@@ -37,6 +38,12 @@ class DefaultSearchBooksQueryKeyFactory(
         SearchBooksQueryKey(service, query, sort)
 }
 
+/** Soil의 재조회/추가 로딩 공통 오류에서 실패한 요청 페이지를 구별합니다. */
+class SearchPageFetchException(
+    val page: Int,
+    override val cause: Exception,
+) : Exception("Failed to fetch search page $page", cause)
+
 internal class SearchBooksQueryKey(
     service: KakaoBookService,
     query: String,
@@ -44,12 +51,18 @@ internal class SearchBooksQueryKey(
 ) : InfiniteQueryKey<SearchPage, Int> by buildInfiniteQueryKey(
     id = SearchBooksQueryId(query, sort),
     fetch = { page ->
-        service.searchBooks(
-            query = query,
-            sort = sort.apiValue,
-            page = page,
-            size = SearchPaging.PAGE_SIZE,
-        ).toSearchPage(page)
+        try {
+            service.searchBooks(
+                query = query,
+                sort = sort.apiValue,
+                page = page,
+                size = SearchPaging.PAGE_SIZE,
+            ).toSearchPage(page)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: Exception) {
+            throw SearchPageFetchException(page, error)
+        }
     },
     initialParam = { SearchPaging.FIRST_PAGE },
     loadMoreParam = { chunks -> chunks.lastOrNull()?.data?.let(SearchPaging::nextPage) },

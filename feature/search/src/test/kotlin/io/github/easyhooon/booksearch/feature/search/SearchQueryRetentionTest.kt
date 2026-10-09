@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createComposeRule
 import io.github.easyhooon.booksearch.core.data.SearchBooksQueryId
 import io.github.easyhooon.booksearch.core.data.SearchBooksQueryKeyFactory
+import io.github.easyhooon.booksearch.core.data.SearchPageFetchException
 import io.github.easyhooon.booksearch.core.model.SearchPage
 import io.github.easyhooon.booksearch.core.model.SearchPaging
 import io.github.easyhooon.booksearch.core.testing.FakeFavoriteWriter
@@ -63,7 +64,7 @@ class SearchQueryRetentionTest {
             id = SearchBooksQueryId(query, sort),
             fetch = { page ->
                 requestedPages += page
-                if (page == 2 && failPage2) throw IOException("offline")
+                if (page == 2 && failPage2) throw SearchPageFetchException(page, IOException("offline"))
                 page(page, isEnd = page == 2)
             },
             initialParam = { SearchPaging.FIRST_PAGE },
