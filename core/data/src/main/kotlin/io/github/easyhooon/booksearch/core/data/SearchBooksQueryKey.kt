@@ -1,8 +1,5 @@
 package io.github.easyhooon.booksearch.core.data
 
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import io.github.easyhooon.booksearch.core.model.SearchPage
 import io.github.easyhooon.booksearch.core.model.SearchPaging
 import io.github.easyhooon.booksearch.core.model.SearchSort
@@ -29,8 +26,6 @@ fun interface SearchBooksQueryKeyFactory {
     fun create(query: String, sort: SearchSort): InfiniteQueryKey<SearchPage, Int>
 }
 
-@ContributesBinding(AppScope::class)
-@Inject
 class DefaultSearchBooksQueryKeyFactory(
     private val service: KakaoBookService,
 ) : SearchBooksQueryKeyFactory {

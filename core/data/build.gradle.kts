@@ -1,6 +1,5 @@
 plugins {
     id("booksearch.android.library")
-    alias(libs.plugins.metro)
 }
 
 dependencies {

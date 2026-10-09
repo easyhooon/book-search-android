@@ -2,7 +2,6 @@ import io.github.easyhooon.booksearch.convention.localProperty
 
 plugins {
     id("booksearch.android.application.compose")
-    alias(libs.plugins.metro)
 }
 
 android {

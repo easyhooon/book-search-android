@@ -8,7 +8,6 @@ versionCode = "1"
 android-gradle-plugin = "9.2.1"
 kotlin = "2.4.0"
 ksp = "2.3.10"
-metro = "1.4.5"
 
 kotlinx-coroutines = "1.11.0"
 kotlinx-serialization-json = "1.11.0"
@@ -98,5 +97,4 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-metro = { id = "dev.zacsweers.metro", version.ref = "metro" }
 room = { id = "androidx.room", version.ref = "androidx-room" }

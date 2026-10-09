@@ -12,7 +12,7 @@ pluginManagement {
 }
 
 plugins {
-    // Gradle daemon용 JDK 21을 자동으로 찾거나 내려받기 위한 toolchain resolver입니다.
+    // 필요한 Java toolchain이 설치되지 않은 환경에서 다운로드를 지원합니다.
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 

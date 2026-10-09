@@ -17,7 +17,6 @@ internal class AndroidFeatureConventionPlugin : Plugin<Project> {
         with(target) {
             applyPlugins(
                 "booksearch.android.library.compose",
-                Plugins.METRO,
                 Plugins.KOTLINX_SERIALIZATION,
             )
 

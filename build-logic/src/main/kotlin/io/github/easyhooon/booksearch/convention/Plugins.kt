@@ -10,6 +10,5 @@ object Plugins {
     const val ANDROID_APPLICATION = "com.android.application"
     const val ANDROID_LIBRARY = "com.android.library"
 
-    const val METRO = "dev.zacsweers.metro"
     const val KSP = "com.google.devtools.ksp"
 }

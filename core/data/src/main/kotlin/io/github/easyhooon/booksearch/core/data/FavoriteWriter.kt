@@ -1,8 +1,5 @@
 package io.github.easyhooon.booksearch.core.data
 
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.Inject
-import dev.zacsweers.metro.SingleIn
 import io.github.easyhooon.booksearch.core.database.FavoriteBookDao
 import io.github.easyhooon.booksearch.core.database.toFavoriteEntity
 import io.github.easyhooon.booksearch.core.model.FavoriteCommand
@@ -16,8 +13,6 @@ import kotlinx.coroutines.sync.withLock
  * 호출한 화면이 사라져 [write]를 기다리던 코루틴이 취소되어도 Room 쓰기는 끝까지 진행합니다.
  * 결과와 예외는 호출자가 기다리는 동안에는 그대로 전달하므로 Soil Mutation의 상태와 일치합니다.
  */
-@SingleIn(AppScope::class)
-@Inject
 class FavoriteWriter(
     private val dao: FavoriteBookDao,
     private val scope: ApplicationCoroutineScope,

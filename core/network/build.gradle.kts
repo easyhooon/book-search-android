@@ -1,7 +1,6 @@
 plugins {
     id("booksearch.android.library")
     id("booksearch.kotlin.library.serialization")
-    alias(libs.plugins.metro)
 }
 
 dependencies {
