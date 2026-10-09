@@ -48,6 +48,7 @@ fun SearchScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val userMessage = uiState.userMessage?.let { stringResource(it.resId) }
     val eventSink by rememberUpdatedState(uiState.eventSink)
+
     LaunchedEffect(userMessage) {
         if (userMessage != null) {
             snackbarHostState.showSnackbar(userMessage)
@@ -105,6 +106,7 @@ private fun SearchContentArea(
     modifier: Modifier = Modifier,
 ) {
     val onRetry = { uiState.eventSink(SearchEvent.Retry) }
+
     when (val content = uiState.content) {
         SearchContent.Idle -> MessageContent(stringResource(R.string.search_idle), modifier)
         SearchContent.Loading -> LoadingContent(modifier)
@@ -115,11 +117,13 @@ private fun SearchContentArea(
             val gridState = rememberSaveable(uiState.submittedQuery, uiState.sort, saver = LazyGridState.Saver) {
                 LazyGridState()
             }
+
             LoadMoreEffect(
                 gridState = gridState,
                 itemCount = content.books.size,
                 onLoadMore = { uiState.eventSink(SearchEvent.LoadMore) },
             )
+
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(BookListDefaults.GridMinCellWidth),
                 state = gridState,
@@ -160,6 +164,7 @@ private fun LoadMoreEffect(
     onLoadMore: () -> Unit,
 ) {
     val currentOnLoadMore by rememberUpdatedState(onLoadMore)
+
     LaunchedEffect(gridState, itemCount) {
         snapshotFlow { gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1 }
             .distinctUntilChanged()

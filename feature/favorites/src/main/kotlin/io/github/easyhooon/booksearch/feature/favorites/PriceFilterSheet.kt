@@ -44,12 +44,13 @@ internal fun PriceFilterSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-    val close = {
-        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
-    }
     var minText by rememberSaveable { mutableStateOf(current.min?.toString().orEmpty()) }
     var maxText by rememberSaveable { mutableStateOf(current.max?.toString().orEmpty()) }
     val draft = PriceFilter(min = PriceInput.parse(minText), max = PriceInput.parse(maxText))
+
+    val close = {
+        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+    }
 
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(

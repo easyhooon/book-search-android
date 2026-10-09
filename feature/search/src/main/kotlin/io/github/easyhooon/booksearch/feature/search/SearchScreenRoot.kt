@@ -21,6 +21,7 @@ fun EntryProviderScope<NavKey>.searchEntry(
 ) {
     entry<SearchNavKey>(metadata = metadata) {
         val graph = retain { graphFactory.createSearchScreenGraph() }
+
         SearchScreenRoot(context = graph.searchScreenContext, onBookClick = onBookClick, selectedBookId = selectedBookId())
     }
 }
@@ -40,5 +41,6 @@ fun SearchScreenRoot(
         favoriteIds = favoriteIds.data.orEmpty(),
         favoriteMutationKey = context.favoriteMutationKey,
     )
+
     SearchScreen(uiState = uiState, onBookClick = onBookClick, modifier = modifier, selectedBookId = selectedBookId)
 }

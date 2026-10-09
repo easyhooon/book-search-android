@@ -44,6 +44,7 @@ fun QueryField(
         focusManager.clearFocus()
         onSubmit()
     }
+
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -81,6 +82,7 @@ fun <T> SortMenuButton(
 ) {
     val focusManager = LocalFocusManager.current
     var expanded by remember { mutableStateOf(false) }
+
     Box(modifier = modifier) {
         TextButton(
             onClick = {

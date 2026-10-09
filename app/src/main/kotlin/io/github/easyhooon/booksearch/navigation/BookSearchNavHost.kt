@@ -81,6 +81,7 @@ fun BookSearchNavHost(
         val sceneStrategy = remember(isTwoPane) {
             if (isTwoPane) ListDetailSceneStrategy() else SinglePaneSceneStrategy()
         }
+
         NavDisplay(
             entries = visibleEntries,
             sceneStrategies = listOf(sceneStrategy),

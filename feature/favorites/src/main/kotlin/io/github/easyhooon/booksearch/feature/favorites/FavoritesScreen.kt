@@ -53,14 +53,15 @@ fun FavoritesScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val userMessage = uiState.userMessage?.let { stringResource(it.resId) }
     val eventSink by rememberUpdatedState(uiState.eventSink)
+    var showPriceFilter by rememberSaveable { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
     LaunchedEffect(userMessage) {
         if (userMessage != null) {
             snackbarHostState.showSnackbar(userMessage)
             eventSink(FavoritesEvent.UserMessageShown)
         }
     }
-    var showPriceFilter by rememberSaveable { mutableStateOf(false) }
-    val focusManager = LocalFocusManager.current
 
     Scaffold(
         modifier = modifier,
@@ -149,6 +150,7 @@ private fun FavoritesContentArea(
             ) {
                 LazyGridState()
             }
+
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(BookListDefaults.GridMinCellWidth),
                 state = gridState,
@@ -177,6 +179,7 @@ private fun FavoritesContentArea(
 private fun PriceFilter.label(): String {
     val min = min?.let(BookFormatters::price)
     val max = max?.let(BookFormatters::price)
+
     return when {
         min != null && max != null -> stringResource(R.string.price_filter_range, min, max)
         min != null -> stringResource(R.string.price_filter_at_least, min)

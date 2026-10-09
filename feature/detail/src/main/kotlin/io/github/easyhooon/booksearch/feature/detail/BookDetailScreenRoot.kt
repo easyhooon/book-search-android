@@ -22,6 +22,7 @@ fun EntryProviderScope<NavKey>.bookDetailEntry(
 ) {
     entry<BookDetailNavKey>(clazzContentKey = { it.book.id }, metadata = metadata) { key ->
         val graph = retain { graphFactory.createBookDetailScreenGraph() }
+
         BookDetailScreenRoot(context = graph.bookDetailScreenContext, snapshot = key.book, onBack = onBack)
     }
 }
@@ -42,5 +43,6 @@ fun BookDetailScreenRoot(
         isRoomLoaded = saved is SubscriptionSuccessObject,
         favoriteMutationKey = context.favoriteMutationKey,
     )
+
     BookDetailScreen(uiState = uiState, onBack = onBack, modifier = modifier)
 }

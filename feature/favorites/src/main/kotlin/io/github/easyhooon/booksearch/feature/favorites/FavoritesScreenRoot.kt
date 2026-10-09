@@ -21,6 +21,7 @@ fun EntryProviderScope<NavKey>.favoritesEntry(
 ) {
     entry<FavoritesNavKey>(metadata = metadata) {
         val graph = retain { graphFactory.createFavoritesScreenGraph() }
+
         FavoritesScreenRoot(context = graph.favoritesScreenContext, onBookClick = onBookClick, selectedBookId = selectedBookId())
     }
 }
@@ -38,5 +39,6 @@ fun FavoritesScreenRoot(
         favoriteBooks = favoriteBooks.data,
         favoriteMutationKey = context.favoriteMutationKey,
     )
+
     FavoritesScreen(uiState = uiState, onBookClick = onBookClick, modifier = modifier, selectedBookId = selectedBookId)
 }

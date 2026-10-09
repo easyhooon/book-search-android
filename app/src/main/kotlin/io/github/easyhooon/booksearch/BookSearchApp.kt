@@ -33,6 +33,7 @@ fun BookSearchApp(
     val currentIsTwoPane by rememberUpdatedState(isTwoPane)
     val onBookClick = { book: Book -> backStack.openDetail(book, replaceDetail = currentIsTwoPane) }
     val selectedBookId = { if (currentIsTwoPane) backStack.openedBookId else null }
+
     BookSearchNavHost(
         backStack = backStack,
         entryProvider = entryProvider<NavKey> {

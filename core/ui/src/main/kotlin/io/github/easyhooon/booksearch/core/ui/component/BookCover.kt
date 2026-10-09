@@ -28,10 +28,12 @@ fun BookCover(
     val shapeModifier = modifier
         .clip(RoundedCornerShape(4.dp))
         .background(MaterialTheme.colorScheme.surfaceVariant)
+
     if (thumbnailUrl.isBlank()) {
         CoverPlaceholder(shapeModifier)
         return
     }
+
     SubcomposeAsyncImage(
         model = thumbnailUrl,
         contentDescription = description,
