@@ -13,6 +13,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.timber)
 
+    testImplementation(projects.core.data)
+    testImplementation(projects.core.database)
+
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.compose.ui.test.manifest)

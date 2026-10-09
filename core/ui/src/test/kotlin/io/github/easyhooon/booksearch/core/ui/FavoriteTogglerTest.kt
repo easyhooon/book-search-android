@@ -2,15 +2,19 @@ package io.github.easyhooon.booksearch.core.ui
 
 import io.github.easyhooon.booksearch.core.model.Book
 import io.github.easyhooon.booksearch.core.model.FavoriteCommand
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.job
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
@@ -65,6 +69,22 @@ class FavoriteTogglerTest {
 
         scope.cancel()
 
+        assertEquals(emptySet<String>(), toggler.pendingIds)
+        assertFalse(toggler.hasFailure)
+    }
+
+    @Test
+    fun `Mutation 취소는 그대로 전파하고 저장 실패로 표시하지 않는다`() = runTest {
+        val cancellation = CancellationException("cancelled")
+        var completionCause: Throwable? = null
+        write = {
+            currentCoroutineContext().job.invokeOnCompletion { completionCause = it }
+            throw cancellation
+        }
+
+        toggler.setFavorite(book("a"), favorite = true)
+
+        assertSame(cancellation, completionCause)
         assertEquals(emptySet<String>(), toggler.pendingIds)
         assertFalse(toggler.hasFailure)
     }

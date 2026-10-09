@@ -35,5 +35,5 @@ class SearchScreenContext(
     val favoriteIdsSubscriptionKey: FavoriteIdsSubscriptionKey,
     favoriteMutationKeyFactory: FavoriteMutationKeyFactory,
 ) {
-    val favoriteMutationKey: MutationKey<Unit, FavoriteCommand> = favoriteMutationKeyFactory.create("search")
+    val favoriteMutationKey: MutationKey<Unit, FavoriteCommand> = favoriteMutationKeyFactory.create()
 }

@@ -30,5 +30,5 @@ class FavoritesScreenContext(
     val favoriteBooksSubscriptionKey: FavoriteBooksSubscriptionKey,
     favoriteMutationKeyFactory: FavoriteMutationKeyFactory,
 ) {
-    val favoriteMutationKey: MutationKey<Unit, FavoriteCommand> = favoriteMutationKeyFactory.create("favorites")
+    val favoriteMutationKey: MutationKey<Unit, FavoriteCommand> = favoriteMutationKeyFactory.create()
 }

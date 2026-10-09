@@ -9,11 +9,11 @@ import soil.query.MutationKey
 import soil.query.buildMutationKey
 
 /**
- * 화면마다 다른 [screenTag]로 Mutation 상태를 분리합니다.
- * 반영 결과는 Room Subscription으로 모든 화면에 전달되므로 Mutation 데이터는 쓰지 않습니다.
+ * 모든 화면의 즐겨찾기 명령을 하나의 Mutation actor에서 접수 순서대로 실행합니다.
+ * 진행·실패 표시는 화면별 Toggler가 소유하고, 반영 결과는 Room Subscription으로 전달합니다.
  */
 fun interface FavoriteMutationKeyFactory {
-    fun create(screenTag: String): MutationKey<Unit, FavoriteCommand>
+    fun create(): MutationKey<Unit, FavoriteCommand>
 }
 
 @ContributesBinding(AppScope::class)
@@ -21,8 +21,8 @@ fun interface FavoriteMutationKeyFactory {
 class DefaultFavoriteMutationKeyFactory(
     private val writer: FavoriteWriter,
 ) : FavoriteMutationKeyFactory {
-    override fun create(screenTag: String): MutationKey<Unit, FavoriteCommand> = buildMutationKey(
-        id = MutationId("favorite", "screen" to screenTag),
+    override fun create(): MutationKey<Unit, FavoriteCommand> = buildMutationKey(
+        id = MutationId("favorite"),
         mutate = { command -> writer.write(command) },
     )
 }
