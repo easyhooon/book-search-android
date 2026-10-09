@@ -1,0 +1,36 @@
+flowchart LR
+    root["ScreenRoot
+엔트리 등록 · Room 값을 Presenter에 전달"]
+    subscription["Soil Subscription
+즐겨찾기 목록 · ID, 값 수신 전 로딩"]
+    roomRead["Room DAO Flow
+즐겨찾기의 단일 상태 기준"]
+    presenter["Presenter · @Composable
+화면 상태 · 이벤트 처리"]
+    query["Soil InfiniteQuery
+확정 검색어 · 정렬로 key 변경"]
+    remote["Retrofit → OkHttp → Kakao API"]
+    saved["rememberSerializable
+입력 · 확정 검색어 · 정렬 · 가격 범위"]
+    toggler["retainFavoriteToggler
+쓰기 진행 상태 유지"]
+    write["Soil Mutation → FavoriteWriter
+→ Room DAO 쓰기"]
+    screen["Screen
+UiState 표시 · eventSink로 이벤트 전달"]
+    root --> subscription --> roomRead
+    root --> presenter
+    presenter --> query --> remote
+    presenter --> saved
+    presenter --> toggler --> write
+    presenter --> screen
+    app["app"]
+    navigation["Navigation 3 + retain decorator
+엔트리 상태 유지 · 제거"]
+    metro["Metro AppGraph
+API · DB · key · 이미지 로더 조립"]
+    coil["Coil ImageLoader
+표지 요청 · 인증 없는 전용 클라이언트"]
+    app --> navigation
+    app --> metro
+    app --> coil

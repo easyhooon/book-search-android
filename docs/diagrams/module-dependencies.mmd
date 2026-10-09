@@ -1,0 +1,22 @@
+flowchart TB
+    app["app
+내비게이션 · AppGraph 조립"]
+    features["feature:search · favorites · detail
+화면 모듈 간 참조 없음"]
+    data["core:data
+Soil key · FavoriteWriter"]
+    ui["core:ui
+공통 컴포넌트 · FavoriteToggler"]
+    model["core:model
+순수 Kotlin 모델 · 규칙"]
+    network["core:network
+Retrofit · OkHttp"]
+    database["core:database
+Room"]
+    app --> features
+    features --> data
+    features --> ui
+    features --> model
+    data --> network
+    data --> database
+    data -->|api로 노출| model

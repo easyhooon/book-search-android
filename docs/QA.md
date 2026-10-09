@@ -1,161 +1,197 @@
-# QA 테스트케이스와 실기기 실행 결과
+# QA 절차와 검증 범위
 
-[요구사항](REQUIREMENTS.md)의 R-ID별 사용자 시나리오를 실기기에서 실행한 기록입니다. 자동 테스트와 기기 확인을 구분하며, "통과"는 아래 환경에서 실제로 실행한 결과만 뜻합니다.
+[요구사항](REQUIREMENTS.md)의 R-ID별 재현 절차와 현재 기대 결과입니다. **APK 빌드·자동 테스트와 Android Studio 새 폴더 가져오기는 통과했으며, 현재 APK의 Galaxy 확인 범위는 아래에 구분**합니다. 표의 "기존 QA 결과"와 화면 자료는 이전 빌드에서 관찰한 참고 기록이며, 현재 코드의 통과 근거가 아닙니다.
 
-## 실행 환경
+## 기기 검증 환경
 
 | 항목 | 값 |
 |---|---|
 | 휴대폰 | Samsung SM-S936N, Android 17(API 37), 1080x2340, density 450 |
 | 태블릿 | Samsung SM-X236N, Android 16(API 36), 1200x1920, density 240. 세로 800dp(레일, 1-pane), 가로 1280dp(2-pane). TC-35, TC-90~94에 사용 |
 | 폴더블 | Samsung Galaxy Z Fold2(SM-F916N), Android 13(API 33). 안쪽 화면 1768x2208(약 589x736dp, compact 너비), 바깥 화면 816x2260(약 272x753dp), density 480. 기기 상태 CLOSE·HALF_FOLDED·OPEN. TC-33(일부), TC-68d~68h에 사용 |
-| 빌드 | debug APK. 휴대폰 TC-01~13·19·20·25·26·40~42·67·08/09·33은 커밋 `e52f12c`, 그 밖의 휴대폰 시나리오와 태블릿·폴더블은 `fe1b21d`. 두 빌드의 앱 코드 차이는 즐겨찾기 Subscription key의 `keepAliveTime` 설정 하나입니다([SPEC](SPEC.md) 8절) |
-| 일시 | 2026-10-08 |
+| 대상 | 최종 debug APK를 Galaxy SM-S936N에 설치. 태블릿·폴더블 정보는 기존 QA 환경 |
 | 조작 | `adb shell input`(tap·swipe·text·keyevent). 폴더블 접힘·펼침은 `cmd device_state state 0/2/3`과 손으로 직접 접고 펴기(TC-68h) |
 | 판정 근거 | `screencap`, `uiautomator dump` 화면 텍스트, OkHttp 로그의 `--> GET` 요청 수, `pidof`(프로세스 유지·교체), `dumpsys`(활성 Activity·키보드·기기 상태) |
 | 기기 설정 | 회전·다크 모드·비행기 모드를 바꾼 뒤 복원(자동 회전 켬, 라이트 모드, 비행기 모드 끔). 폴더블은 이 앱의 "커버 화면에서 앱 계속 사용"을 켜고, 기기 상태 강제값을 `cmd device_state state reset`으로 해제 |
 
 스크린샷은 [qa/](qa/)에 있고, 파일 이름의 `tcNN`이 TC 번호입니다.
 
-## 결과 요약
+## 최종 검증 상태
 
-- 실기기 시나리오 표 45행(휴대폰 33, 태블릿 6, 폴더블 5, 휴대폰·폴더블에 걸친 TC-33 1. TC-08/09는 한 행)을 실행했고 모두 통과입니다.
-- 단위·Compose·Room 자동 테스트 121개, 실패 0개입니다(아래 "자동 테스트").
+| 범위 | 상태 |
+|---|---|
+| 자동 테스트·APK 빌드 | 140개 모두 새 실행, 실패·오류·건너뜀 0. APK 빌드 성공 |
+| Android Studio ZIP 가져오기 | SDK 경로 자동 생성·Sync·IDE APK 빌드 성공. 설치된 SDK·JDK·캐시 사용 |
+| 실기기 | Galaxy 설치·검색·상세·즐겨찾기·정렬·로컬 검색·가격 필터 확인. 아래 미실행 항목과 기존 QA 결과는 구분 |
+| 제출 ZIP | 구성·CRC·압축 해제 파일 해시·Studio 빌드 통과. 포함 APK는 Galaxy 검증 APK와 동일 |
+
+## Android Studio 확인
+
+| 항목 | 확인 범위·결과 |
+|---|---|
+| 환경 | Android Studio Rabbit 1 2026.2.1. 내장 JBR 25.0.3과 별도로 Gradle daemon criteria가 JDK 21 선택 |
+| 절차 | ZIP을 새 폴더에 풀어 `sdk.dir`·`.idea`·`.gradle`·빌드 결과가 없는 상태에서 열기. 기존 IDE 신뢰 상태 사용 |
+| 결과 | 수동 SDK·JDK 설정 없이 SDK 경로 자동 생성, Gradle Sync 및 IDE `assembleDebug` 성공 |
+| 한계 | 이미 설치된 SDK 37·JDK 21 및 사용자 캐시 사용. 새 PC의 JDK 자동 다운로드·캐시 없는 빌드는 미검증 |
+
+## 제출 패키지 확인
+
+- `.git`·`local.properties`·APK·시연 영상 2개·다이어그램 원본과 이미지 포함, `build/`·`.gradle/` 등 제외 확인.
+- API 키 포함 여부만 확인하고 값은 기록하지 않음. 개인 `sdk.dir`는 제외.
+- CRC 및 압축 해제 파일 해시 대조 통과. ZIP APK와 Galaxy에 설치한 APK의 해시 일치.
+- 제출 커밋의 소스·문서와 `.git`을 포함하며 기존 ZIP은 별도 보존.
+
+## 현재 APK의 Galaxy 확인 범위
+
+| 범위 | 확인 결과 |
+|---|---|
+| 설치·검색 | 설치·실행 성공, `kotlin` 검색과 카드의 도서 정보 표시 |
+| 상세 | 검색·즐겨찾기에서 진입, 제목·저자·출판사·출간일·ISBN·정가·할인가 표시 |
+| 즐겨찾기 | 검색 카드·상세에서 추가, 즐겨찾기 목록에서 해제, 검색 카드 하트 동기화 |
+| 정렬·검색 | 제목 오름차순·내림차순 전환, 로컬 검색어 `with`로 제목 필터링 |
+| 가격 범위 | 최대 38,000원에서 40,000원 도서 제외·36,000원 도서 유지. 최대 36,000원에서 같은 금액 포함 |
+| 정가 정보 없음 | API 정가 0인 `Mastering Kotlin Multiplatform`의 카드·상세에 "가격 정보 없음". 저장 후 무필터 목록에 유지, 금액 필터 적용 시 제외 |
+
+네트워크 오류·페이지네이션, 앱 종료 후 복원, 태블릿·폴더블의 현재 APK 재검증은 미실행입니다. 아래 표의 부분 확인은 해당 절차 중 확인한 범위만 뜻하며, 참고 화면은 기존 QA 자료입니다.
 
 ## 실기기 시나리오
 
 ### 검색
 
-| TC | R-ID | 절차 | 기대 결과 | 실제 결과 | 판정 | 증거 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
 | 01 | R-012 | 앱을 새로 설치하고 첫 실행 | 검색 탭, 하단 탭 2개, 검색 전 안내 | "도서를 검색해 보세요"와 검색·즐겨찾기 탭 | 통과 | [tc01](qa/tc01_launch.jpg) |
 | 02 | R-013, R-016 | "kotlin" 입력 후 키보드 검색 키로 확정 | 카드에 표지·제목·저자·출판사·출판일·가격 | `query=kotlin&sort=accuracy&page=1&size=20` 요청 1건, 필드 모두 표시 | 통과 | [tc02](qa/tc02_search.jpg) |
-| 03 | R-014, R-019 | 정렬 메뉴에서 발간일순 선택 | `sort=latest`로 1페이지부터 다시 요청, 이전 결과와 섞이지 않음 | `sort=latest&page=1` 요청 1건, 출간일 2026.06.16 → 06.05 → 05.19 순서 | 통과 | [메뉴](qa/tc03_sort_menu.jpg), [결과](qa/tc03_latest.jpg) |
-| 04 | R-015, R-062 | 결과 목록을 끝까지 연속 스크롤 | 끝에 닿을 때마다 다음 페이지 요청, 마지막 페이지 뒤 요청 없음 | `page=2`~`11`을 한 번씩 차례로 요청. 마지막 페이지 뒤 더 스크롤해도 요청 0건 | 통과 | [tc04](qa/tc04_page2.jpg) |
-| 05 | R-020 | 결과가 없는 검색어("qzxqzxqzx987") 확정 | 결과 없음 안내 | "검색 결과가 없습니다" 표시 | 통과 | [tc05](qa/tc05_empty.jpg) |
-| 06 | R-061 | 검색어를 지운 뒤 빈 상태로 확정 | 검색 전 상태로 복귀 | 지우기만 하면 이전 결과 화면 유지, 빈 상태로 확정하면 검색 전 안내. 요청 0건 | 통과 | [지움](qa/tc06_cleared_input.jpg), [확정](qa/tc06_blank_submit.jpg) |
-| 19 | R-019, R-061 | "android" 확정 직후 "java"로 바꿔 확정 | 마지막 검색어 결과만 표시 | java 결과만 표시. android 응답(80ms)이 java 요청 전에 와서 늦은 응답 경합은 기기에서 재현 안 됨(단위 테스트로 확인) | 통과 | [tc19](qa/tc19_fast_change.jpg) |
+| 03 | R-014, R-019 | 정렬 메뉴에서 발간일순 선택 | `sort=latest`로 1페이지부터 다시 요청, 이전 결과와 섞이지 않음 | `sort=latest&page=1` 요청 1건, 출간일 2026.06.16 → 06.05 → 05.19 순서 | 미검증 | [메뉴](qa/tc03_sort_menu.jpg), [결과](qa/tc03_latest.jpg) |
+| 04 | R-015, R-062 | 결과 목록을 끝까지 연속 스크롤 | 끝에 닿을 때마다 다음 페이지 요청, 마지막 페이지 뒤 요청 없음 | `page=2`~`11`을 한 번씩 차례로 요청. 마지막 페이지 뒤 더 스크롤해도 요청 0건 | 미검증 | [tc04](qa/tc04_page2.jpg) |
+| 05 | R-020 | 결과가 없는 검색어("qzxqzxqzx987") 확정 | 결과 없음 안내 | "검색 결과가 없습니다" 표시 | 미검증 | [tc05](qa/tc05_empty.jpg) |
+| 06 | R-061 | 검색어를 지운 뒤 빈 상태로 확정 | 검색 전 상태로 복귀 | 지우기만 하면 이전 결과 화면 유지, 빈 상태로 확정하면 검색 전 안내. 요청 0건 | 미검증 | [지움](qa/tc06_cleared_input.jpg), [확정](qa/tc06_blank_submit.jpg) |
+| 19 | R-019, R-061 | "android" 확정 직후 "java"로 바꿔 확정 | 마지막 검색어 결과만 표시 | java 결과만 표시. android 응답(80ms)이 java 요청 전에 와서 늦은 응답 경합은 기기에서 재현 안 됨(단위 테스트로 확인) | 미검증 | [tc19](qa/tc19_fast_change.jpg) |
 
 ### 오류와 네트워크
 
-| TC | R-ID | 절차 | 기대 결과 | 실제 결과 | 판정 | 증거 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
-| 20 | R-020, R-034 | 비행기 모드에서 새 검색어("swift") 확정 | 최초 오류 화면과 재시도 버튼 | 요청 4건(자동 재시도 포함, SPEC 9절) 뒤 "네트워크 연결을 확인한 뒤 다시 시도해 주세요."와 "다시 시도" 표시 | 통과 | [tc20](qa/tc20_initial_error.jpg) |
-| 40 | R-040, R-063 | 온라인에서 재시도 → 오프라인 전환 → 끝까지 스크롤 → 오류 뒤 더 스크롤 | 목록 유지, 끝에 추가 로딩 오류·재시도. 오류 뒤 중복 요청 없음 | 재시도 요청 1건으로 결과 표시. 추가 로딩은 `page=2` 4건(자동 재시도 포함) 뒤 실패, 목록 유지·끝에 오류와 재시도. 이후 스크롤 요청 0건 | 통과 | [재시도](qa/tc40_retry_ok.jpg), [추가 오류](qa/tc40_more_error.jpg) |
-| 40b | R-040, R-069 | 추가 로딩 실패 상태에서 즐겨찾기 탭으로 10초 이동 후 복귀 → 온라인에서 재시도 | 목록과 목록 끝 재시도가 그대로 남음. 재시도는 실패한 페이지만 요청 | 복귀 시 요청 0건, 목록과 재시도 유지. 재시도 시 `page=2`만 요청 | 통과 | [실패](qa/tc40b_more_error_before.jpg), [복귀](qa/tc40b_more_error_after_tab.jpg), [재시도](qa/tc40b_retry_after_tab.jpg) |
-| 42 | R-034, R-040 | 오프라인에서 새 검색어("compose") 오류 → 연결 복구 후 12초 대기 → 재시도 | 재시도 버튼으로 복구 | 복구 후 자동 요청 0건, 오류 화면 유지. 재시도 시 요청 1건으로 결과 표시 | 통과 | [오류](qa/tc42_offline_initial_error.jpg), [복구 후](qa/tc42_after_reconnect_still_error.jpg), [재시도](qa/tc42_retry_after_reconnect.jpg) |
-| 86 | R-086 | `local.properties`가 없는 별도 worktree로 빌드·설치 → 검색 → 즐겨찾기 탭과 상세 | 빌드 성공, 검색에 키 미설정 안내, 즐겨찾기 정상 | `assembleDebug` 성공 후 설치. "API 키가 설정되지 않았습니다…" 안내, 요청 0건. 즐겨찾기 목록과 상세 정상 | 통과 | [검색](qa/tc86_no_key_search.jpg), [목록](qa/tc86_no_key_fav.jpg), [상세](qa/tc86_no_key_fav_detail.jpg) |
+| 20 | R-020, R-034 | 비행기 모드에서 새 검색어("swift") 확정 | 최초 오류 화면과 재시도 버튼 | 요청 4건(자동 재시도 포함, SPEC 9절) 뒤 "네트워크 연결을 확인한 뒤 다시 시도해 주세요."와 "다시 시도" 표시 | 미검증 | [tc20](qa/tc20_initial_error.jpg) |
+| 40 | R-040, R-063 | 온라인에서 재시도 → 오프라인 전환 → 끝까지 스크롤 → 오류 뒤 더 스크롤 | 목록 유지, 끝에 추가 로딩 오류·재시도. 오류 뒤 중복 요청 없음 | 재시도 요청 1건으로 결과 표시. 추가 로딩은 `page=2` 4건(자동 재시도 포함) 뒤 실패, 목록 유지·끝에 오류와 재시도. 이후 스크롤 요청 0건 | 미검증 | [재시도](qa/tc40_retry_ok.jpg), [추가 오류](qa/tc40_more_error.jpg) |
+| 40b | R-040, R-069 | 추가 로딩 실패 상태에서 즐겨찾기 탭으로 10초 이동 후 복귀 → 온라인에서 재시도 | 목록과 목록 끝 재시도가 그대로 남음. 재시도는 실패한 페이지만 요청 | 복귀 시 요청 0건, 목록과 재시도 유지. 재시도 시 `page=2`만 요청 | 미검증 | [실패](qa/tc40b_more_error_before.jpg), [복귀](qa/tc40b_more_error_after_tab.jpg), [재시도](qa/tc40b_retry_after_tab.jpg) |
+| 42 | R-034, R-040 | 오프라인에서 새 검색어("compose") 오류 → 연결 복구 후 12초 대기 → 재시도 | 재시도 버튼으로 복구 | 복구 후 자동 요청 0건, 오류 화면 유지. 재시도 시 요청 1건으로 결과 표시 | 미검증 | [오류](qa/tc42_offline_initial_error.jpg), [복구 후](qa/tc42_after_reconnect_still_error.jpg), [재시도](qa/tc42_retry_after_reconnect.jpg) |
+| 86 | R-086 | `local.properties`가 없는 별도 worktree로 빌드·설치 → 검색 → 즐겨찾기 탭과 상세 | 빌드 성공, 검색에 키 미설정 안내, 즐겨찾기 정상 | `assembleDebug` 성공 후 설치. "API 키가 설정되지 않았습니다…" 안내, 요청 0건. 즐겨찾기 목록과 상세 정상 | 미검증 | [검색](qa/tc86_no_key_search.jpg), [목록](qa/tc86_no_key_fav.jpg), [상세](qa/tc86_no_key_fav_detail.jpg) |
 
 ### 즐겨찾기
 
-| TC | R-ID | 절차 | 기대 결과 | 실제 결과 | 판정 | 증거 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
-| 07 | R-017, R-021 | 검색 결과 카드 3개의 하트 누르기 | 즐겨찾기 상태로 바뀜 | 3개 모두 "즐겨찾기 해제" 상태 | 통과 | [tc07](qa/tc07_fav_added.jpg) |
-| 10 | R-021, R-023 | 2개를 더 추가한 뒤 즐겨찾기 탭 열기 | 저장한 도서가 제목 오름차순 | 5권 모두 제목 오름차순(한글 우선) | 통과 | [tc10](qa/tc10_fav_list.jpg) |
+| 07 | R-017, R-021 | 검색 결과 카드 3개의 하트 누르기 | 즐겨찾기 상태로 바뀜 | 3개 모두 "즐겨찾기 해제" 상태 | 부분 확인: 검색 카드·상세에서 추가 | [tc07](qa/tc07_fav_added.jpg) |
+| 10 | R-021, R-023 | 2개를 더 추가한 뒤 즐겨찾기 탭 열기 | 저장한 도서가 제목 오름차순 | 5권 모두 제목 오름차순(한글 우선) | 부분 확인: 2권 제목 오름차순 | [tc10](qa/tc10_fav_list.jpg) |
 | 12 | R-023 | 정렬을 제목 내림차순으로 변경 | 역순 정렬 | 제목 내림차순 | 통과 | [tc12](qa/tc12_desc.jpg) |
-| 12b | R-023, R-041 | 목록을 아래로 스크롤한 뒤 정렬 변경 | 새 정렬의 맨 위부터 표시 | 내림차순 첫 항목 "Kotlin in Action"부터 표시 | 통과 | [스크롤](qa/tc12b_fav_scrolled.jpg), [변경 후](qa/tc12b_desc_top.jpg) |
-| 11 | R-022 | 로컬 검색: 제목 "action", 저자 "jemerov", 일치 없음 "sebastian", 검색어 지우기 | 제목·저자로 걸러지고, 없으면 안내 | 제목 2건, 저자 1건, 일치 없음은 "조건에 맞는 도서가 없습니다". 지우면 전체 목록 | 통과 | [제목](qa/tc11_local_title.jpg), [저자](qa/tc11_local_author.jpg), [없음](qa/tc11_no_match.jpg) |
-| 13 | R-024, R-065 | 가격 필터: 36000~40000 적용 → 최소 50000·최대 40000 입력 → 최소 70000만 적용 → 초기화 | 범위 적용, 잘못된 범위 적용 불가, 0건 안내, 초기화 시 전체 | 칩 "36,000원 ~ 40,000원"으로 3권(정가 36,000·40,000·36,000원). 잘못된 범위는 "최소 금액이 최대 금액보다 클 수 없습니다"·적용 버튼 비활성. "70,000원 이상"은 "조건에 맞는 도서가 없습니다". 초기화 후 칩 "가격 필터"·전체 목록 | 통과 | [시트](qa/tc13_sheet.jpg), [입력](qa/tc13_sheet_filled.jpg), [적용](qa/tc13_filtered.jpg), [잘못된 범위](qa/tc13_invalid.jpg), [0건](qa/tc13_no_match.jpg), [초기화](qa/tc13_cleared.jpg) |
+| 12b | R-023, R-041 | 목록을 아래로 스크롤한 뒤 정렬 변경 | 새 정렬의 맨 위부터 표시 | 내림차순 첫 항목 "Kotlin in Action"부터 표시 | 미검증 | [스크롤](qa/tc12b_fav_scrolled.jpg), [변경 후](qa/tc12b_desc_top.jpg) |
+| 11 | R-022 | 로컬 검색: 제목 "action", 저자 "jemerov", 일치 없음 "sebastian", 검색어 지우기 | 제목·저자로 걸러지고, 없으면 안내 | 제목 2건, 저자 1건, 일치 없음은 "조건에 맞는 도서가 없습니다". 지우면 전체 목록 | 부분 확인: 제목 with 검색. 저자·일치 없음 미실행 | [제목](qa/tc11_local_title.jpg), [저자](qa/tc11_local_author.jpg), [없음](qa/tc11_no_match.jpg) |
+| 13 | R-024, R-065 | 가격 필터: 36000~40000 적용 → 최소 50000·최대 40000 입력 → 최소 70000만 적용 → 초기화 | 범위 적용, 잘못된 범위 적용 불가, 0건 안내, 초기화 시 전체 | 칩 "36,000원 ~ 40,000원"으로 3권(정가 36,000·40,000·36,000원). 잘못된 범위는 "최소 금액이 최대 금액보다 클 수 없습니다"·적용 버튼 비활성. "70,000원 이상"은 "조건에 맞는 도서가 없습니다". 초기화 후 칩 "가격 필터"·전체 목록 | 부분 확인: 최대 38,000/36,000원·동등 경계. 최소·잘못된 범위 미실행 | [시트](qa/tc13_sheet.jpg), [입력](qa/tc13_sheet_filled.jpg), [적용](qa/tc13_filtered.jpg), [잘못된 범위](qa/tc13_invalid.jpg), [0건](qa/tc13_no_match.jpg), [초기화](qa/tc13_cleared.jpg) |
 | 27 | R-027 | 즐겨찾기 목록에서 하트 해제 → 검색 탭 확인 | 목록에서 빠지고 검색 카드도 해제 | 목록에서 사라지고 검색 카드가 빈 하트 | 통과 | [목록](qa/tc27_fav_removed.jpg), [검색](qa/tc27_search_synced.jpg) |
-| 67 | R-067 | 검색 카드의 하트를 한 번의 셸 호출로 6회 연속 탭 | 쓰기 중인 카드는 비활성. 최종 상태가 검색·즐겨찾기 탭에서 일치 | 최종 상태 미저장, 즐겨찾기 목록에도 없어 두 탭 일치 | 통과 | [검색](qa/tc67_rapid_toggle_search.jpg), [목록](qa/tc67_rapid_toggle_fav.jpg) |
-| 26 | R-026 | `am force-stop` 후 재실행 → 즐겨찾기 탭 | 저장한 도서 유지 | 4권 그대로 표시 | 통과 | [tc26](qa/tc26_after_force_stop.jpg) |
+| 67 | R-067 | 검색 카드의 하트를 한 번의 셸 호출로 6회 연속 탭 | 쓰기 중인 카드는 비활성. 최종 상태가 검색·즐겨찾기 탭에서 일치 | 최종 상태 미저장, 즐겨찾기 목록에도 없어 두 탭 일치 | 미검증 | [검색](qa/tc67_rapid_toggle_search.jpg), [목록](qa/tc67_rapid_toggle_fav.jpg) |
+| 26 | R-026 | `am force-stop` 후 재실행 → 즐겨찾기 탭 | 저장한 도서 유지 | 4권 그대로 표시 | 미검증 | [tc26](qa/tc26_after_force_stop.jpg) |
 
 ### 상세와 탐색
 
-| TC | R-ID | 절차 | 기대 결과 | 실제 결과 | 판정 | 증거 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
-| 08/09 | R-018, R-029, R-030, R-031, R-087 | 저장한 도서 상세 열기 → 상세에서 하트 해제 → 뒤로 | 상세 표시. 해제해도 정보가 남고 목록에 반영 | 표지·제목·저자·출판사·출간일·ISBN·정가·할인가·소개 표시. 해제 후 정보 유지, 목록에서 빠짐 | 통과 | [상세](qa/tc08_detail.jpg), [해제](qa/tc09_detail_unfav.jpg), [목록](qa/tc09_list_synced.jpg) |
-| 25 | R-025 | 즐겨찾기 목록에서 카드 선택 | 상세로 이동 | 해당 도서 상세 표시 | 통과 | [tc25](qa/tc25_detail_from_fav.jpg) |
-| 71 | R-071, R-027 | 미저장 도서 상세에서 하트를 누르고 같은 셸 호출에서 바로 뒤로 가기. 상세 진입 약 1초 뒤 실행해 저장·해제를 번갈아 4회, 하트 후 2초 뒤 뒤로 2회. 즐겨찾기 목록의 상세에서도 해제 후 바로 뒤로 | 화면이 닫혀도 쓰기 완료, 돌아온 목록과 다른 탭에 바로 반영 | 매번 돌아온 지 1초 안에 검색 카드 하트가 바뀜. 저장 뒤 즐겨찾기 목록에 포함, 목록 상세에서 해제하면 목록에서 빠짐 | 통과 | [검색](qa/tc71_back_during_write_search.jpg), [목록](qa/tc71_back_during_write_fav.jpg), [목록 상세 해제](qa/tc71_fav_list_unfav_back.jpg) |
-| 18 | R-085 | 검색 → 즐겨찾기 탭 → 즐겨찾기 탭 재선택 → 뒤로 → 검색 루트에서 뒤로 | 즐겨찾기 루트의 뒤로는 검색 탭, 검색 루트의 뒤로는 앱 종료 | 검색 탭 복귀, 검색어 "kotlin" 유지. 검색 루트에서 뒤로 시 런처 | 통과 | [tc18](qa/tc18_back_to_search.jpg) |
-| 85 | R-085, R-069 | 서로 다른 카드 2개를 거의 동시에 탭(백그라운드 탭 + 즉시 탭) → 뒤로 | 상세는 하나만 쌓임 | 상세 1개("안드로이드 with Kotlin 앱 프로그래밍 가이드")만 열림, 뒤로 1번에 검색 목록 복귀 | 통과 | [탭](qa/tc85_double_tap.jpg), [뒤로](qa/tc85_after_back.jpg) |
+| 08/09 | R-018, R-029, R-030, R-031, R-087 | 저장한 도서 상세 열기 → 상세에서 하트 해제 → 뒤로 | 상세 표시. 해제해도 정보가 남고 목록에 반영 | 표지·제목·저자·출판사·출간일·ISBN·정가·할인가·소개 표시. 해제 후 정보 유지, 목록에서 빠짐 | 부분 확인: 상세 필드·추가. 상세 해제 미실행 | [상세](qa/tc08_detail.jpg), [해제](qa/tc09_detail_unfav.jpg), [목록](qa/tc09_list_synced.jpg) |
+| 25 | R-025 | 즐겨찾기 목록에서 카드 선택 | 상세로 이동 | 해당 도서 상세 표시 | 통과: 즐겨찾기에서 정가 정보 없음 도서 상세 진입 | [tc25](qa/tc25_detail_from_fav.jpg) |
+| 71 | R-071, R-027 | 미저장 도서 상세에서 하트를 누르고 같은 셸 호출에서 바로 뒤로 가기. 상세 진입 약 1초 뒤 실행해 저장·해제를 번갈아 4회, 하트 후 2초 뒤 뒤로 2회. 즐겨찾기 목록의 상세에서도 해제 후 바로 뒤로 | 화면이 닫혀도 쓰기 완료, 돌아온 목록과 다른 탭에 바로 반영 | 매번 돌아온 지 1초 안에 검색 카드 하트가 바뀜. 저장 뒤 즐겨찾기 목록에 포함, 목록 상세에서 해제하면 목록에서 빠짐 | 미검증 | [검색](qa/tc71_back_during_write_search.jpg), [목록](qa/tc71_back_during_write_fav.jpg), [목록 상세 해제](qa/tc71_fav_list_unfav_back.jpg) |
+| 18 | R-085 | 검색 → 즐겨찾기 탭 → 즐겨찾기 탭 재선택 → 뒤로 → 검색 루트에서 뒤로 | 즐겨찾기 루트의 뒤로는 검색 탭, 검색 루트의 뒤로는 앱 종료 | 검색 탭 복귀, 검색어 "kotlin" 유지. 검색 루트에서 뒤로 시 런처 | 미검증 | [tc18](qa/tc18_back_to_search.jpg) |
+| 85 | R-085, R-069 | 서로 다른 카드 2개를 거의 동시에 탭(백그라운드 탭 + 즉시 탭) → 뒤로 | 상세는 하나만 쌓임 | 상세 1개("안드로이드 with Kotlin 앱 프로그래밍 가이드")만 열림, 뒤로 1번에 검색 목록 복귀 | 미검증 | [탭](qa/tc85_double_tap.jpg), [뒤로](qa/tc85_after_back.jpg) |
 
 ### 누락 필드
 
-| TC | R-ID | 절차 | 기대 결과 | 실제 결과 | 판정 | 증거 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
-| 33 | R-033 | 실제 응답에서 필드가 빠진 도서를 찾아 카드와 상세 확인. 휴대폰: "kotlin" 발간일순 마지막 페이지의 "Kotlin in Action"(2017.04.03, 저자·출판사·소개 없음), 일본어판 "KOTLINイン.アクション"(출판사·소개 없음). 폴더블: "compose" 정확도순의 "Commentaire Compose"·"Passe Compose"(표지·소개 없음, 정가 0·판매가 -1), "Compose, Design, Advocate"(출간일 없음) | 빠진 값은 대체 표시, 화면이 깨지지 않음 | 저자·출판사·출간일·소개는 "정보 없음", 표지는 "표지 없음" 대체 이미지, 판매가 -1은 "할인 없음". 정가 0은 제품 정책 2(0원은 유효)대로 "0원". 줄바꿈·잘림 외 깨짐 없음 | 통과 | [저자 없음 카드](qa/tc33_missing_author_card.jpg), [저자 없음 상세](qa/tc33_missing_author_detail.jpg), [출판사 없음 상세](qa/tc33_missing_publisher_detail.jpg), [표지 없음](qa/tc33_fold_missing_cover.jpg), [표지 없음 상세](qa/tc33_fold_missing_cover_detail.jpg), [출간일 없음](qa/tc33_fold_missing_date.jpg) |
+| 33 | R-033 | 누락 필드 및 정가 0 이하·null 도서의 카드·상세 확인 → 즐겨찾기 저장 → 금액 필터 적용·초기화 | 누락 필드 대체 표시. 0 이하·null 정가는 "가격 정보 없음". 금액 필터 적용 시 제외, 미적용 시 도서 유지 | 기존 화면은 누락 필드 표시 참고용. 현재 정가 정책 결과는 위 Galaxy 확인 범위에 기록 | 부분 확인: 실제 정가 0의 표시·필터. 음수·null은 자동 테스트 | [저자 없음 카드](qa/tc33_missing_author_card.jpg), [저자 없음 상세](qa/tc33_missing_author_detail.jpg), [출판사 없음 상세](qa/tc33_missing_publisher_detail.jpg), [표지 없음](qa/tc33_fold_missing_cover.jpg), [표지 없음 상세](qa/tc33_fold_missing_cover_detail.jpg), [출간일 없음](qa/tc33_fold_missing_date.jpg) |
 
 ### list-detail 2-pane과 큰 화면(태블릿 실기기)
 
-expanded 너비(840dp 이상)에서 목록과 상세를 나란히 보여 줍니다([SPEC](SPEC.md) 10절). TC-90~94는 태블릿 가로(1280dp)에서 실행했습니다.
+expanded 너비(840dp 이상)에서 목록과 상세를 나란히 보여 줍니다([SPEC](SPEC.md) 10절). TC-90~94는 태블릿 가로(1280dp) 기준의 재현 절차입니다.
 
-| TC | R-ID | 절차 | 기대 결과 | 실제 결과 | 판정 | 증거 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
-| 35 | R-035 | 세로(800dp)에서 검색 → 상세 | medium 너비에서 레일, 상세는 탐색 UI 숨김 | 레일 + 1열 목록, 검색창 폭 제한. 상세에서는 레일 숨김 | 통과 | [검색](qa/tc35_tablet_port_search.jpg), [상세](qa/tc35_tablet_port_detail.jpg) |
-| 90 | R-035 | 가로에서 앱 데이터를 지우고 실행 → "kotlin" 검색 → 첫 카드 선택 | 왼쪽 레일·목록(400dp)과 오른쪽 안내 칸. 선택하면 오른쪽에 상세 | 오른쪽에 "도서를 선택하면 상세 정보가 여기에 표시됩니다.", 레일 유지. 선택 시 오른쪽에 상세, 목록 유지 | 통과 | [안내](qa/tc90_two_pane_placeholder.jpg), [상세](qa/tc90_two_pane_detail.jpg) |
-| 91 | R-035, R-085 | 상세가 열린 채 다른 카드 선택 | 오른쪽 상세만 바뀌고 선택 카드 강조 | "내일은 코틀린(Kotlin)" 상세로 바뀌고 해당 카드에 테두리·배경 강조 | 통과 | [tc91](qa/tc91_replace_detail.jpg) |
-| 92 | R-085 | 뒤로 / 같은 카드 두 번 선택 후 뒤로 / 서로 다른 카드 3개를 차례로 선택 후 뒤로 | 매번 뒤로 1번에 안내 칸 복귀(상세는 하나만 쌓임) | 세 경우 모두 뒤로 1번에 안내 문구, 앱 유지 | 통과 | [tc92](qa/tc92_back_placeholder.jpg) |
-| 93 | R-025, R-027 | 검색 카드 2개 저장 → 즐겨찾기 탭에서 카드 선택 → 오른쪽 상세에서 하트 해제 | 목록과 상세가 나란히. 해제하면 왼쪽 목록에서 바로 빠지고 상세 유지 | 오른쪽에 상세, 해제 직후 왼쪽 목록에서 빠짐. 상세는 남고 빈 하트 | 통과 | [상세](qa/tc93_fav_detail.jpg), [해제](qa/tc93_unfav_synced.jpg) |
-| 94 | R-041, R-068 | 2-pane에서 상세를 연 채 세로 회전 → 다시 가로 회전 | 세로는 1-pane 상세(레일 숨김), 가로는 같은 상세로 2-pane | 세로에서 같은 상세가 전체 화면, 가로에서 목록과 같은 상세가 다시 나란히. 요청 0건 | 통과 | [세로](qa/tc94_portrait_one_pane.jpg), [가로](qa/tc94_back_to_two_pane.jpg) |
+| 35 | R-035 | 세로(800dp)에서 검색 → 상세 | medium 너비에서 레일, 상세는 탐색 UI 숨김 | 레일 + 1열 목록, 검색창 폭 제한. 상세에서는 레일 숨김 | 미검증 | [검색](qa/tc35_tablet_port_search.jpg), [상세](qa/tc35_tablet_port_detail.jpg) |
+| 90 | R-035 | 가로에서 앱 데이터를 지우고 실행 → "kotlin" 검색 → 첫 카드 선택 | 왼쪽 레일·목록(400dp)과 오른쪽 안내 칸. 선택하면 오른쪽에 상세 | 오른쪽에 "도서를 선택하면 상세 정보가 여기에 표시됩니다.", 레일 유지. 선택 시 오른쪽에 상세, 목록 유지 | 미검증 | [안내](qa/tc90_two_pane_placeholder.jpg), [상세](qa/tc90_two_pane_detail.jpg) |
+| 91 | R-035, R-085 | 상세가 열린 채 다른 카드 선택 | 오른쪽 상세만 바뀌고 선택 카드 강조 | "내일은 코틀린(Kotlin)" 상세로 바뀌고 해당 카드에 테두리·배경 강조 | 미검증 | [tc91](qa/tc91_replace_detail.jpg) |
+| 92 | R-085 | 뒤로 / 같은 카드 두 번 선택 후 뒤로 / 서로 다른 카드 3개를 차례로 선택 후 뒤로 | 매번 뒤로 1번에 안내 칸 복귀(상세는 하나만 쌓임) | 세 경우 모두 뒤로 1번에 안내 문구, 앱 유지 | 미검증 | [tc92](qa/tc92_back_placeholder.jpg) |
+| 93 | R-025, R-027 | 검색 카드 2개 저장 → 즐겨찾기 탭에서 카드 선택 → 오른쪽 상세에서 하트 해제 | 목록과 상세가 나란히. 해제하면 왼쪽 목록에서 바로 빠지고 상세 유지 | 오른쪽에 상세, 해제 직후 왼쪽 목록에서 빠짐. 상세는 남고 빈 하트 | 미검증 | [상세](qa/tc93_fav_detail.jpg), [해제](qa/tc93_unfav_synced.jpg) |
+| 94 | R-041, R-068 | 2-pane에서 상세를 연 채 세로 회전 → 다시 가로 회전 | 세로는 1-pane 상세(레일 숨김), 가로는 같은 상세로 2-pane | 세로에서 같은 상세가 전체 화면, 가로에서 목록과 같은 상세가 다시 나란히. 요청 0건 | 미검증 | [세로](qa/tc94_portrait_one_pane.jpg), [가로](qa/tc94_back_to_two_pane.jpg) |
 
 ### 폴더블 접힘·펼침(Galaxy Z Fold2 실기기)
 
-이 앱은 힌지 자세(FoldingFeature)에 따로 반응하지 않고 창 크기 클래스로만 배치를 정합니다. 그래서 접힘·펼침·중간 접힘에서 배치가 깨지지 않고 상태가 유지되는지를 확인했습니다. 펼친 안쪽 화면도 compact 너비(약 589dp)라 하단 바와 1열 목록입니다. 테이블톱처럼 화면을 위아래로 나누는 배치는 구현 범위가 아닙니다.
+이 앱은 힌지 자세(FoldingFeature)에 따로 반응하지 않고 창 크기 클래스로만 배치를 정합니다. 접힘·펼침·중간 접힘에서 배치와 상태 유지 여부를 확인합니다. 펼친 안쪽 화면도 compact 너비(약 589dp)라 하단 바와 1열 목록입니다. 테이블톱처럼 화면을 위아래로 나누는 배치는 구현 범위가 아닙니다.
 
-| TC | R-ID | 절차 | 기대 결과 | 실제 결과 | 판정 | 증거 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
-| 68d | R-035, R-068 | 펼친 화면에서 "compose" 결과를 스크롤 → 접힘(state 0) → 펼침(state 3) | 바깥 화면에서도 같은 검색어·정렬·목록 위치, 재요청 없음 | 같은 프로세스(pid 유지)로 바깥 화면에 하단 바 배치, 검색어·정렬·목록 위치 유지. 펼쳐도 동일. 요청 0건 | 통과 | [펼침](qa/tc68d_open.jpg), [접힘](qa/tc68d_folded.jpg), [다시 펼침](qa/tc68d_unfolded.jpg) |
-| 68e | R-041, R-068 | 상세를 연 채 접힘 → 펼침 → 뒤로 | 상세 유지, 뒤로 가면 목록 위치 유지 | 바깥·안쪽 화면 모두 같은 상세, 뒤로 1번에 같은 위치의 목록. 요청 0건 | 통과 | [접힘](qa/tc68e_detail_folded.jpg), [펼침](qa/tc68e_detail_unfolded.jpg) |
-| 68f | R-041, R-068 | 즐겨찾기 가격 필터 시트에 "300"을 입력하는 중(키보드 열림) 접힘 → 펼침 | 시트와 입력값 유지 | 바깥 화면에서도 시트와 최소 금액 "300" 유지, 펼쳐도 유지 | 통과 | [입력](qa/tc68f_sheet_open.jpg), [접힘](qa/tc68f_sheet_folded.jpg), [펼침](qa/tc68f_sheet_unfolded.jpg) |
-| 68g | R-068 | 검색 결과에서 중간 접힘(HALF_FOLDED, state 2) → 펼침 | 배치가 깨지지 않고 상태 유지 | 펼침과 같은 배치·검색 상태, pid 유지, 요청 0건 | 통과 | [중간 접힘](qa/tc68g_half_folded.jpg) |
-| 68h | R-068 | 기기 상태 강제값을 해제하고 손으로 접었다 펴기 | 68d와 같은 결과 | 접힘·펼침 모두 같은 프로세스에서 검색어 "compose"·정확도순 유지, 요청 0건 | 통과 | [접힘](qa/tc68h_physical_folded.jpg), [펼침](qa/tc68h_physical_unfolded.jpg) |
+| 68d | R-035, R-068 | 펼친 화면에서 "compose" 결과를 스크롤 → 접힘(state 0) → 펼침(state 3) | 바깥 화면에서도 같은 검색어·정렬·목록 위치, 재요청 없음 | 같은 프로세스(pid 유지)로 바깥 화면에 하단 바 배치, 검색어·정렬·목록 위치 유지. 펼쳐도 동일. 요청 0건 | 미검증 | [펼침](qa/tc68d_open.jpg), [접힘](qa/tc68d_folded.jpg), [다시 펼침](qa/tc68d_unfolded.jpg) |
+| 68e | R-041, R-068 | 상세를 연 채 접힘 → 펼침 → 뒤로 | 상세 유지, 뒤로 가면 목록 위치 유지 | 바깥·안쪽 화면 모두 같은 상세, 뒤로 1번에 같은 위치의 목록. 요청 0건 | 미검증 | [접힘](qa/tc68e_detail_folded.jpg), [펼침](qa/tc68e_detail_unfolded.jpg) |
+| 68f | R-041, R-068 | 즐겨찾기 가격 필터 시트에 "300"을 입력하는 중(키보드 열림) 접힘 → 펼침 | 시트와 입력값 유지 | 바깥 화면에서도 시트와 최소 금액 "300" 유지, 펼쳐도 유지 | 미검증 | [입력](qa/tc68f_sheet_open.jpg), [접힘](qa/tc68f_sheet_folded.jpg), [펼침](qa/tc68f_sheet_unfolded.jpg) |
+| 68g | R-068 | 검색 결과에서 중간 접힘(HALF_FOLDED, state 2) → 펼침 | 배치가 깨지지 않고 상태 유지 | 펼침과 같은 배치·검색 상태, pid 유지, 요청 0건 | 미검증 | [중간 접힘](qa/tc68g_half_folded.jpg) |
+| 68h | R-068 | 기기 상태 강제값을 해제하고 손으로 접었다 펴기 | 68d와 같은 결과 | 접힘·펼침 모두 같은 프로세스에서 검색어 "compose"·정확도순 유지, 요청 0건 | 미검증 | [접힘](qa/tc68h_physical_folded.jpg), [펼침](qa/tc68h_physical_unfolded.jpg) |
 
 ### 오프라인 상세와 프로세스 재생성
 
-| TC | R-ID | 절차 | 기대 결과 | 실제 결과 | 판정 | 증거 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
-| 32 | R-032, R-066 | 비행기 모드에서 즐겨찾기 탭의 도서 상세 열기 | Room 정보로 상세 표시 | 저자·정가 등 표시, 하트는 해제 버튼 | 통과 | [tc32](qa/tc32_offline_fav_detail.jpg) |
-| 70a | R-070 | 비행기 모드에서 검색 결과(미저장) 도서 상세 열기 | 백스택 엔트리의 도서 정보로 상세 표시 | 상세 표시, 하트는 추가 버튼 | 통과 | [tc70](qa/tc70_offline_unsaved_detail.jpg) |
-| 70b | R-054, R-070 | 미저장 도서 상세(비행기 모드) → 홈 → `am kill` → 재실행 | 새 프로세스에서 요청 없이 상세 복원 | pid가 바뀐 새 프로세스에서 같은 상세 복원, 요청 0건 | 통과 | [종료 전](qa/tc70_detail_before_kill.jpg), [복원](qa/tc70_detail_after_kill_offline.jpg) |
-| 54 | R-054 | TC-70b에 이어 뒤로 → 즐겨찾기 탭 | 검색어·정렬·즐겨찾기 정렬 복원, 검색 결과는 다시 요청 | 검색어 "kotlin"·발간일순 복원, 1페이지 재요청(오프라인, 자동 재시도 포함 4건) 후 오류·재시도. 즐겨찾기 제목 내림차순 복원 | 통과 | [검색](qa/tc54_search_restored_offline.jpg), [즐겨찾기](qa/tc54_fav_restored.jpg) |
+| 32 | R-032, R-066 | 비행기 모드에서 즐겨찾기 탭의 도서 상세 열기 | Room 정보로 상세 표시 | 저자·정가 등 표시, 하트는 해제 버튼 | 미검증 | [tc32](qa/tc32_offline_fav_detail.jpg) |
+| 70a | R-070 | 비행기 모드에서 검색 결과(미저장) 도서 상세 열기 | 백스택 엔트리의 도서 정보로 상세 표시 | 상세 표시, 하트는 추가 버튼 | 미검증 | [tc70](qa/tc70_offline_unsaved_detail.jpg) |
+| 70b | R-054, R-070 | 미저장 도서 상세(비행기 모드) → 홈 → `am kill` → 재실행 | 새 프로세스에서 요청 없이 상세 복원 | pid가 바뀐 새 프로세스에서 같은 상세 복원, 요청 0건 | 미검증 | [종료 전](qa/tc70_detail_before_kill.jpg), [복원](qa/tc70_detail_after_kill_offline.jpg) |
+| 54 | R-054 | TC-70b에 이어 뒤로 → 즐겨찾기 탭 | 검색어·정렬·즐겨찾기 정렬 복원, 검색 결과는 다시 요청 | 검색어 "kotlin"·발간일순 복원, 1페이지 재요청(오프라인, 자동 재시도 포함 4건) 후 오류·재시도. 즐겨찾기 제목 내림차순 복원 | 미검증 | [검색](qa/tc54_search_restored_offline.jpg), [즐겨찾기](qa/tc54_fav_restored.jpg) |
 
 ### 회전·테마(휴대폰)
 
-| TC | R-ID | 절차 | 기대 결과 | 실제 결과 | 판정 | 증거 |
+| TC | R-ID | 절차 | 현재 기대 결과 | 기존 QA 결과 | 최종 판정 | 참고 화면 |
 |---|---|---|---|---|---|---|
-| 41 | R-041, R-068 | 검색 목록을 스크롤한 상태로 가로 회전 | 검색어·정렬·목록 유지, 재요청 없음 | 같은 항목("Jetpack Compose")이 상단, 요청 0건 | 통과 | [세로](qa/tc41_portrait.jpg), [가로](qa/tc41_landscape.jpg) |
-| 68a | R-068 | 상세에서 회전 후 뒤로 / 가격 필터 시트에 "300" 입력 중 회전 | 상세 유지, 시트와 입력값 유지 | 상세 유지, 목록 복귀 시 요청 0건. 시트와 "300" 유지 | 통과 | [상세](qa/tc68_detail_landscape.jpg), [시트](qa/tc68_sheet_landscape.jpg) |
-| 68b | (추가 확인) | 다크 모드 전환 | 화면 깨짐 없음, 재요청 없음 | 즐겨찾기·검색 화면 정상, 요청 0건 | 통과 | [즐겨찾기](qa/tc68_dark_fav.jpg), [검색](qa/tc68_dark_search.jpg) |
+| 41 | R-041, R-068 | 검색 목록을 스크롤한 상태로 가로 회전 | 검색어·정렬·목록 유지, 재요청 없음 | 같은 항목("Jetpack Compose")이 상단, 요청 0건 | 미검증 | [세로](qa/tc41_portrait.jpg), [가로](qa/tc41_landscape.jpg) |
+| 68a | R-068 | 상세에서 회전 후 뒤로 / 가격 필터 시트에 "300" 입력 중 회전 | 상세 유지, 시트와 입력값 유지 | 상세 유지, 목록 복귀 시 요청 0건. 시트와 "300" 유지 | 미검증 | [상세](qa/tc68_detail_landscape.jpg), [시트](qa/tc68_sheet_landscape.jpg) |
+| 68b | (추가 확인) | 다크 모드 전환 | 화면 깨짐 없음, 재요청 없음 | 즐겨찾기·검색 화면 정상, 요청 0건 | 미검증 | [즐겨찾기](qa/tc68_dark_fav.jpg), [검색](qa/tc68_dark_search.jpg) |
 
-## 시연 영상
+## 제출 시연 영상
 
-QA 주요 흐름을 이어 녹화했습니다([요구사항](REQUIREMENTS.md) R-079). 제출 ZIP 루트에 있고 용량 때문에 Git에는 넣지 않습니다(`.gitignore`). 위 QA보다 앞선 빌드로 녹화했습니다.
-
-| 항목 | `demo.mp4`(휴대폰) | `demo-tablet.mp4`(태블릿 2-pane) |
+| 파일 | 길이 | 범위·구분 |
 |---|---|---|
-| 길이·형식 | 1분 42초, 720x1560 H.264, 약 4MB | 31초, 1280x746 H.264, 약 1.7MB |
-| 녹화 | SM-S936N, 커밋 `71cdf67`. QA와 같은 `adb shell input` 스크립트, 방해 금지·세로 고정. 앞쪽 홈 화면 3.65초를 잘라 `ffmpeg`로 압축 | SM-X710(Galaxy Tab S9), 커밋 `bad3cd5`. 앱 데이터 삭제·가로 고정, `screenrecord --size 1280x800`. 작업 표시줄이 보이지 않게 아래 54px를 잘라 재인코딩 |
-| 순서 | 검색 → 페이지네이션 → 발간일순 → 목록·상세에서 즐겨찾기 추가 → 즐겨찾기 제목 내림차순·검색 → 가격 필터 적용·초기화 → 상세에서 해제 → 비행기 모드에서 즐겨찾기 상세와 검색 오류 → 연결 복구 후 재시도 → 가로 회전 → 다크 모드 | 2-pane 안내 칸 → 검색 → 상세 → 다른 도서로 교체(카드 강조) → 상세·목록에서 즐겨찾기 → 뒤로 가기로 안내 칸 → 즐겨찾기 탭 상세 → 세로 회전(1-pane) → 가로 회전(2-pane) |
-| 기기 설정 복원 | 방해 금지 끔, 자동 회전 켬, 비행기 모드 끔, 라이트 모드 | 방해 금지 끔, 자동 회전 켬 |
+| `demo.mp4` | 47.5초 | 최종 APK의 검색 결과·상세·즐겨찾기 추가·목록 반영·가격 정보 없음 표시·제목 내림차순 정렬 |
+| `demo-tablet.mp4` | 30.675초 | 기존 빌드의 2-pane 시연. 현재 코드의 검증 근거에서 제외 |
 
-- 휴대폰 영상 오프라인 구간에 잠깐 보이는 "모바일 네트워크에 연결합니다…"는 앱이 아닌 시스템 토스트입니다.
-- 태블릿 녹화 끝 무렵 시스템 업데이트 안내가 떠 마지막 뒤로 가기 장면은 빠졌습니다. 영상에는 앱 화면만 담겼고, 같은 동작은 영상 중간과 TC-92에 있습니다.
+합계 78.175초로 3분 이내입니다. 가격 필터 적용은 영상에 포함되지 않으며 위 Galaxy 기기 QA 결과와 구분합니다. 영상은 Git에서 제외하고 제출 ZIP에 포함합니다.
 
 ## 자동 테스트
 
-마지막 실행: 2026-10-08, 커밋 `fe1b21d`, `./gradlew assembleDebug testDebugUnitTest test --continue`. Android 모듈 98개 + 순수 JVM 모듈 `core:model` 23개, 모두 121개 통과(실패·오류·건너뜀 0). `testDebugUnitTest`만으로는 core:model이 빠져 `test`를 함께 지정합니다.
+APK 빌드 성공. 테스트 140개 모두 새로 실행해 실패·오류·건너뜀 0, 이전 테스트 결과 재사용 0. 아래 명령으로 Android·순수 JVM 모듈을 함께 검증했습니다.
 
-| 영역 | 테스트 클래스(개수) | 기기 시나리오가 다루지 못하는 부분 |
+```sh
+./gradlew assembleDebug testDebugUnitTest test --continue --offline --rerun-tasks
+```
+
+실행 환경은 Launcher JVM 17 / Gradle daemon JVM 21. 순수 JVM 모듈 toolchain과 Android Java·Kotlin 컴파일 대상은 17이며, 빌드 실행 JDK 17을 뜻하지 않습니다.
+
+| 영역 | 테스트 클래스 | 기기 시나리오가 다루지 못하는 부분 |
 |---|---|---|
-| 순수 규칙 | `BookIdentityTest`(7), `PriceFilterTest`(5), `FavoriteListRulesTest`(5), `SearchPagingTest`(5), `BookTest`(1) | ID 정책, 가격 경계값·0원·가격 없음(R-065), 마지막 20개 + `is_end`(R-062), 페이지 간 중복 제거(R-064) |
-| API | `KakaoBookServiceTest`(4) | 요청 파라미터, 인증 헤더, 키 누락, HTTP 오류 |
-| Room | `FavoriteBookDaoTest`(4), `FavoriteSubscriptionKeysTest`(5) | 저장·삭제·Flow, 파일 DB 재열기 후 영속성(R-057), Room → Soil Subscription 연결, 구독을 놓은 사이의 쓰기가 다시 구독할 때 반영됨(TC-71) |
-| 데이터 | `BookMapperTest`(3), `ErrorKindTest`(3), `SearchBooksQueryKeyTest`(3), `FavoriteWriterTest`(3) | 누락 필드 매핑(R-033), 오류 분류, 쓰기 실패 전파·순서·화면 취소 후 완료(R-067, R-071) |
-| UI 공통 | `BookFormattersTest`(3), `FavoriteTogglerTest`(3) | 누락 값 표시, 쓰기 실패 처리 |
-| Presenter | `SearchPresenterTest`(17), `FavoritesPresenterTest`(10), `BookDetailPresenterTest`(6), `PriceInputTest`(3) | 늦은 응답 경합(R-019, R-061), 추가 로딩 재시도와 중복 차단(R-063), 쓰기 실패 메시지(R-028, R-067) |
-| 화면 상태 | `SearchQueryRetentionTest`(2), `SearchStateRestorationTest`(1), `FavoritesStateLifecycleTest`(3), `FavoritesScreenTest`(5) | 다른 탭에서 돌아와도 추가 로딩 실패 상태 유지(TC-40b), 프로세스 재생성 뒤 입력·확정 조건 복원, 쓰기 중 컴포지션 이탈·복귀 시 진행 상태 유지와 pop 후 정리, 즐겨찾기 검색어·정렬·가격 필터 변경 시 맨 위부터·조건이 같으면 위치 유지(TC-12b), 2-pane 선택 카드 강조 |
-| 내비게이션 | `BookSearchBackStackTest`(7), `BookSearchNavHostTest`(13) | 탭·백스택 규칙, 상세 중복 방지, retain 수명(R-058, R-069), 2-pane 장면·상세 교체 시 retain 정리·창 크기 변경 |
+| 순수 규칙 | `BookIdentityTest`, `PriceFilterTest`, `FavoriteListRulesTest`, `SearchPagingTest`, `BookTest`, `BookPricePolicyTest` | ID 정책, 가격 경계값·0 이하·가격 없음(R-065), 마지막 20개 + `is_end`(R-062), 페이지 간 중복 제거(R-064) |
+| API | `KakaoBookServiceTest` | 요청 파라미터, 인증 헤더, 키 누락, HTTP 오류 |
+| Room | `FavoriteBookDaoTest`, `FavoriteSubscriptionKeysTest` | 저장·삭제·Flow, 기존 정가 원본 보존·필터 정책, 파일 DB 재열기 후 영속성(R-057), Room → Soil Subscription 연결, 구독을 놓은 사이의 쓰기가 다시 구독할 때 반영됨(TC-71) |
+| 데이터 | `BookMapperTest`, `ErrorKindTest`, `SearchBooksQueryKeyTest`, `FavoriteWriterTest` | 누락 필드·정가 원본 보존, 오류 분류·실패 페이지와 원인 보존, 취소 예외 전파, writer의 직렬 실행·호출자 취소 뒤 완료 |
+| UI 공통 | `BookFormattersTest`, `FavoriteTogglerTest`, `FavoriteMutationLifecycleTest`, `PriceLineTest` | 카드의 0 이하·누락 정가 표시. 실제 retain·Soil·Writer와 Fake DAO로 대기 명령의 화면 종료 후 완료·접수 순서·종료 후 신규 요청 차단·실패 격리·참조 해제 |
+| Presenter | `SearchPresenterTest`, `SearchRetryTest`, `FavoritesPresenterTest`, `BookDetailPresenterTest`, `PriceInputTest` | 검색 경합·추가 로딩 중복 차단, 실제 검색 key factory·Soil·Presenter와 Fake API로 첫·복수 페이지 재조회와 추가 로딩 재시도 구분, 쓰기 실패 메시지 |
+| 화면 상태 | `BookDetailPriceTest`, `SearchQueryRetentionTest`, `SearchStateRestorationTest`, `FavoritesStateLifecycleTest`, `FavoritesScreenTest` | 상세의 0 이하·누락 정가 표시, 다른 탭에서 돌아와도 추가 로딩 실패 상태 유지(TC-40b), 프로세스 재생성 뒤 입력·확정 조건 복원, 쓰기 중 컴포지션 이탈·복귀 시 진행 상태 유지와 pop 후 정리, 즐겨찾기 검색어·정렬·가격 필터 변경 시 맨 위부터·조건이 같으면 위치 유지(TC-12b), 2-pane 선택 카드 강조 |
+| 내비게이션 | `BookSearchBackStackTest`, `BookSearchNavHostTest` | 탭·백스택 규칙, 상세 중복 방지, retain 수명(R-058, R-069), 2-pane 장면·상세 교체 시 retain 정리·창 크기 변경 |
 
-`FavoriteSubscriptionKeysTest`의 Turbine 대기는 30초입니다. Room Flow가 실제 스레드에서 방출되어, 클래스의 첫 테스트가 Robolectric·Room 초기화(이 환경에서 12~100초)를 기다리는 동안 기본값 3초를 넘기지 않게 했습니다.
+## Compose 컴파일러 정적 진단
 
-## 제약과 미실행 항목
+Kotlin 2.4.0의 기존 Compose compiler에 보고서 출력 경로만 외부 임시 설정으로 지정해 컴파일했습니다. 앱 코드·의존성·안정성 annotation은 변경하지 않았습니다.
 
-- **동시 탭:** adb로는 멀티터치를 만들 수 없어 TC-85는 탭 하나를 백그라운드로 보내고 다른 탭을 바로 보냈습니다. 두 손가락 동시 입력은 `BookSearchNavHostTest`가 대신합니다.
-- **연타·쓰기 중 뒤로:** TC-67, TC-71의 입력 간격은 수십~수백 ms입니다. 쓰기 중 비활성으로 무시된 탭은 기기에서 구분하지 않고 최종 상태 일치만 확인했습니다. 쓰기 순서와 취소 경계는 단위 테스트로 확인합니다.
-- **Room 쓰기 실패(R-028, R-067):** 실기기에서는 만들지 않았고, Fake writer로 실패를 주입한 Presenter·`FavoriteToggler` 테스트로 확인합니다.
-- **폴더블:** 접힘·펼침·중간 접힘은 `cmd device_state`로 기기 상태를 바꿔 실행했고(앱은 실제 바깥·안쪽 디스플레이로 옮겨짐), 접고 펴기는 손으로 한 번 더 확인했습니다(TC-68h). 중간 접힘은 adb로만 만들었습니다. Fold2 안쪽 화면은 compact 너비라 폴더블에서 2-pane은 나타나지 않으며, 2-pane은 태블릿에서 확인했습니다(TC-90~94).
-- **프로세스 종료:** `am kill`로 종료했습니다. 메모리 부족 종료와 같은 경로(저장된 상태로 Activity 재생성)이지만 실제 메모리 압박은 만들지 않았습니다.
-- **텍스트 입력:** `adb input text`로 입력한 뒤 시트를 닫으면 키보드가 다시 뜨는 현상이 있습니다. 키패드 터치에서는 재현되지 않아 adb 입력의 부작용으로 판단했습니다.
-- **네트워크 재연결:** 연결이 돌아와도 자동 재요청은 없습니다(TC-42). 재시도 버튼이 복구 수단입니다([SPEC](SPEC.md) 9절).
-- **정가 0원:** 일부 외서는 Kakao가 정가를 0, 판매가를 -1로 보냅니다(TC-33). 제품 정책 2에 따라 0원은 유효한 가격으로 보고 "0원"으로 표시하며, 가격 범위 필터에도 0원으로 포함됩니다.
+- SearchScreen·FavoritesScreen·BookDetailScreen·BookCard·PriceLine·BookDetailBody는 `restartable skippable`로 판정됐습니다.
+- Book·PriceFilter 인자는 `unstable`이지만 관련 UI는 skippable입니다. 세 UiState의 stable 판정은 기존 `@Immutable` 계약을 반영합니다.
+- Strong skipping이 켜진 환경의 정적 판정이며, 실제 재구성·skip 횟수나 프레임 성능을 입증하지 않습니다.
+
+## 검증 한계
+
+- **동시 입력·저장 경합:** 기존 adb 확인은 입력 간격과 실제 DB 지연을 통제하지 못함. 동시 탭·연타·대기 중 화면 종료·쓰기 실패는 자동 테스트에서 별도 확인.
+- **폴더블:** Fold2 안쪽 화면도 compact 너비이므로 2-pane 확인은 태블릿에서 수행. 힌지 자세별 테이블톱 배치는 구현 범위 밖.
+- **프로세스 복원:** `am kill` 후 저장 상태 복원을 확인하는 절차. 실제 메모리 압박과 프로세스 종료 중 미완료 쓰기까지 보장하지 않음.
+- **네트워크:** 조건부 재연결 재조회와 오류 버튼 재시도 제공([아키텍처](ARCHITECTURE.md#검색-캐시의-수명과-재조회)). TC-42는 기존 QA 관찰이며 현재 APK의 재연결 경로는 미검증. 표지는 캐시가 없으면 대체 이미지 표시.
+- **정가 정책:** 0 이하·null은 자동 테스트, API 정가 0은 Galaxy에서 확인. TC-33의 기존 화면은 새 정책의 증거에서 제외.

@@ -2,171 +2,129 @@
 
 Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하는 Android 앱입니다.
 
-- **검색 탭**: 검색어를 입력하고 키보드의 검색 버튼으로 검색합니다. 정확도순·최신순 정렬을 지원하고, 끝까지 스크롤하면 다음 페이지(20개 단위)를 불러옵니다.
-- **즐겨찾기 탭**: 저장한 도서를 제목순으로 정렬하고, 기기 안에서 검색하고, 정가 범위로 거릅니다. 앱을 다시 실행해도 유지됩니다.
-- **상세 화면**: 두 탭에서 공통으로 쓰며, 여기서도 즐겨찾기를 추가·해제할 수 있습니다. 어느 화면에서 바꿔도 모든 화면에 바로 반영됩니다.
+- **검색**: 검색어 확정, 정확도순·발간일순 정렬, 20개 단위 페이지네이션
+- **즐겨찾기**: 로컬 저장·검색, 제목 오름차순·내림차순, 정가 범위 필터
+- **상세**: 두 목록에서 공통으로 사용하며, 도서 정보와 즐겨찾기 상태 표시·변경
+
+## 주요 설계와 구현
+
+- **검색 상태**: Soil InfiniteQuery가 검색어·정렬별 캐시와 로딩·오류 상태를 맡습니다. 앱은 `is_end`·페이지 상한에 따른 종료와 중복 ID 제거를 맡고, 네트워크 오류·HTTP 5xx·429를 자동 재시도하도록 설정합니다. 실패 페이지를 보존해 기존 페이지 재조회 실패는 다시 조회하고, 추가 로딩 실패는 해당 페이지만 재시도합니다.
+- **즐겨찾기**: Room을 상태의 단일 기준으로 삼아 세 화면이 같은 저장 결과를 관찰합니다. 하나의 Mutation actor가 UI에서 접수한 명령을 순서대로 처리하고, `FavoriteWriter`가 앱 범위에서 Room에 씁니다. 화면을 닫으면 새 요청을 막고, 이미 접수한 요청의 완료 후 참조를 정리합니다. 진행·오류 표시는 화면별로 유지합니다.
+- **화면 수명**: Navigation 3 엔트리에 retain 저장소를 연결해 화면 전환·구성 변경 중 객체를 유지하고 pop 시 정리합니다. 입력·정렬·필터와 상세 스냅샷은 별도로 저장해 시스템 프로세스 재생성에 대응합니다. 이 연결을 위한 decorator와 수명 테스트를 직접 관리합니다.
+- **협업 경계**: 화면은 Root·Presenter·Screen으로 나누고, 원격·로컬 구현은 `core:data` 뒤에 둡니다. Metro가 객체 조립을 생성하지만 화면 그래프와 Soil key의 수명을 맞추는 책임은 앱에 남습니다.
+- **화면·네트워크**: 창 너비에 따라 하단 바·레일을 전환하고, 840dp 이상에서는 목록과 상세를 나란히 표시합니다. 저장한 도서의 텍스트는 오프라인에서도 열리며, 표지는 캐시가 없으면 대체 이미지를 표시합니다. API 인증 interceptor는 이미지 요청에 전달하지 않습니다.
+
+선택 이유·비용과 데이터 흐름은 [아키텍처](docs/ARCHITECTURE.md), 세부 동작은 [구현 사양](docs/SPEC.md)에 있습니다.
+
+## 검증 범위와 상태
+
+- **자동 테스트**: 140개 통과(실패·오류·건너뜀 0), APK 빌드 성공. 상세 범위는 [QA](docs/QA.md) 참고.
+- **Android Studio**: ZIP을 새 폴더에 풀어 수동 SDK·JDK 설정 없이 SDK 경로 자동 생성, Sync·APK 빌드 성공. 설치된 SDK 37·JDK 21과 캐시를 사용한 환경이며 새 PC의 JDK 자동 설치는 미검증.
+- **실기기 QA**: Galaxy SM-S936N에 최종 APK 설치 후 검색·상세, 즐겨찾기 추가·해제·동기화, 제목 정렬·로컬 검색·가격 필터 확인. API 정가 0의 정보 없음 표시와 필터 제외 확인. 네트워크 오류·페이지네이션·태블릿·폴더블은 현재 APK로 재실행하지 않음.
+- **검증 경계**: 검색은 실제 Soil·key factory·Presenter와 Fake API, 저장은 실제 retain·Soil·Writer와 Fake DAO로 경합·수명 확인. 절차·판정 기준·미실행 항목은 [QA](docs/QA.md)에 정리.
 
 ## 빌드 방법
 
-1. 프로젝트 루트의 `local.properties`에 Kakao REST API 키를 넣습니다. 이 파일은 Git에서 제외됩니다.
+Android SDK Platform 37이 설치되어 있어야 합니다. 명령줄 빌드는 `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`로 SDK를 찾습니다. 제출 ZIP에는 개인 기기의 `sdk.dir`를 넣지 않으므로, SDK 환경이 설정된 머신에서 실행해야 합니다.
+
+| 항목 | 버전 |
+| --- | --- |
+| Gradle / AGP | 9.4.1(Wrapper 포함) / 9.2.1 |
+| Kotlin / KSP | 2.4.0 / 2.3.10 |
+| compileSdk / targetSdk / minSdk | 37 / 37 / 26 |
+| Gradle 실행 JDK(daemon) | 21 |
+| 순수 JVM 모듈(`core:model`) toolchain | 17 |
+| Android Java·Kotlin 컴파일 대상 | 17 |
+
+**JDK 조건 차이:** Metro 1.4.5의 플러그인·컴파일러가 JVM 21을 요구해 원문의 JDK 17 실행 조건은 미충족입니다. `gradle/gradle-daemon-jvm.properties`가 daemon 21을 선택하며, 컴파일 대상 17과 빌드 실행 JDK는 별개입니다. 근거는 [구현 사양](docs/SPEC.md) 2절에 있습니다.
+
+1. 프로젝트 루트의 `local.properties`에 Kakao REST API 키를 설정합니다. 제출 ZIP에는 이 파일이 포함되며 Git에서는 제외됩니다.
 
    ```properties
    KAKAO_REST_API_KEY=발급받은_REST_API_키
    ```
 
-2. 빌드하고 설치합니다.
+2. 빌드·설치합니다.
 
    ```sh
    ./gradlew assembleDebug
    ./gradlew :app:installDebug
    ```
 
-3. 테스트를 실행합니다. `core:model`은 순수 JVM 모듈이라 `test` 작업을 함께 지정해야 전체가 실행됩니다.
+3. 테스트합니다. 순수 JVM 모듈 `core:model`을 포함하려면 `test`도 지정합니다.
 
    ```sh
    ./gradlew testDebugUnitTest test --continue
    ```
 
-키가 없어도 빌드와 설치는 됩니다. 이때 검색 화면은 키 설정 안내를 보여 주고 요청을 보내지 않으며, 즐겨찾기는 그대로 동작합니다.
+키가 없어도 빌드할 수 있습니다. 검색은 키 설정 안내를 표시하고 요청을 보내지 않으며, 로컬 즐겨찾기는 사용할 수 있습니다.
 
-### 제출 ZIP 구성
+### 제출 파일
 
-`scripts/make-submission-zip.sh`로 만듭니다. 저장소 전체와 `.git`에 더해, Git에서 제외한 다음 파일이 루트에 들어 있습니다. `build/`·`.gradle/` 등 빌드 산출물은 넣지 않았습니다.
+ZIP에는 제출 커밋의 소스·문서, `.git`, 개인 SDK 경로를 제외한 `local.properties`, `app-debug.apk`, 시연 영상 2개를 포함하고 `build/`·`.gradle/` 등은 제외합니다. 구성·CRC·압축 해제 파일 해시와 Studio 빌드 확인 완료. 포함 APK는 Galaxy에서 검증한 APK와 동일합니다.
 
-- `local.properties`: 제출용 API 키. `sdk.dir`는 뺐으며, Android Studio가 자동으로 채우거나 명령줄 빌드는 `ANDROID_HOME`으로 SDK를 찾습니다.
-- `app-debug.apk`: debug APK. `adb install app-debug.apk`로 바로 설치할 수 있습니다.
-- `demo.mp4`: 시연 영상(1분 42초)
-- `demo-tablet.mp4`: 태블릿 2-pane 시연 영상(31초)
+`app-debug.apk`는 `adb install app-debug.apk`로 설치할 수 있습니다. 제출 영상은 최종 APK의 휴대폰 시연 `demo.mp4`(47.5초)와 기존 빌드의 태블릿 2-pane 시연 `demo-tablet.mp4`(30.675초)입니다. 합계 78.175초이며, 태블릿 영상은 현재 코드의 검증 근거로 사용하지 않습니다.
 
-### 빌드 환경
-
-| 항목 | 버전 |
-| --- | --- |
-| Gradle | 9.4.1 (Wrapper 포함) |
-| AGP | 9.2.1 |
-| Kotlin | 2.4.0 |
-| KSP | 2.3.10 |
-| compileSdk / targetSdk / minSdk | 37 / 37 / 26 |
-| JDK | 앱 컴파일·바이트코드 기준 17, Gradle daemon 21 |
-
-Metro 1.4.5의 Gradle 플러그인이 실행 JVM 21 이상을 요구해 `gradle/gradle-daemon-jvm.properties`로 Gradle daemon만 JDK 21로 고정했습니다. JDK 17로 `./gradlew`를 실행해도 Gradle이 JDK 21 daemon을 찾거나 내려받습니다. 앱의 `sourceCompatibility`·`targetCompatibility`·`jvmTarget`은 17입니다. 근거는 [아키텍처](docs/ARCHITECTURE.md) 10절과 [구현 사양](docs/SPEC.md) 2절에 있습니다.
-
-## 사용 프레임워크
+## 사용 기술 및 라이브러리
 
 | 영역 | 선택 |
 | --- | --- |
 | UI | Jetpack Compose(BOM 2026.09.00), Material 3, Material 3 Adaptive Navigation Suite |
+| 비동기 처리 | Kotlin Coroutines, Flow |
 | 화면 이동·상태 수명 | Navigation 3 1.2.0, Compose `retain` |
-| 데이터 접근 | Soil 1.0.0-alpha15 (InfiniteQuery, Subscription, Mutation) |
-| 원격 | Retrofit 3.0.0, OkHttp 5.5.0, kotlinx.serialization |
-| 로컬 | Room 2.8.5 |
+| 비동기 상태 관리 | Soil 1.0.0-alpha15 |
+| HTTP 통신·직렬화 | Retrofit 3.0.0, OkHttp 5.5.0, kotlinx.serialization |
+| 로컬 저장 | Room 2.8.5 |
 | 의존성 주입 | Metro 1.4.5 |
-| 이미지 | Coil 3.6.3 |
-| 로그 | Timber 5.0.1 (debug 빌드에서만 Tree 등록) |
+| 이미지 / 로그 | Coil 3.6.3 / Timber 5.0.1(debug 빌드에서만 Tree 등록) |
 | 테스트 | JUnit 4, Robolectric 4.17, Compose UI Test, Molecule, Turbine, MockWebServer |
 
-ViewModel·Repository·UseCase 계층은 두지 않았습니다. 화면 상태는 얇은 `@Composable` Presenter가 만들고, Presenter가 Soil key를 통해 Retrofit과 Room에 바로 닿습니다. 선택 이유와 비용은 [아키텍처](docs/ARCHITECTURE.md) 9절에 있습니다.
+Soil은 비동기 데이터의 조회·캐싱·갱신과 로딩·오류 상태를 관리합니다. 이 앱은 **InfiniteQuery → Retrofit 검색**, **Subscription → Room Flow**, **Mutation → Room 쓰기**를 연결하며, 독립적인 단건 Query는 사용하지 않습니다. HTTP 통신은 Retrofit·OkHttp가 담당합니다.
+
+검색 캐시는 정규화한 검색어·정렬별로 나뉘며, 마지막 성공(추가 페이지 포함) 후 5분이 지나면 오래된 상태(stale)로 판단합니다. 시간 경과만으로 요청하지 않고 재구독 등 조건을 만족할 때 기존 페이지를 재조회합니다. 메모리 캐시의 수명·재시도·재연결 조건은 [아키텍처](docs/ARCHITECTURE.md#검색-캐시의-수명과-재조회) 참고.
 
 ## 구조
 
-```text
-book-search-android
-├── app                          Activity, Metro AppGraph, Navigation 3 백스택·탭, retain 엔트리 decorator
-│   ├── MainActivity.kt
-│   ├── AppGraph.kt              앱 의존성 그래프 (Soil 클라이언트, 이미지 로더)
-│   ├── initializer/             App Startup으로 debug 빌드에만 Timber 등록
-│   └── navigation/
-│       ├── BookSearchNavHost.kt                 탭·백스택과 NavDisplay 연결
-│       ├── BookSearchBackStack.kt               두 탭 루트를 유지하는 백스택 규칙
-│       ├── ListDetailSceneStrategy.kt           840dp 이상 2-pane
-│       └── RetainedValuesStoreNavEntryDecorator.kt  엔트리 단위 retain 수명
-├── core
-│   ├── model                    도서 모델, ID 규칙, 페이징 규칙, 가격 필터, 즐겨찾기 정렬 (순수 Kotlin)
-│   ├── network                  Retrofit 서비스, 인증 interceptor, DTO
-│   ├── database                 Room DB, 즐겨찾기 DAO·엔티티
-│   ├── data                     Soil key와 즐겨찾기 쓰기, 오류 분류
-│   │   ├── SearchBooksQueryKey.kt         검색 InfiniteQuery
-│   │   ├── FavoriteSubscriptionKeys.kt    즐겨찾기 Room Subscription
-│   │   ├── FavoriteMutationKey.kt         화면별 즐겨찾기 Mutation
-│   │   └── FavoriteWriter.kt              앱 범위 직렬 쓰기
-│   ├── ui                       테마, 도서 카드·표지·상태 컴포넌트, 검색어 입력·정렬 메뉴, 즐겨찾기 토글
-│   └── testing                  Presenter 테스트 도구 (테스트 전용)
-├── feature                      화면마다 같은 구성
-│   ├── search                   검색 (+ SearchQueryHolder: 다른 탭에 있는 동안 쿼리 유지)
-│   ├── favorites                즐겨찾기 (+ PriceFilterSheet: 가격 필터)
-│   └── detail                   상세
-│       ├── *NavKey.kt           직렬화되는 내비게이션 키
-│       ├── *ScreenGraph.kt      엔트리 단위 Metro 그래프 (retain)
-│       ├── *ScreenRoot.kt       엔트리 등록, Soil·Room 값을 Presenter에 연결
-│       ├── *Presenter.kt        화면 상태와 이벤트 처리 (@Composable)
-│       └── *Screen.kt           UI
-├── build-logic                  모듈 공통 Gradle convention 플러그인
-├── docs                         요구사항, 구현 사양, 아키텍처, QA, AI 활용 기록
-└── scripts                      제출 ZIP 생성 스크립트
-```
+- `app`: 의존성 조립, 탭·백스택, retain decorator, 2-pane 장면
+- `feature:search`·`favorites`·`detail`: 엔트리 등록과 데이터 연결(Root), 화면 상태·이벤트(Presenter), UI(Screen). feature끼리는 참조하지 않습니다.
+- `core:model`·`network`·`database`·`data`·`ui`: 순수 규칙, 통신, 저장, 데이터 연결, 공통 UI
+- `core:testing`·`build-logic`: 테스트 도구와 공통 빌드 설정
 
-모듈 의존 방향과 데이터 흐름은 [아키텍처](docs/ARCHITECTURE.md)에 그림으로 정리했습니다.
-
-## 주요 구현 포인트
-
-- **검색 경합**: 검색어·정렬마다 Soil key가 따로 있어 이전 조건의 늦은 응답이 새 목록에 섞이지 않습니다. 빠른 조건 변경과 빈 검색어 전환을 테스트로 확인했습니다.
-- **페이지네이션**: `is_end`와 페이지 메타데이터로 마지막 페이지를 판단해, 마지막 페이지가 정확히 20개여도 더 요청하지 않습니다. 페이지 사이 중복 ID는 처음 것만 남기고, 추가 로딩이 실패하면 받아 둔 목록 아래에 재시도 버튼을 보여 줍니다.
-- **즐겨찾기 단일 기준**: 즐겨찾기 상태는 Room 하나만 기준으로 삼고, 검색·즐겨찾기·상세 화면이 모두 Room Flow를 구독합니다. Soil 구독은 화면을 떠나면 바로 멈추게 해(`keepAliveTime = 0`), 상세에서 저장하고 곧바로 돌아와도 목록이 현재 Room 값을 다시 받습니다.
-- **쓰기 순서와 화면 이탈**: 즐겨찾기 쓰기는 앱 범위 코루틴에서 Mutex로 직렬 실행해, 저장 중 화면을 닫아도 끝까지 실행됩니다. 저장 중에는 그 도서의 버튼만 비활성화합니다.
-- **상세 중복 진입 방지**: 상세 화면이 맨 위에 있는 동안의 상세 열기 요청은 무시해, 두 카드를 동시에 눌러도 상세는 하나만 쌓입니다. 2-pane에서는 다른 도서를 고르면 상세를 바꿉니다.
-- **상태 수명과 복원**: 화면별 retain 값은 Navigation 3 엔트리에 묶여 엔트리가 빠지면 정리되고 구성 변경에서는 유지됩니다. `configChanges`로 재생성을 막지 않고, 백스택은 직렬화한 NavKey로, 입력값·정렬·필터는 Presenter의 `rememberSerializable`, 스크롤 위치는 `rememberSaveable`로 복원합니다. 서버 상태는 Soil·Room이 소유하고, 화면 전용 상태는 Presenter가 저장 데이터와 retain 데이터로 나눠 둡니다. 상세 키는 진입 시점의 도서 스냅샷을 담아 단건 조회 API 없이도 상세를 다시 그립니다([아키텍처](docs/ARCHITECTURE.md) "구성 변경과 프로세스 재생성 대응").
-- **오류 처리**: 키 누락·인증 실패·요청 한도 초과·서버·네트워크·응답 해석 오류를 나눠 안내하고, 네트워크·서버 오류만 자동 재시도합니다. 오프라인에서도 저장한 도서의 목록과 상세는 열립니다.
-- **적응형 레이아웃**: 창 크기에 따라 하단 탭과 내비게이션 레일을 바꾸고, 목록은 `GridCells.Adaptive`로 열 수를 늘립니다. 840dp 이상에서는 Navigation 3 `SceneStrategy`로 직접 구현한 list-detail 2-pane을 보여 줍니다(Material의 list-detail 전략은 Navigation 3 1.2.0과 맞지 않음). 창 크기가 바뀌어도 열린 상세가 유지됩니다.
-- **보안**: 이미지 로더는 인증 interceptor가 없는 OkHttp 클라이언트를 써서 표지 요청에 API 키가 실리지 않습니다. 네트워크 로그는 debug 빌드에서만 남기며 Authorization 헤더를 가립니다.
-
-## 검증 결과
-
-- **자동 테스트**: 2026-10-08, 커밋 `fe1b21d`에서 `./gradlew assembleDebug testDebugUnitTest test --continue` 성공. 테스트 121개(Android 모듈 98개, `core:model` 23개), 실패·오류·건너뜀 0.
-- **실기기 QA**: 2026-10-08 현재 구조의 빌드(`e52f12c`·`fe1b21d`)로 요구사항 기반 시나리오 45행을 실행해 모두 통과했습니다. 휴대폰 SM-S936N(Android 17)에서 검색·즐겨찾기·회전·프로세스 재생성 복원·쓰기 중 화면 이동, 태블릿 SM-X236N(Android 16)에서 레일과 2-pane, Galaxy Z Fold2(Android 13)에서 접힘·펼침·중간 접힘과 필드가 빠진 실제 도서를 확인했습니다. 시나리오별 절차와 화면은 [QA](docs/QA.md)에 있습니다.
-- **시연 영상**: 제출 ZIP 루트에 있으며 용량 때문에 Git에는 넣지 않았습니다. `demo.mp4`(1분 42초)는 검색·페이지네이션·정렬, 즐겨찾기 추가·해제·정렬·검색·가격 필터, 오프라인 오류와 재시도, 회전, 다크 모드를 보여 줍니다. `demo-tablet.mp4`(31초)는 2-pane에서 상세 교체, 뒤로 가기, 탭 전환, 회전 뒤 상세 유지를 보여 줍니다.
-- **요구사항별 상태**: [요구사항 체크리스트](docs/REQUIREMENTS.md) 9절에 R-ID마다 구현 상태·검증 상태·증거·미충족 사항을 적었습니다. 실제로 확인한 항목만 체크했습니다.
+원격 검색 상태는 Soil, 로컬 즐겨찾기 데이터는 Room, 화면 전용 상태는 Presenter가 관리합니다. `core:data`의 key와 writer가 데이터 계층을 이루며, 호출을 전달만 하는 Repository·UseCase는 추가하지 않았습니다.
 
 ## 알려진 제한
 
-- 폴더블은 창 크기 클래스로만 배치를 바꾸며, 힌지 자세에 맞춘 테이블톱 배치는 없습니다. Galaxy Z Fold2의 안쪽 화면은 compact 너비라 2-pane이 나타나지 않습니다.
-- 네트워크가 다시 연결돼도 실패한 검색을 자동으로 다시 요청하지 않습니다. 재시도 버튼으로 복구합니다.
-- 프로세스가 종료되는 순간 끝나지 않은 즐겨찾기 쓰기는 보장하지 않습니다.
-- 일부 외서는 Kakao가 정가를 0으로 보내며, 정책상 0원은 유효한 가격이라 "0원"으로 표시합니다.
+- **저장 수명:** 화면에서 접수한 요청은 화면을 닫아도 완료하지만, 프로세스 종료 시 미완료 쓰기까지 보장하지는 않습니다.
+- **오프라인 검색:** 검색 결과는 메모리 캐시만 사용하며, 프로세스 종료 후에는 다시 요청합니다. 재연결에 따른 자동 재조회에는 조건이 있으며, 오류 화면에서 직접 재시도할 수 있습니다.
+- **데이터 규모·식별:** 즐겨찾기는 수백 건을 가정해 전체 목록을 메모리에서 검색·정렬합니다. 대량 데이터 성능은 측정하지 않았습니다. 같은 책의 ISBN10·ISBN13이 응답마다 한쪽만 오면 서로 다른 ID가 될 수 있습니다.
+- **폴더블·이미지:** 배치는 창 크기를 기준으로 하며 힌지 자세별 테이블톱 배치는 없습니다. Fold2 안쪽 화면은 compact 너비라 2-pane이 나타나지 않습니다. 오프라인 표지 표시는 이미지 캐시 유무에 따릅니다.
+- **가격 정책:** 0 이하·누락 정가는 "가격 정보 없음"으로 표시합니다. 가격 필터 적용 시 제외하고, 미적용 시 도서를 유지합니다. API 값의 의미를 단정하지 않는 방어적 앱 정책입니다.
 
 ## AI 활용
 
 ### 활용한 작업
 
-- **설계(Codex)**: 개발자와 협의하며 요구사항 정리, 참고 코드·Kakao API·Android 문서 조사, 위험 식별, 아키텍처 문서 초안을 맡았습니다. 코드는 작성하지 않았습니다.
-- **사양·구현·검증(Claude Code, Claude Opus 5.5)**: 개발자의 요청으로 [구현 사양](docs/SPEC.md) 확정, 빌드 설정, 모든 모듈의 코드와 테스트, adb로 실행한 실기기 QA, 시연 영상, 제출 ZIP 스크립트, 검증 문서를 맡았습니다.
+| 도구 | 맡은 작업 |
+| --- | --- |
+| Codex | 요구사항·자료 조사, 설계 초안, 코드·문서 검토. 개발자 승인에 따른 앱 코드·회귀 테스트 구현 및 실행, 빌드·문서 정리 |
+| Claude Code(Claude Opus 5.5) | 사양 구체화, 빌드 설정, 초기 앱 코드·테스트, adb 실기기 QA, 시연 영상·제출 스크립트 |
 
 ### 검증 방법
 
-- AI 결과에는 근거(공식 문서, 라이브러리 소스·바이트코드, 실행한 명령과 결과)를 붙이고, 개발자가 요구사항·동작·유지보수 관점에서 검토해 채택하거나 고쳤습니다.
-- 기능 단위로 빌드와 테스트를 실행한 뒤 커밋했습니다. 결과는 위 [검증 결과](#검증-결과)에 있습니다.
-- 요구사항마다 실기기 시나리오를 만들어 휴대폰과 태블릿에서 실행했습니다([QA](docs/QA.md)).
+공식 문서·라이브러리 소스와 코드 대조, 빌드·자동 테스트·실기기 시나리오로 검증. 개발자가 요구사항·동작·유지보수 관점에서 채택·수정 여부를 판단하고, AI가 승인된 코드 수정·테스트 수행. 실행 범위와 미실행 항목은 [QA](docs/QA.md)에 기록.
 
 ### 직접 판단해 바꾼 부분
 
-| 주제 | AI 제안·초안 | 개발자 결정 |
-| --- | --- | --- |
-| 상태 수명 | 일정과 익숙함을 이유로 ViewModel | Compose `retain` + Navigation 3. 대신 엔트리 수명·정리·복원 테스트를 먼저 작성 |
-| 원격 통신 | 참고 프로젝트의 Ktor 구성을 기준으로 조사 | 경험이 많은 Retrofit. Soil key에 Retrofit 서비스를 주입 |
-| 모듈 | `core:data` 하나 | `core:network`·`core:database` 분리 |
-| JDK | Metro 버전을 낮추거나 DI 교체 | 지정 버전 유지, Gradle daemon만 JDK 21 |
-| Timber 초기화 | Application에서 직접 등록 | App Startup initializer, debug 빌드에서만 등록 |
-| 상세 중복 진입 | 드문 경우라 후순위 | 두 카드 동시 탭 대응과 Compose 테스트 |
-| QA | 자동 테스트와 일부 기기 확인 | 요구사항 기반 시나리오 전체를 실기기에서 실행 |
-| 2-pane | 선택 항목이라 미구현 | list-detail 2-pane 구현, 태블릿 실기기 확인과 시연 영상 |
-| 폴더블 확인 | 폴더블 에뮬레이터로 확인 | 실제 Galaxy Z Fold2에서 접힘·펼침·중간 접힘 확인 |
+| AI 제안·참고 구현 | 개발자 판단 |
+| --- | --- |
+| ViewModel 중심 구조 | retain + Navigation 3 선택, 엔트리 수명·정리·복원 검증 추가 |
+| 참고 코드의 Ktor | Android 전용 과제의 HTTP 통신·테스트를 Retrofit·OkHttp로 충족하므로 Ktor 추가 이점이 없다고 판단. 더 익숙한 Retrofit 선택, Soil key에 서비스 주입 |
+| 원격·로컬 연결 구조 | 통신·저장 구현을 별도 모듈로 분리 |
+| 화면·기기 검증 범위 | 동시 탭 대응과 태블릿·실제 폴더블 검증 포함 |
+| 가격 정보 처리 | 0 이하 정가는 정보 없음, 금액 필터 적용 시 제외·미적용 시 도서 유지 |
 
-결정별 근거는 [AI 활용 기록](docs/AI_USAGE.md)에 있습니다.
+Metro 유지로 daemon JVM 21을 선택한 판단과 그 제약을 포함한 상세 기록은 [AI 활용 기록](docs/AI_USAGE.md)에 있습니다.
 
 ## 문서
 
-1. [요구사항 체크리스트](docs/REQUIREMENTS.md): 필수 요구사항과 R-ID별 구현·검증 기록
-2. [구현 사양](docs/SPEC.md): 화면·API·ID·백스택·오류 처리 등 세부 계약
-3. [아키텍처](docs/ARCHITECTURE.md): 기술별 역할, 데이터 흐름, 상태 소유권, 구성 변경 대응, 테스트 경계, 선택 이유·참고 코드·미채택 대안
-4. [QA](docs/QA.md): 실기기 시나리오와 자동 테스트 목록
-5. [AI 활용 기록](docs/AI_USAGE.md): AI에 맡긴 범위, 개발자 판단, 검증 근거
-6. [저장소 작업 지침](AGENTS.md): 문서·커밋·검증·보안 기준
+[요구사항과 검증 상태](docs/REQUIREMENTS.md) · [구현 사양](docs/SPEC.md) · [아키텍처와 선택 이유](docs/ARCHITECTURE.md) · [QA](docs/QA.md) · [AI 활용 기록](docs/AI_USAGE.md) · [작업 지침](AGENTS.md)

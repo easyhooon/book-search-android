@@ -7,9 +7,9 @@
 | 영역 | 기술 | 상태와 역할 |
 | --- | --- | --- |
 | 화면 | Jetpack Compose | 필수. 입력·표시·사용자 이벤트 전달 |
-| 화면 모델 | Root + 얇은 @Composable Presenter | 현재 권장안. Root의 데이터 관찰·boundary, Presenter의 준비된 데이터·로컬 상태·mutation |
+| 화면 모델 | Root + 얇은 @Composable Presenter | 현재 구현. Root의 데이터 관찰, Presenter의 화면 상태·이벤트·쓰기 명령 |
 | 수명·이동 | retain + Navigation 3 | 사용자 선택. 엔트리별 유지·제거 및 백스택 |
-| 데이터 접근 | Soil typed-key | 사용자 선택. 원격 Query / InfiniteQuery, 로컬 Subscription / Mutation |
+| 비동기 상태 관리 | Soil typed-key | 원격 검색 InfiniteQuery, 로컬 Room 관찰 Subscription / 쓰기 Mutation |
 | 페이지네이션 | Soil InfiniteQuery | 사용자 선택. 요청 key와 페이지 메타데이터 연결 |
 | 원격 통신 | Retrofit + OkHttp + kotlinx.serialization | 사용자 선택. 요청·응답·직렬화 |
 | 로컬 저장 | Room + Flow | 사용자 선택. 즐겨찾기의 단일 상태 기준 |
@@ -21,38 +21,19 @@ Android 전용이며 KMP 구성과 Circuit은 도입하지 않습니다(사용�
 
 ## 2. 의존성과 데이터 흐름
 
-모듈 의존 방향입니다. 들여쓴 항목이 위 모듈이 의존하는 모듈입니다.
+모듈의 주요 의존 방향입니다. 화살표는 참조하는 모듈에서 참조 대상 모듈로 향합니다. 화면 모듈은 서로 참조하지 않으며, 네트워크·DB 접근은 `core:data` 뒤로 숨깁니다.
 
-```text
-app                                        내비게이션 조립과 AppGraph. Metro 조립을 위해 모든 core도 직접 봄
-└── feature:search · favorites · detail    서로 참조하지 않음
-    ├── core:data                          Soil key, FavoriteWriter
-    │   ├── core:network                   Retrofit·OkHttp (feature에는 숨김)
-    │   ├── core:database                  Room (feature에는 숨김)
-    │   └── core:model                     api로 노출
-    ├── core:ui                            공통 컴포넌트, FavoriteToggler
-    └── core:model                         순수 Kotlin 모델과 규칙
-core:testing                               테스트 전용. Fake FavoriteWriter, Presenter 테스트 도구
-```
+![모듈 의존 구조: app에서 화면 모듈, 공통 UI·데이터·모델로 이어지는 참조 관계](diagrams/module-dependencies.png)
 
-화면 하나의 데이터 흐름입니다.
+[Mermaid 소스](diagrams/module-dependencies.mmd)
 
-```text
-*ScreenRoot                                엔트리 등록, Room 값을 읽어 Presenter에 넘김
-├── Soil Subscription ── Room DAO Flow     즐겨찾기 목록·ID (단일 기준). 값이 오기 전에는 로딩
-└── *Presenter (@Composable)               화면 상태와 이벤트 처리
-    ├── Soil InfiniteQuery                 검색 결과. 확정 검색어·정렬로 key가 바뀌어 여기서 연결
-    │   └── Retrofit ── OkHttp ── Kakao API
-    ├── rememberSerializable               검색·즐겨찾기의 입력·확정 검색어·정렬·가격 범위 (저장 데이터)
-    ├── retainFavoriteToggler              쓰기 진행 상태 (retain 데이터)
-    │   └── Soil Mutation ── FavoriteWriter ── Room DAO 쓰기
-    └── *Screen                            UiState를 그리고 eventSink로 이벤트 전달
+`app`은 Metro 조립을 위해 `core:model`·`network`·`database`·`data`·`ui`도 직접 참조합니다. `core:testing`은 Fake FavoriteWriter와 Presenter 테스트 도구를 제공하는 테스트 전용 모듈입니다.
 
-app
-├── Navigation 3 + retain decorator        엔트리 상태의 유지·제거
-├── Metro AppGraph                         API, DB, key, 이미지 로더 등 객체 조립
-└── Coil ImageLoader                       Screen의 표지 요청. 인증 interceptor 없는 이미지 전용 클라이언트
-```
+화면 하나의 연결 구조입니다. 화살표는 구성 요소의 연결·호출 관계이며, Room Flow 값은 Subscription을 거쳐 Root와 Presenter로 전달됩니다.
+
+![화면 연결 구조: Root의 Room 관찰, Presenter의 검색·저장 상태·쓰기 처리, Screen 표시와 앱 공통 구성](diagrams/screen-data-flow.png)
+
+[Mermaid 소스](diagrams/screen-data-flow.mmd)
 
 DroidKaigi 2026의 패턴을 얇게 적용합니다. Root가 Room subscription을 연결하고, Presenter는 UI 모델을 만들고 이벤트를 데이터 명령으로 연결합니다. 검색 InfiniteQuery는 확정 검색어에 따라 key가 바뀌므로 Presenter가 연결합니다. 화면은 DTO나 Room Entity를 직접 다루지 않습니다. typed-key가 이미 맡은 호출을 전달만 하는 Repository는 두지 않습니다. 이는 이 프로젝트의 책임 분리이며 Soil이 Repository를 금지한다는 뜻은 아닙니다. ID 정규화·가격 정책 같은 독립 규칙은 일반 Kotlin 함수로 둡니다.
 
@@ -69,7 +50,7 @@ entry<BookDetailNavKey>(clazzContentKey = { it.book.id }) { key ->
 }
 ```
 
-화면 그래프는 그 화면의 Soil key와 화면별 Mutation key(`favoriteMutationKeyFactory.create("search")` 등)를 담은 `XxxScreenContext`를 노출합니다. 엔트리가 백스택에 있는 동안 같은 key 인스턴스를 쓰고, pop되면 그래프도 버려집니다. 자체 코드 생성기·컴파일러 플러그인은 만들지 않습니다. Metro 컴파일러 플러그인은 모든 모듈에, Room용 KSP는 `core:database`에만 적용합니다.
+화면 그래프는 그 화면의 Soil key와 공통 Mutation ID를 사용하는 key(`favoriteMutationKeyFactory.create()`)를 담은 `XxxScreenContext`를 노출합니다. 엔트리가 백스택에 있는 동안 같은 key 인스턴스를 쓰고, pop되면 그래프도 버려집니다. Metro는 `app`, 세 feature, `core:network`·`database`·`data`에 적용합니다. `core:model`·`ui`·`testing`에는 적용하지 않으며, Room용 KSP는 `core:database`에만 적용합니다.
 
 ### 요구사항과 현재 제품 정책의 경계
 
@@ -77,7 +58,7 @@ entry<BookDetailNavKey>(clazzContentKey = { it.book.id }) { key ->
 
 다섯 정책은 사용자의 도서 앱 사례 참고 방향에 따라 정했으며, 공개 자료로 확인한 범위만 근거로 씁니다.
 
-- [교보문고 웹 검색](https://search.kyobobook.co.kr/search?keyword=Search&pbcm=Search): 가격 범위 입력·적용 UI를 참고했습니다. 정가/판매가 기준은 확인하지 않았고, 정가 기준과 0원·가격 없음 규칙은 [Kakao 가격 필드](https://developers.kakao.com/docs/ko/daum-search/dev-guide#search-book)를 바탕으로 한 이 앱의 정책입니다.
+- [교보문고 웹 검색](https://search.kyobobook.co.kr/search?keyword=Search&pbcm=Search): 가격 범위 입력·적용 UI를 참고했습니다. 정가/판매가 기준은 확인하지 않았고, 정가 기준과 0 이하·누락 정가를 정보 없음으로 처리하는 규칙은 이 앱의 방어적 정책입니다. [Kakao 가격 필드](https://developers.kakao.com/docs/ko/daum-search/dev-guide#search-book)가 0을 무료 또는 정보 없음으로 정의한다고 단정하지 않습니다.
 - [리디 위시리스트 안내](https://ridihelp.ridibooks.com/support/solutions/articles/154000207731): 상세에서 관심 도서를 추가하고 MY에서 확인하는 흐름만 참고했습니다. DB 쓰기 scope·순서·pop 처리의 근거는 아닙니다.
 - 검색 버튼/IME 확정은 설계 선택이고, 복원 범위는 [Android 상태 저장 지침](https://developer.android.com/develop/ui/compose/state-saving)에 맞춘 기술 정책입니다. 다른 앱의 검색 트리거나 프로세스 종료 동작을 확인한 결과가 아닙니다.
 - 2-pane은 [list-detail 가이드](https://developer.android.com/develop/ui/compose/layouts/adaptive/list-detail)의 가능한 패턴이며 필수 레이아웃이 아닙니다.
@@ -97,22 +78,22 @@ Navigation 3 1.2.0에는 retain용 엔트리 decorator가 없어 `RetainedValues
 - `retainRetainedValuesStoreRegistry()`의 `LocalRetainedValuesStoreProvider(entry.contentKey)`로 엔트리마다 retain 저장소를 나눕니다.
 - 엔트리가 pop되면 `registry.clearChild(contentKey)`로 저장소를 비우고, retain한 객체의 `RetainObserver.onRetired`가 불립니다.
 - `BookSearchNavHost`는 saveable·retain decorator를 백스택 전체에 적용하고 `NavDisplay`에는 활성 탭 루트부터의 엔트리만 넘깁니다. 비활성 탭 루트는 백스택에 남아 retain 값이 유지됩니다.
-- 840dp 이상에서는 `ListDetailSceneStrategy`가 `[목록 루트, 상세]`를 나란히 그리고, 장면 key를 목록 엔트리로 두어 상세를 열고 닫아도 목록을 다시 그리지 않습니다. 다른 도서로 바꾸면 이전 상세만 pop되어 정리됩니다([SPEC](SPEC.md) 10절).
+- 840dp 이상에서는 `ListDetailSceneStrategy`가 `[목록 루트, 상세]`를 나란히 그리고, 장면 key를 목록 엔트리로 두어 상세를 열고 닫아도 목록의 컴포지션과 상태를 유지합니다. 다른 도서로 바꾸면 이전 상세만 pop되어 정리됩니다([SPEC](SPEC.md) 10절).
 
 ### 화면 상태 소유
 
-서버 상태는 Soil(`rememberInfiniteQuery`)과 Room(즐겨찾기)이 소유하고, 화면에서만 쓰는 상태는 각 Presenter가 공식 retain 문서의 권장대로 저장 데이터와 retain 데이터로 나눠 직접 둡니다([SPEC](SPEC.md) "화면 상태 소유").
+원격 검색 상태는 Soil(`rememberInfiniteQuery`), 로컬 즐겨찾기 데이터는 Room이 소유하고, 화면에서만 쓰는 상태는 각 Presenter가 공식 retain 문서의 권장대로 저장 데이터와 retain 데이터로 나눠 직접 둡니다([SPEC](SPEC.md) "화면 상태 소유").
 
 - 저장 데이터(입력·확정 검색어·정렬·가격 범위)는 `rememberSerializable`로 묶어 프로세스 재생성 뒤 복원합니다.
-- retain 데이터는 `private` `RetainObserver`로 감싸 엔트리가 은퇴할 때 정리합니다. `retainFavoriteToggler`(진행 중인 도서 ID·실패 여부와 그 scope·Mutation 구독)와 검색의 `retainSearchQueryHolder`가 여기에 속합니다.
+- retain 데이터는 `private` `RetainObserver`로 감쌉니다. 엔트리가 은퇴하면 검색 참조를 놓고, 즐겨찾기는 신규 접수를 막은 뒤 이미 접수한 요청이 끝나면 정리합니다. `retainFavoriteToggler`(진행 중인 도서 ID·실패 여부와 그 scope·Mutation 구독)와 검색의 `retainSearchQueryHolder`가 여기에 속합니다.
 - InfiniteQuery 객체와 Room 즐겨찾기 ID처럼 컴포지션마다 바뀌는 값은 `eventSink` 람다가 그 컴포지션의 값을 읽고, retain 값에는 보관하지 않습니다.
 - 별도 Store 클래스는 두지 않습니다. 재시도·다음 페이지처럼 이벤트가 쿼리를 다시 부르는 흐름을 Presenter 한 파일에서 읽을 수 있게 하기 위한 개발자 결정입니다.
 
-엔트리가 은퇴하면 `FavoriteToggler`의 scope만 취소되어 대기를 멈춥니다. 이미 시작한 쓰기는 앱 범위의 `FavoriteWriter`가 끝까지 실행하므로, 쓰기 도중 상세를 닫아도 쓰기는 완료되고 실패 알림만 사라집니다(`FavoritesStateLifecycleTest`).
+엔트리가 은퇴하면 `FavoriteToggler`는 신규 요청부터 차단합니다. 요청 scope의 Job은 이미 접수한 자식 작업이 완료될 때까지 유지되며, 마지막 요청 완료 후 Mutation 참조를 닫습니다. 실제 DB 쓰기는 별도의 앱 범위 `FavoriteWriter`가 맡습니다. 닫힌 화면의 실패는 로그만 남기고 새 화면의 오류로 전달하지 않습니다(`FavoriteMutationLifecycleTest`).
 
 ### 구성 변경과 프로세스 재생성 대응
 
-retain은 구성 변경(회전, 다크 모드, 창 크기 변경)에서 객체를 유지할 뿐 프로세스가 죽으면 남지 않으므로, 상태마다 맞는 수단을 씁니다. Manifest `configChanges`로 Activity 재생성을 막지 않습니다. 재생성 경로를 두어야 회전 확인이 프로세스 재생성 복원과 같은 코드를 지나기 때문입니다.
+retain은 구성 변경(회전, 다크 모드, 창 크기 변경)에서 객체를 유지할 뿐 프로세스가 죽으면 남지 않으므로, 상태마다 맞는 수단을 씁니다. Manifest `configChanges`로 Activity 재생성을 막지 않습니다. 구성 변경 시 객체 유지와 저장 상태 복원, 프로세스 재생성 시 저장 상태 복원을 각각 검증합니다.
 
 | 상태 | 수단 | 구성 변경 | 프로세스 재생성 |
 | --- | --- | --- | --- |
@@ -120,11 +101,11 @@ retain은 구성 변경(회전, 다크 모드, 창 크기 변경)에서 객체�
 | 엔트리별 화면 상태 | `rememberSaveableStateHolderNavEntryDecorator` | 유지 | 복원 |
 | 검색어·정렬·가격 범위(입력·확정) | Presenter의 `rememberSerializable` | 유지 | 복원. 검색 결과는 재요청 |
 | 가격 필터 시트 열림과 입력 중 금액 | 화면의 `rememberSaveable` | 유지 | 복원 |
-| 목록 스크롤 위치 | 조회 조건을 key로 둔 `rememberSaveable(..., saver = LazyGridState.Saver)` | 유지 | 복원. 조건이 바뀌면 맨 위부터 |
+| 목록 스크롤 위치 | 조회 조건을 `rememberSaveable`의 입력으로 두고 `LazyGridState.Saver`로 첫 표시 항목의 index·offset 저장 | 유지. 조건 변경 시 맨 위부터 | 위치 값 복원. 검색 결과는 재조회하므로 이전 페이지 전체·동일 도서 위치는 보장하지 않음 |
 | 화면 그래프, `FavoriteToggler`, `SearchQueryHolder` | `retain` + `RetainedValuesStoreNavEntryDecorator` | 같은 객체 유지. 쓰기 진행 상태 유지(`FavoritesStateLifecycleTest`) | 새로 만듦 |
-| 검색 결과 페이지 | 앱 싱글턴 Soil `SwrCachePlus` 메모리 캐시(`staleTime` 5분) | 유지. 재요청 없음 | 조건으로 재요청 |
+| 검색 결과 페이지 | 앱 싱글턴 Soil `SwrCachePlus` 메모리 캐시(`staleTime` 5분) | 기존 결과 유지. 재구독 시 stale 등 조건에 따라 재조회 | 조건으로 재요청 |
 | 즐겨찾기 | Room, Subscription으로 관찰 | 유지 | 디스크에서 읽음 |
-| 진행 중인 즐겨찾기 쓰기 | 앱 범위 `FavoriteWriter`(`ApplicationScope` + `Mutex`) | 화면이 사라져도 완료 | 보장하지 않음 |
+| 진행 중인 즐겨찾기 쓰기 | 접수한 Mutation 요청의 수명 유지 + 앱 범위 `FavoriteWriter` | 화면 종료 후에도 접수한 요청 완료, 이후 참조 정리 | 보장하지 않음 |
 | 하단 바/레일, 그리드 열 수, 1-pane/2-pane | `currentWindowAdaptiveInfo()`·`GridCells.Adaptive`를 매번 계산. 2-pane은 장면 전략만 바꾸고 백스택은 유지 | 새 크기에 맞춤. 열린 상세 유지 | 같음 |
 | 키보드 표시 중 레이아웃 | `windowSoftInputMode="adjustResize"` | 해당 없음 | 해당 없음 |
 
@@ -157,28 +138,41 @@ Circuit의 `eventSink` 형태만 빌려 왔고 라이브러리는 쓰지 않습�
 
 Presenter는 `rememberInfiniteQuery`를 `key(queryKey.id)` 그룹 안에서 호출합니다. Soil compose의 기본 수집이 key 없는 `collectAsState`라서, 그룹을 나누지 않으면 조건이 바뀐 첫 프레임에 이전 결과가 보일 수 있기 때문입니다. 다음 페이지는 상태가 성공이고 진행 중 요청이 없으며 다음 페이지 값이 있을 때만 요청하고, 커스텀 페이지 상태는 두지 않습니다.
 
-검색 루트가 백스택에 있는 동안 retain한 `SearchQueryHolder`가 현재 쿼리를 붙잡아 둡니다. 다른 탭을 보는 동안 검색 루트가 컴포지션에서 빠져도 Soil이 keepAliveTime 뒤 쿼리를 내리지 않으므로, 받아 둔 목록과 추가 로딩 오류 상태가 탭 전환 뒤에도 남습니다(`SearchQueryRetentionTest`).
+### 검색 캐시의 수명과 재조회
 
-정렬 변경, 빈 검색어 초기화, 중복 ID, is_end, 재시도, 늦은 응답 격리는 `SearchPresenterTest`·`SearchBooksQueryKeyTest`로 확인합니다.
+| 항목 | 설정과 동작 |
+| --- | --- |
+| 캐시 key | 앞뒤 공백을 제거한 검색어 + 정렬. 같은 조건은 같은 쿼리 공유. 페이지 번호는 key가 아닌 해당 쿼리의 페이지 인자 |
+| 신선도(`staleTime`) | Soil 기본 0초 → 앱 검색은 5분. 마지막 성공(추가 페이지 포함)부터 계산하며 실패는 이 시각을 바꾸지 않음. 5분 경과 자체는 HTTP 요청을 발생시키지 않음 |
+| 기존 페이지 재조회 | 재구독 시 미조회·무효화·stale이면 실행. fresh 성공 결과는 유지. `refresh()`는 무효화 후 1페이지부터 보유 페이지 수만큼 순차 조회(`is_end`면 조기 종료). 성공 상태에서 같은 검색어 재제출만으로 강제 갱신하지 않음 |
+| 다음 페이지 | `loadMore()`는 다음 페이지만 요청. 오류 버튼은 실패 페이지에 따라 refresh 또는 해당 추가 페이지 재시도 |
+| 활성 참조(`keepAliveTime`) | Soil 기본 5초 유지. `SearchQueryHolder`가 검색 엔트리의 현재 쿼리 참조를 유지하므로 탭·상세 전환만으로 해제되지 않음. 조건 변경·검색 초기화·엔트리 종료 시 해제 |
+| 비활성 캐시(`gcTime`) | 마지막 참조 해제 후 keepAlive 시간이 지나면 비활성화하고 성공 상태만 캐시에 저장. 저장 시점부터 기본 5분 유효하며, 기본 50개 key 제한·메모리 압력으로 더 일찍 제거 가능. staleTime과 별개 |
+| 재연결·화면 복귀 | 네트워크 복구 후 2초 뒤 활성 실패 쿼리에 resume 요청. 최초·재조회·추가 로딩 실패 모두 대상이지만, 실제 재조회는 미조회·무효화·stale 조건을 추가로 만족할 때만 실행. 창 가시성 공급자는 연결하지 않아 포그라운드 복귀만으로 자동 재조회를 보장하지 않음 |
+| 프로세스 종료 | Soil 검색 캐시는 휘발. 저장된 조건으로 다시 요청하며 Room의 즐겨찾기 영속 저장·Coil의 표지 캐시는 별개 |
+
+탭 전환 중 목록·추가 로딩 오류의 유지는 `SearchQueryRetentionTest`로 확인합니다. 옵션 기본값과 재조회 조건은 Soil 1.0.0-alpha15의 [QueryOptions](https://github.com/soil-kt/soil/blob/f2e1874ff38458f5e1b42c69eb7965be5c2f8fe0/soil-query-core/src/commonMain/kotlin/soil/query/QueryOptions.kt#L82)·[QueryCommand](https://github.com/soil-kt/soil/blob/f2e1874ff38458f5e1b42c69eb7965be5c2f8fe0/soil-query-core/src/commonMain/kotlin/soil/query/QueryCommand.kt#L51)·[캐시 정리](https://github.com/soil-kt/soil/blob/f2e1874ff38458f5e1b42c69eb7965be5c2f8fe0/soil-query-core/src/commonMain/kotlin/soil/query/SwrCacheInternal.kt#L255) 기준이며, 앱 설정은 `SearchBooksQueryKey`·`SearchQueryHolder`·`AppGraph`에 있습니다.
+
+정렬 변경, 빈 검색어 초기화, 중복 ID, is_end, 재시도, 늦은 응답 격리는 `SearchPresenterTest`·`SearchBooksQueryKeyTest`로 확인합니다. `SearchRetryTest`는 실제 key factory와 Presenter를 연결해 실패 페이지가 다음 페이지일 때만 append하고, 기존 페이지 재조회 실패는 refresh하는지 확인합니다.
 
 ### 즐겨찾기 쓰기와 관찰
 
 1. 화면이 `setFavorite(book, favorite)`로 도서와 목표 상태를 전달합니다. upsert에 도서 정보 전체가 필요하므로 ID만 넘기지 않습니다.
-2. Mutation이 앱 싱글턴 `FavoriteWriter`를 호출해 Room에 저장/삭제합니다. 해당 도서 버튼만 비활성화하고 명령 순서를 보장합니다.
-3. Subscription이 Room Flow를 관찰해 검색·즐겨찾기·상세가 같은 확정 상태를 반영합니다. Soil은 구독자가 없는 keepAliveTime 동안 받은 값을 버리므로 즐겨찾기 Subscription key는 keepAliveTime을 0으로 두어, 화면에 돌아올 때 Room이 현재 값부터 다시 내보내게 합니다([SPEC](SPEC.md) 8절).
+2. Mutation이 앱 싱글턴 `FavoriteWriter`를 호출해 Room에 저장/삭제합니다. 해당 화면에서 그 도서의 버튼을 비활성화하고 Room 쓰기를 직렬 실행합니다.
+3. Subscription이 Room Flow를 관찰해 검색·즐겨찾기·상세가 같은 확정 상태를 반영합니다. Soil은 구독자가 없는 keepAliveTime 동안 받은 값을 버리므로 즐겨찾기 Subscription key는 keepAliveTime을 기본 5초에서 0초로 바꿔, 화면에 돌아올 때 Room이 현재 값부터 다시 내보내게 합니다([SPEC](SPEC.md) 8절). 이는 관찰 수명 설정이며 캐시 비활성화가 아닙니다. 성공 상태는 별도 메모리 캐시(기본 `gcTime` 5분·20개 key 제한)에 남을 수 있고, 재구독 시 캐시 초기값 뒤 Room의 현재 값을 받습니다.
 4. 실패하면 성공 안내 없이 기존 확정 상태를 유지합니다.
 
-Soil Mutation의 scope는 마지막 구독자가 사라지고 keepAliveTime(기본 5초)이 지나면 취소됩니다. 그래서 실제 쓰기는 Metro 앱 그래프가 소유한 `ApplicationScope`(SupervisorJob)에서 `async`로 시작하고 하나의 `Mutex`로 직렬화하며, Mutation은 결과를 기다리기만 합니다. 화면 이동은 허용합니다. 근거는 [SPEC](SPEC.md) 8절에 있습니다.
+모든 화면의 즐겨찾기 명령은 공통 Mutation actor에서 접수 순서대로 실행합니다. `FavoriteToggler`는 pop 이후에도 접수한 요청의 전송·실행 완료까지 요청 scope와 Mutation 참조를 유지하므로, 대기 중인 명령도 처리됩니다. `FavoriteWriter`의 앱 scope와 Mutex는 Room 쓰기를 직렬 실행합니다. UI 요청 순서는 공통 actor가 보장하며, writer API를 임의로 동시에 직접 호출하는 경우까지 FIFO를 보장하지는 않습니다([SPEC](SPEC.md) 8절).
 
 ### Retrofit 연결과 재시도 경계
 
-Soil에는 Retrofit 전용 모듈이 없지만, 범용 key의 suspend fetch에서 주입된 Retrofit suspend API를 호출하면 충분해 어댑터를 만들지 않습니다. 기본 `Retryable` / `canRetry`가 Retrofit 예외를 재시도한다고 가정하지 않고, key의 `onConfigureOptions`에 `shouldRetry = { error -> error.toErrorKind().isRetryable }`를 지정해 네트워크 오류·HTTP 5xx·429만 재시도합니다. 키 미설정과 4xx는 재시도하지 않습니다([SPEC](SPEC.md) 9절).
+Soil에는 Retrofit 전용 모듈이 없지만, 범용 key의 suspend fetch에서 주입된 Retrofit suspend API를 호출하면 충분해 어댑터를 만들지 않습니다. 기본 `Retryable` / `canRetry`가 Retrofit 예외를 재시도한다고 가정하지 않고, key의 `onConfigureOptions`에 `shouldRetry = { error -> error.toErrorKind().isRetryable }`를 지정해 네트워크 오류·HTTP 5xx·429만 재시도합니다. 키 미설정과 429를 제외한 4xx는 재시도하지 않습니다([SPEC](SPEC.md) 9절).
 
 ### 취소와 Result 변환의 경계
 
-Query/InfiniteQuery fetch와 Mutation은 성공 시 T를 반환하고 실패는 던집니다. Soil의 [QueryCommand](https://github.com/soil-kt/soil/blob/main/soil-query-core/src/commonMain/kotlin/soil/query/QueryCommand.kt)·[MutationCommand](https://github.com/soil-kt/soil/blob/main/soil-query-core/src/commonMain/kotlin/soil/query/MutationCommand.kt)가 재시도와 실패 상태 변환을 맡고 CancellationException은 재전파합니다. `Result.failure`를 T로 반환하면 성공으로 처리될 수 있어 runSuspendCatching으로 감싸지 않습니다. Subscription도 Flow의 취소 투명성을 유지합니다.
+이 앱의 InfiniteQuery fetch와 Mutation은 성공 시 T를 반환하고 실패는 던집니다. Soil의 [QueryCommand](https://github.com/soil-kt/soil/blob/main/soil-query-core/src/commonMain/kotlin/soil/query/QueryCommand.kt)·[MutationCommand](https://github.com/soil-kt/soil/blob/main/soil-query-core/src/commonMain/kotlin/soil/query/MutationCommand.kt)가 재시도와 실패 상태 변환을 맡고 CancellationException은 재전파합니다. `Result.failure`를 T로 반환하면 성공으로 처리될 수 있어 runSuspendCatching으로 감싸지 않습니다. Subscription도 Flow의 취소 투명성을 유지합니다.
 
-Soil 밖에서 예외를 다루는 곳은 `FavoriteToggler` 하나이며, `CancellationException`은 다시 던지고 `Exception`만 실패로 표시합니다. Soil 밖에서 Result 계약이 필요한 작업이 없어 Reed의 runSuspendCatching(Error까지 포착)은 도입하지 않습니다. DroidKaigi의 영속 캐시 wrapper는 일반 runCatching으로 취소까지 삼킬 수 있어 가져오지 않습니다.
+검색 key는 `SearchPageFetchException`에 실패 페이지와 원인 예외를 담아 재시도할 작업을 구분합니다. `CancellationException`은 감싸지 않고 그대로 전파합니다. `FavoriteToggler`도 취소는 재전파하고 일반 예외만 로그·실패 상태로 처리합니다.
 
 ## 5. 이미지와 인증 경계
 
@@ -211,13 +205,13 @@ Soil 밖에서 예외를 다루는 곳은 `FavoriteToggler` 하나이며, `Cance
 | 대상 | 도구·경계 | 확인할 내용 |
 | --- | --- | --- |
 | 독립 비즈니스 규칙 | Kotlin 단위 테스트 | ID, 가격 경계, 필터·정렬 |
-| 원격 API | Retrofit + MockWebServer | 요청 파라미터, 응답 변환, 오류 분류·재시도, 취소 보존, 인증 헤더 범위 |
-| Soil 데이터 접근 | Fake key/데이터 소스, 제어 가능한 코루틴 | key 격리, is_end, 중복 append, 재시도, 취소 |
+| 원격 API | Retrofit + MockWebServer | 요청 파라미터·인증 헤더, 응답 변환, HTTP 오류 전파, 키 누락 시 요청 차단 |
+| Soil 데이터 접근 | 실제 key factory·Soil + Fake API/DAO | 조건 격리, 페이지 종료, 재조회·추가 로딩 재시도, 화면 종료 후 접수 명령 완료·순서·실패 격리 |
 | 로컬 저장 | Room 통합 테스트 | 저장·삭제·Flow 관찰·DB 재열기 |
 | Presenter | Molecule + Turbine + coroutines-test(`core:testing`) | 상태 방출·이벤트·경합 |
 | 실제 호스트와 UI | Compose/내비게이션·기기 검증 | retain 수명, pop 정리, 회전·크기 변화·프로세스 복원 |
 
-Presenter 테스트는 로컬 JVM에서 실행하며, viewModelScope·Main 디스패처·SavedStateHandle 준비 없이 Fake `FavoriteWriter`와 테스트용 Soil key를 `SwrClientPlus`에 연결합니다. 테스트를 위해 Repository를 만들지 않습니다. Molecule 테스트는 호스트의 retained store나 백스택 수명을 증명하지 않으므로, retain 수명은 `BookSearchNavHostTest`가 Robolectric `ActivityScenario`로 앱 NavHost를 띄워 확인합니다. Activity 재생성 확인을 프로세스 종료 복원 검증으로 표현하지 않으며, 후자는 실기기 `am kill`로 확인합니다([QA](QA.md)).
+Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행합니다. `MainDispatcherRule`로 Main 디스패처를 교체하고 Fake `FavoriteWriter`와 테스트용 Soil key를 `SwrClientPlus`에 연결합니다. ViewModel과 SavedStateHandle은 사용하지 않습니다. Molecule 테스트는 호스트의 retained store나 백스택 수명을 증명하지 않으므로, retain 수명은 `BookSearchNavHostTest`가 Robolectric `ActivityScenario`로 앱 NavHost를 띄워 확인합니다. Activity 재생성 확인을 프로세스 종료 복원 검증으로 표현하지 않으며, 후자는 실기기 `am kill`로 확인합니다([QA](QA.md)).
 
 ## 8. 코드 경계와 확장
 
@@ -229,30 +223,30 @@ Presenter 테스트는 로컬 JVM에서 실행하며, viewModelScope·Main 디�
 
 | 선택 | 상태 | 이유 | 비용·한계 |
 | --- | --- | --- | --- |
-| retain + Navigation 3 | 사용자 선택 | 학습 목표. 엔트리별 상태 소유 | 엔트리 수명과 프로세스 복원을 나눠 설계. decorator 직접 작성 |
-| Soil typed-key + InfiniteQuery | 사용자 선택 | key가 데이터 접근을 맡아 Repository 없이 원격·로컬을 다룸. 페이징 학습 | key·provider 수명, 취소·무효화·테스트 설정 이해 비용. 페이지 불변식은 테스트로 확인 |
-| Retrofit + OkHttp + kotlinx.serialization | 사용자 선택 | Ktor보다 익숙한 REST 경험 활용 | Soil 전용 모듈 없음. 재시도 조건 직접 지정(4절) |
+| retain + Navigation 3 | 선택 | 백스택 엔트리에 화면 객체의 유지·정리 범위를 맞춤. 학습 목표도 포함 | decorator와 retain observer 직접 관리. 프로세스 복원은 saveable로 별도 구현 |
+| Soil typed-key + InfiniteQuery | 선택 | 검색 조건별 캐시·로딩·오류·페이지 요청 상태를 공통 API로 처리 | 탭 전환에는 `SearchQueryHolder`, Room에는 구독 수명 보정이 필요. Mutation 전달·참조 정리와 재조회 재시도 경계를 별도로 구현·검증 |
+| Retrofit + OkHttp + kotlinx.serialization | 사용자 선택 | Android 전용 HTTP 통신·테스트 충족. Ktor 추가 이점이 없어 더 익숙한 Retrofit 선택 | Soil 전용 모듈 없음. 재시도 조건 직접 지정(4절) |
 | Room | 사용자 선택 | 영속성과 화면 간 단일 관찰 기준 | 스키마·KSP·마이그레이션 책임 |
-| Metro | 사용자 선택 | 명시적인 최소 그래프. [Metro](https://github.com/ZacSweers/metro) 1.4.5가 Kotlin 2.4.0 지원 | Gradle daemon을 JDK 21로 고정(10절) |
+| Metro | 선택 | 컴파일 시 의존성 조립·scope 구현 생성. 화면별 의존성을 선언으로 모음 | 앱 그래프 1개·화면 그래프 3개 관리, Kotlin 플러그인 호환 비용. daemon JDK 21로 원문 JDK 조건과 차이(10절) |
 | Coil 3 | 사용자 선택 | Compose 이미지 로딩·캐시 | 캐시 정책과 인증 경계 별도 관리(5절) |
 | Timber | 사용자 선택 | debug 전용 출력을 한 곳에서 결정(6절) | 의존성 추가. 2021년 5.0.1 이후 릴리스가 없으나 API가 작아 문제로 보지 않음 |
 | 얇은 @Composable Presenter | 현재 권장안 | Root/Presenter 분리, JVM 테스트 | 호스트 retain 수명은 별도 통합 테스트 |
 | 저장 성공 후 반영 | 제품 정책 | 롤백 복잡도 감소 | 반응 지연, 도서별 처리 중 UI |
 | 원격 결과 메모리 유지 | 기본 범위 | 오류에서도 목록 유지 | 프로세스 종료 시 재조회 |
-| 9개 모듈 + `core:testing` | 결정 | 협업·의존 방향을 빌드로 강제 | 초기 설정 비용 |
+| 9개 모듈 + `core:testing` | 결정 | feature 간 참조를 막고 통신·저장 구현과 순수 규칙의 변경 범위를 분리 | 세 화면 규모에 비해 빌드 설정·파일 이동 비용이 큼. 빌드 시간 개선은 측정하지 않음 |
 | 1-pane 우선, 2-pane 추가 | 제품 정책 | 넓이·회전 대응 먼저 검증 | 2-pane은 840dp 이상에서만 |
 
 ### 미채택 대안
 
 | 대안 | 이유 |
 | --- | --- |
-| AAC ViewModel | retain + Navigation 3가 사용자 선택. 테스트에 viewModelScope·Main 디스패처·SavedStateHandle 준비가 더해질 수 있음 |
+| AAC ViewModel | 엔트리별 객체 수명은 retain, 저장 상태는 saveable로 구현하는 구성을 선택. 현재 구성에도 Main 교체와 수명·복원 테스트가 필요 |
 | Circuit 라이브러리 | 사용자 선택으로 미도입. `eventSink` 형태만 빌림 |
-| 단순 위임 Repository·UseCase | typed-key가 이미 데이터 접근을 맡음. 테스트는 Fake key·Fake `FavoriteWriter`로 충분 |
+| 단순 위임 Repository·UseCase | `core:data`의 key와 writer가 데이터 계층을 구성하므로 같은 호출만 전달하는 계층은 추가하지 않음 |
 | 전체 상태 StateFlow 소유자 | 순수 Kotlin 테스트만을 위한 중복 |
-| Paging 3 | 로드 상태·재시도가 표준화되어 있으나 InfiniteQuery와 페이지 상태를 중복 관리하게 됨 |
+| Paging 3 | InfiniteQuery를 페이징 상태의 단일 소유자로 선택해 함께 도입하지 않음. Paging 3로 같은 요구를 구현하는 것도 가능 |
 | 커스텀 페이지네이션 | 경합과 종료 판정을 모두 직접 책임져야 함 |
-| Ktor(+Ktorfit) | 가능한 대안이나 사용자의 Retrofit 경험을 우선 |
+| Ktor(+Ktorfit) | 현재 Android 전용 통신·테스트 요구에 추가 이점이 없어 익숙한 Retrofit 선택 |
 | DataStore·파일 저장 | 즐겨찾기 목록의 검색·정렬·가격 필터와 관찰에 제약 |
 | 낙관적 UI | 쓰기 직렬화와 실패 롤백 비용 |
 | 단일 모듈 + 패키지 경계 | 의존 방향을 빌드로 강제하지 못함 |
@@ -286,7 +280,7 @@ Presenter 테스트는 로컬 JVM에서 실행하며, viewModelScope·Main 디�
 | DroidKaigi/conference-app-2025 ([`07b46e65`](https://github.com/DroidKaigi/conference-app-2025/tree/07b46e65)) | Soil typed-key·Mutation key·Presenter 방향 교차 확인 | Rin `rememberRetained`, Navigation 3 alpha, Ktor + Ktorfit, 커스텀 KSP 생성기 |
 | 사용자의 retain PoC | 없음(코드 미확인) | 구현 근거로 쓰지 않음 |
 
-DroidKaigi 2026은 Kotlin 2.4.0 기준의 유일한 참고 조합이지만, 행사용 앱이고 기여가 한 사람에 집중되어 이후 수정을 기대하기 어렵습니다. 그래서 retain decorator는 Navigation 3 1.2.0과 `compose-runtime-retain` 1.12.1 API로 다시 작성해 `BookSearchNavHostTest`로 확인하고, 탭 전환·상세 중복은 [SPEC](SPEC.md) 7절 규칙과 `BookSearchBackStackTest`로 막습니다. 두 DroidKaigi 앱 모두 즐겨찾기를 Room에 두지 않으므로 Soil과 Room의 연결은 이 앱이 직접 확장해 테스트한 부분입니다.
+참고 앱의 패턴을 이 앱의 라이브러리 버전과 데이터 수명에 맞춰 검증했습니다. retain decorator는 Navigation 3 1.2.0과 `compose-runtime-retain` 1.12.1 API로 다시 작성해 `BookSearchNavHostTest`로 확인하고, 탭 전환·상세 중복은 [SPEC](SPEC.md) 7절 규칙과 `BookSearchBackStackTest`로 막습니다. 두 DroidKaigi 앱 모두 즐겨찾기를 Room에 두지 않으므로 Soil과 Room의 연결은 이 앱이 직접 확장해 테스트한 부분입니다.
 
 ### 참고한 공식 문서
 
@@ -296,12 +290,6 @@ DroidKaigi 2026은 Kotlin 2.4.0 기준의 유일한 참고 조합이지만, 행�
 
 지정된 Gradle 9.4.1 / AGP 9.2.1 / Kotlin 2.4.0 / KSP 2.3.10 / compileSdk 37을 그대로 씁니다. 의존성 버전은 [SPEC](SPEC.md) 2절에 고정했습니다.
 
-JDK 17은 앱 바이트코드와 컴파일 기준으로 지킵니다(`sourceCompatibility`·`targetCompatibility`·`jvmTarget` 17). Metro 1.4.5의 Gradle 플러그인은 실행 JVM 21 이상을 요구해 JDK 17로는 설정 단계부터 실패하므로, `gradle/gradle-daemon-jvm.properties`로 Gradle daemon만 JDK 21로 고정했습니다(사용자 결정). JDK 17로 `./gradlew`를 실행해도 Gradle이 JDK 21 daemon을 찾거나 내려받습니다([SPEC](SPEC.md) 2절 "JDK 기준").
+앱의 `sourceCompatibility`·`targetCompatibility`·`jvmTarget`은 17이지만, Gradle daemon은 21입니다. Metro 1.4.5 플러그인의 실행 JVM 요구 때문에 `gradle/gradle-daemon-jvm.properties`로 21을 선택했습니다. JDK 17로 Wrapper를 실행하는 것과 전체 빌드가 JDK 17에서 실행되는 것은 다르며, 원문의 JDK 17 조건과 차이가 남습니다([SPEC](SPEC.md) 2절 "JDK 기준").
 
-커밋 `71cdf67`, macOS 26.3.1, Launcher JVM 17.0.10, Gradle daemon JVM 21(Temurin)에서 실행한 결과입니다.
-
-| 명령 | 결과 |
-| --- | --- |
-| `./gradlew assembleDebug testDebugUnitTest test --continue` | 성공. 테스트 110개 실행, 실패 0, 오류 0, 건너뜀 0 |
-
-`testDebugUnitTest`는 Android 모듈 테스트(87개)만, `test`는 순수 JVM 모듈 `core:model` 테스트(23개)를 실행하므로 둘을 함께 지정합니다. 테스트 클래스별 대응과 실기기 결과는 [QA](QA.md)에, 요구사항별 검증 상태는 [REQUIREMENTS](REQUIREMENTS.md)에 있습니다.
+검증 범위·재현 절차·남은 확인은 [QA](QA.md)와 [요구사항 검증 상태](REQUIREMENTS.md)에 정리합니다. Android 모듈과 순수 JVM 모듈을 모두 확인하려면 `./gradlew assembleDebug testDebugUnitTest test --continue`로 실행합니다.
