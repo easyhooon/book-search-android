@@ -2,6 +2,8 @@
 
 기존 Draft PR #1의 `codex/manual-di-jdk17`에 main `6f80ef0c568626bcdb08d6a81d5229e214805774`를 merge 방식으로 반영했습니다. Writer 제거, Mutation·retain 수명 회귀 테스트, 문서 갱신, QA 중복 이미지와 미사용 다이어그램 PNG 정리를 포함합니다. main으로 이 비교안을 merge하지는 않습니다.
 
+공개 사용자용 README 정리 커밋 `510d7a6`도 추가 merge로 반영했습니다. 이 후속 변경은 README와 검증 문서뿐이며, 아래 JVM 17 검증 이후 운영 코드·빌드 설정·테스트 소스는 변경되지 않았습니다.
+
 ## 유지한 비교 범위
 
 - Metro plugin·annotation 대신 `ManualAppGraph`가 객체를 조립합니다. AppGraph·화면 Graph·Factory 계약, retain·Navigation 3·Soil 경계를 유지합니다.
