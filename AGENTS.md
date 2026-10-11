@@ -13,6 +13,8 @@
 - Android 전용으로 구성합니다. KMP source set, expect/actual, 플랫폼 추상화를 추가하지 않습니다. DroidKaigi에서는 retain/Navigation 3 소유권과 Presenter·테스트 패턴만 필요한 범위에서 참고합니다.
 - 지정 빌드 버전은 구현 시작 시 호환성을 먼저 검증합니다. 충돌을 숨기거나 요청 버전을 임의로 바꾸지 않습니다.
 
+이 수동 DI 비교 브랜치에서는 사용자 승인에 따라 Metro 대신 `ManualAppGraph`를 사용하고 daemon JVM 17·Robolectric SDK 35를 유지합니다. main의 Metro 선택에 대한 브랜치 한정 예외이며, retain·Navigation 3·Soil 경계는 유지합니다.
+
 ## 작업과 변경 기록
 
 - 이번 과제에서는 이슈를 생성하지 않습니다. 진행 상태는 요구사항 체크리스트와 문서로 관리합니다.

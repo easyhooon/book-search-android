@@ -1,8 +1,5 @@
 package io.github.easyhooon.booksearch.core.data
 
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
 import io.github.easyhooon.booksearch.core.database.FavoriteBookDao
 import io.github.easyhooon.booksearch.core.database.toFavoriteEntity
 import io.github.easyhooon.booksearch.core.model.FavoriteCommand
@@ -18,8 +15,6 @@ fun interface FavoriteMutationKeyFactory {
     fun create(): MutationKey<Unit, FavoriteCommand>
 }
 
-@ContributesBinding(AppScope::class)
-@Inject
 class DefaultFavoriteMutationKeyFactory(
     private val dao: FavoriteBookDao,
 ) : FavoriteMutationKeyFactory {

@@ -1,9 +1,5 @@
 package io.github.easyhooon.booksearch.core.data
 
-import dev.zacsweers.metro.AppScope
-import dev.zacsweers.metro.ContributesBinding
-import dev.zacsweers.metro.Inject
-import dev.zacsweers.metro.binding
 import io.github.easyhooon.booksearch.core.database.FavoriteBookDao
 import io.github.easyhooon.booksearch.core.database.toBook
 import io.github.easyhooon.booksearch.core.model.Book
@@ -29,8 +25,6 @@ fun interface FavoriteBookSubscriptionKeyFactory {
     fun create(id: String): SubscriptionKey<Book?>
 }
 
-@ContributesBinding(AppScope::class, binding = binding<FavoriteIdsSubscriptionKey>())
-@Inject
 class DefaultFavoriteIdsSubscriptionKey(
     dao: FavoriteBookDao,
 ) : FavoriteIdsSubscriptionKey,
@@ -39,8 +33,6 @@ class DefaultFavoriteIdsSubscriptionKey(
         subscribe = { dao.observeIds().map { it.toSet() }.distinctUntilChanged() },
     )
 
-@ContributesBinding(AppScope::class, binding = binding<FavoriteBooksSubscriptionKey>())
-@Inject
 class DefaultFavoriteBooksSubscriptionKey(
     dao: FavoriteBookDao,
 ) : FavoriteBooksSubscriptionKey,
@@ -49,8 +41,6 @@ class DefaultFavoriteBooksSubscriptionKey(
         subscribe = { dao.observeAll().map { entities -> entities.map { it.toBook() } }.distinctUntilChanged() },
     )
 
-@ContributesBinding(AppScope::class)
-@Inject
 class DefaultFavoriteBookSubscriptionKeyFactory(
     private val dao: FavoriteBookDao,
 ) : FavoriteBookSubscriptionKeyFactory {

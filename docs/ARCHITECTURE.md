@@ -13,7 +13,7 @@
 | 페이지네이션 | Soil InfiniteQuery | 사용자 선택. 요청 key와 페이지 메타데이터 연결 |
 | 원격 통신 | Retrofit + OkHttp + kotlinx.serialization | 사용자 선택. 요청·응답·직렬화 |
 | 로컬 저장 | Room + Flow | 사용자 선택. 즐겨찾기의 단일 상태 기준 |
-| 의존성 연결 | Metro | 사용자 선택. 필요한 객체와 최소 그래프 조립 |
+| 의존성 연결 | 수동 DI | JDK 17 비교안. 기존 AppGraph·화면 Factory 계약을 직접 구현 |
 | 표지 이미지 | Coil | 사용자 선택. Coil 3.6.3의 coil-compose + coil-network-okhttp |
 | 로그 | Timber | 사용자 선택. debug 빌드에서만 출력 |
 
@@ -50,7 +50,7 @@ Room"]
 
 [Mermaid 소스](diagrams/module-dependencies.mmd)
 
-`app`은 Metro 조립을 위해 `core:model`·`network`·`database`·`data`·`ui`도 직접 참조합니다. `core:testing`은 FakeFavoriteMutation와 Presenter 테스트 도구를 제공하는 테스트 전용 모듈입니다.
+`app`은 수동 객체 조립을 위해 `core:model`·`network`·`database`·`data`·`ui`도 직접 참조합니다. `core:testing`은 FakeFavoriteMutation와 Presenter 테스트 도구를 제공하는 테스트 전용 모듈입니다.
 
 화면 하나의 연결 구조입니다. 화살표는 구성 요소의 연결·호출 관계이며, Room Flow 값은 Subscription을 거쳐 Root와 Presenter로 전달됩니다.
 
@@ -84,7 +84,7 @@ UiState 표시 · eventSink로 이벤트 전달"]
     app["app"]
     navigation["Navigation 3 + retain decorator
 엔트리 상태 유지 · 제거"]
-    metro["Metro AppGraph
+    metro["ManualAppGraph
 API · DB · key · 이미지 로더 조립"]
     coil["Coil ImageLoader
 표지 요청 · 인증 없는 전용 클라이언트"]
@@ -97,11 +97,11 @@ API · DB · key · 이미지 로더 조립"]
 
 DroidKaigi 2026의 패턴을 얇게 적용합니다. Root가 Room subscription을 연결하고, Presenter는 UI 모델을 만들고 이벤트를 데이터 명령으로 연결합니다. 검색 InfiniteQuery는 확정 검색어에 따라 key가 바뀌므로 Presenter가 연결합니다. 화면은 DTO나 Room Entity를 직접 다루지 않습니다. typed-key가 이미 맡은 호출을 전달만 하는 Repository는 두지 않습니다. 이는 이 프로젝트의 책임 분리이며 Soil이 Repository를 금지한다는 뜻은 아닙니다. ID 정규화·가격 정책 같은 독립 규칙은 일반 Kotlin 함수로 둡니다.
 
-Metro는 의존성을 연결할 뿐 화면 상태나 데이터의 기준을 대신하지 않습니다. 그래프는 앱 그래프 하나(`AppGraph`, `AppScope`)와 화면별 `GraphExtension` 세 개(`SearchScreenGraph`, `FavoritesScreenGraph`, `BookDetailScreenGraph`)입니다. `AppGraph`가 화면 그래프의 `Factory`를 구현하고, Retrofit·OkHttp·Room·`SwrCachePlus`·Coil `ImageLoader`를 싱글턴으로 둡니다.
+`AppGraph`와 화면 그래프 세 개(`SearchScreenGraph`, `FavoritesScreenGraph`, `BookDetailScreenGraph`)의 Factory 계약은 유지합니다. `ManualAppGraph`가 Factory를 직접 구현하고 Retrofit·OkHttp·Room·`SwrCachePlus`·Coil `ImageLoader`를 앱 인스턴스 범위의 `lazy` 객체로 공유합니다. 화면별 key와 factory는 각 화면 그래프 안에서 필요할 때 새로 조립하며, 의존성 연결이 화면 상태나 데이터의 기준을 대신하지는 않습니다.
 
-### Metro factory와 retain 연결
+### 수동 factory와 retain 연결
 
-DroidKaigi 2026의 `TimetableScreenGraph`·`TimetableNavEntryProvider`를 참고합니다. `@GraphExtension.Factory`의 구현은 Metro 컴파일러가 생성하고, 엔트리는 factory로 만든 그래프를 retain으로 유지합니다.
+DroidKaigi 2026의 화면 factory·retain 연결을 참고했습니다. 이 브랜치는 코드 생성 대신 `ManualAppGraph`가 factory 메서드를 직접 구현하며, 엔트리가 factory로 만든 그래프를 retain으로 유지하는 흐름은 같습니다.
 
 ```kotlin
 entry<BookDetailNavKey>(clazzContentKey = { it.book.id }) { key ->
@@ -110,7 +110,7 @@ entry<BookDetailNavKey>(clazzContentKey = { it.book.id }) { key ->
 }
 ```
 
-화면 그래프는 그 화면의 Soil key와 공통 Mutation ID를 사용하는 key(`favoriteMutationKeyFactory.create()`)를 담은 `XxxScreenContext`를 노출합니다. 엔트리가 백스택에 있는 동안 같은 key 인스턴스를 쓰고, pop되면 그래프도 버려집니다. Metro는 `app`, 세 feature, `core:network`·`database`·`data`에 적용합니다. `core:model`·`ui`·`testing`에는 적용하지 않으며, Room용 KSP는 `core:database`에만 적용합니다.
+화면 그래프는 그 화면의 Soil key와 공통 Mutation ID를 사용하는 key(`favoriteMutationKeyFactory.create()`)를 담은 `XxxScreenContext`를 노출합니다. 엔트리가 백스택에 있는 동안 같은 key 인스턴스를 쓰고, pop되면 그래프도 버려집니다. Metro 플러그인·annotation은 사용하지 않으며, Room용 KSP는 `core:database`에만 적용합니다. 새 의존성이 생기면 생성자 연결과 공유 범위를 수동 조립 코드에 함께 반영해야 합니다.
 
 ### 요구사항과 현재 제품 정책의 경계
 
@@ -169,7 +169,7 @@ retain은 구성 변경(회전, 다크 모드, 창 크기 변경)에서 객체�
 | 하단 바/레일, 그리드 열 수, 1-pane/2-pane | `currentWindowAdaptiveInfo()`·`GridCells.Adaptive`를 매번 계산. 2-pane은 장면 전략만 바꾸고 백스택은 유지 | 새 크기에 맞춤. 열린 상세 유지 | 같음 |
 | 키보드 표시 중 레이아웃 | `windowSoftInputMode="adjustResize"` | 해당 없음 | 해당 없음 |
 
-구성 변경 시 백스택·retain 유지는 `BookSearchNavHostTest`로 확인합니다. [QA](QA.md)의 TC-41·68(회전·다크 모드·창 크기), TC-54·70(`am kill` 후 복원)은 기존 빌드의 관찰이며 현재 APK 재검증은 미실행입니다.
+자동 테스트는 `BookSearchNavHostTest`의 Activity 재생성과 `StateRestorationTester`의 저장 상태 복원 모사입니다. 실제 프로세스 종료와 구분합니다. [QA](QA.md)의 TC-41·68(회전, 다크 모드, 창 크기)과 TC-54·70(`am kill` 후 복원)은 main·이전 빌드의 참고 절차이며, 이 브랜치 기기 검증은 미실행입니다.
 
 ### 화면 이벤트 전달
 
@@ -260,7 +260,7 @@ Soil에는 Retrofit 전용 모듈이 없지만, 범용 key의 suspend fetch에�
 
 ## 7. 테스트와 계층 대응
 
-테스트 코드 작성은 사용자가 추가한 필수 요구입니다. 작성, 실행, 통과를 구분합니다.
+테스트 코드 작성은 사용자가 추가한 필수 요구입니다. 이 브랜치는 JDK 17에서 main의 145개와 수동 DI 4개를 새 실행해 모두 통과했습니다. Robolectric은 SDK 35이며 실제 기기 검증과 구분합니다.
 
 | 대상 | 도구·경계 | 확인할 내용 |
 | --- | --- | --- |
@@ -268,10 +268,11 @@ Soil에는 Retrofit 전용 모듈이 없지만, 범용 key의 suspend fetch에�
 | 원격 API | Retrofit + MockWebServer | 요청 파라미터·인증 헤더, 응답 변환, HTTP 오류 전파, 키 누락 시 요청 차단 |
 | Soil 데이터 접근 | 실제 key factory·Soil + Fake API/DAO | 조건 격리, 페이지 종료, 재조회·추가 로딩 재시도, 화면 종료 후 접수 명령 완료·순서·실패 격리 |
 | 로컬 저장 | Room 통합 테스트 | 저장·삭제·Flow 관찰·DB 재열기 |
+| 수동 DI 조립 | `ManualAppGraphTest`: 실제 그래프·Room, 공개 key 직접 호출 | 화면 context 수명, 앱별 SWR·ImageLoader 공유, 공통 Mutation ID, 세 화면 쓰기·읽기 연결 |
 | Presenter | Molecule + Turbine + coroutines-test(`core:testing`) | 상태 방출·이벤트·경합 |
 | 실제 호스트와 UI | Compose/내비게이션·기기 검증 | retain 수명, pop 정리, 회전·크기 변화·프로세스 복원 |
 
-Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행합니다. `MainDispatcherRule`로 Main 디스패처를 교체하고 Fake Mutation key와 테스트용 Soil key를 `SwrClientPlus`에 연결합니다. ViewModel과 SavedStateHandle은 사용하지 않습니다. Molecule 테스트는 호스트의 retained store나 백스택 수명을 증명하지 않으므로, retain 수명은 `BookSearchNavHostTest`가 Robolectric `ActivityScenario`로 앱 NavHost를 띄워 확인합니다. Activity 재생성·saveable 복원과 실제 프로세스 종료를 구분합니다. `am kill`을 사용하는 기기 복원 절차는 [QA](QA.md)에 있으며 현재 APK 재검증은 미실행입니다.
+Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행합니다. `MainDispatcherRule`로 Main 디스패처를 교체하고 Fake `FavoriteMutation`와 테스트용 Soil key를 `SwrClientPlus`에 연결합니다. ViewModel과 SavedStateHandle은 사용하지 않습니다. Molecule 테스트는 호스트의 retained store나 백스택 수명을 증명하지 않으므로, retain 수명은 `BookSearchNavHostTest`가 Robolectric `ActivityScenario`로 앱 NavHost를 띄워 확인합니다. Activity 재생성과 저장 상태 복원 모사는 실제 프로세스 종료 검증이 아닙니다. 기기 `am kill` 절차는 [QA](QA.md)에 있으며 이 브랜치에서는 미실행입니다.
 
 ## 8. 코드 경계와 확장
 
@@ -287,7 +288,7 @@ Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행
 | Soil typed-key + InfiniteQuery | 선택 | 검색 조건별 캐시·로딩·오류·페이지 요청 상태를 공통 API로 처리 | 탭 전환에는 `SearchQueryHolder`, Room에는 구독 수명 보정이 필요. Mutation 전달·참조 정리와 재조회 재시도 경계를 별도로 구현·검증 |
 | Retrofit + OkHttp + kotlinx.serialization | 사용자 선택 | Android 전용 HTTP 통신·테스트 충족. Ktor 추가 이점이 없어 더 익숙한 Retrofit 선택 | Soil 전용 모듈 없음. 재시도 조건 직접 지정(4절) |
 | Room | 사용자 선택 | 영속성과 화면 간 단일 관찰 기준 | 스키마·KSP·마이그레이션 책임 |
-| Metro | 선택 | 컴파일 시 의존성 조립·scope 구현 생성. 화면별 의존성을 선언으로 모음 | 앱 그래프 1개·화면 그래프 3개 관리, Kotlin 플러그인 호환 비용. daemon JDK 21로 원문 JDK 조건과 차이(10절) |
+| 수동 DI | JDK 17 비교안 | Metro 실행 JVM 제약 제거. 기존 그래프·factory 경계를 유지해 연결 경로를 코드로 추적 | 앱 싱글턴·화면별 객체의 생성과 공유 범위 직접 관리. 생성자 변경 때 조립 코드도 수정하며, 누락·수명 오류는 빌드와 테스트로 검증 |
 | Coil 3 | 사용자 선택 | Compose 이미지 로딩·캐시 | 캐시 정책과 인증 경계 별도 관리(5절) |
 | Timber | 사용자 선택 | debug 전용 출력을 한 곳에서 결정(6절) | 의존성 추가. 2021년 5.0.1 이후 릴리스가 없으나 API가 작아 문제로 보지 않음 |
 | 얇은 @Composable Presenter | 현재 권장안 | Root/Presenter 분리, JVM 테스트 | 호스트 retain 수명은 별도 통합 테스트 |
@@ -337,7 +338,7 @@ Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행
 | easyhooon/BookSearch ([`2533f396`](https://github.com/easyhooon/BookSearch/tree/2533f396)) | 검색 흐름, Compose Presenter, Room/Flow 즐겨찾기 | Ktor, 결과 개수 기반 다음 페이지 판단, 저장 성공 전 낙관적 상태·병렬 쓰기, 세로 고정, 0원 여부만 거르는 가격 필터 |
 | easyhooon/KakaoMediaSearchApp2 ([`ba5ae0af`](https://github.com/easyhooon/KakaoMediaSearchApp2/tree/ba5ae0af)) | 입력 복원, load-state UI의 문제 해결 방식 | ViewModel 코드, pageSize=10·loadSize 계산, 취소까지 잡는 Exception wrapper, 미디어 DTO·정렬 |
 | YAPP-Github/Reed-Android ([`74a8ce90`](https://github.com/YAPP-Github/Reed-Android/tree/74a8ce90)) | 최초/추가 로딩 분리, 하단 재시도, 성공 후 페이지 증가, 취소 재전파, App Startup 초기화 | Circuit, 편집 중 입력으로 append, 보이는 아이템 6개 이하 자동 로드 차단, start/maxResults 계약 |
-| DroidKaigi/conference-app-2026 ([`300a81bc`](https://github.com/DroidKaigi/conference-app-2026/tree/300a81bc)) | `contentKey`별 retain 저장소와 onPop 정리, saveable decorator, 저장 가능한 백스택 키, Root/Presenter, Soil typed-key, Metro factory + retain | KMP·전체 DI 그래프, 탭 전환 코드(열린 이슈 [#344](https://github.com/DroidKaigi/conference-app-2026/issues/344) 백스택 역전, [#226](https://github.com/DroidKaigi/conference-app-2026/issues/226) 상세 중복 push), `ScreenChannel`, `PersistedQueryKey` |
+| DroidKaigi/conference-app-2026 ([`300a81bc`](https://github.com/DroidKaigi/conference-app-2026/tree/300a81bc)) | `contentKey`별 retain 저장소와 onPop 정리, saveable decorator, 저장 가능한 백스택 키, Root/Presenter, Soil typed-key, 화면 factory + retain 연결(수동 DI로 구현) | KMP·전체 DI 그래프, 탭 전환 코드(열린 이슈 [#344](https://github.com/DroidKaigi/conference-app-2026/issues/344) 백스택 역전, [#226](https://github.com/DroidKaigi/conference-app-2026/issues/226) 상세 중복 push), `ScreenChannel`, `PersistedQueryKey` |
 | DroidKaigi/conference-app-2025 ([`07b46e65`](https://github.com/DroidKaigi/conference-app-2025/tree/07b46e65)) | Soil typed-key·Mutation key·Presenter 방향 교차 확인 | Rin `rememberRetained`, Navigation 3 alpha, Ktor + Ktorfit, 커스텀 KSP 생성기 |
 | 사용자의 retain PoC | 없음(코드 미확인) | 구현 근거로 쓰지 않음 |
 
@@ -351,6 +352,8 @@ retain decorator는 Navigation 3 1.2.0과 `compose-runtime-retain` 1.12.1 API를
 
 지정된 Gradle 9.4.1 / AGP 9.2.1 / Kotlin 2.4.0 / KSP 2.3.10 / compileSdk 37을 그대로 씁니다. 의존성 버전은 [SPEC](SPEC.md) 2절 기준입니다.
 
-앱의 `sourceCompatibility`·`targetCompatibility`·`jvmTarget`은 17이지만, Gradle daemon은 21입니다. Metro 1.4.5 플러그인의 실행 JVM 요구에 따라 `gradle/gradle-daemon-jvm.properties`가 21을 선택합니다. JDK 17로 Wrapper를 실행하는 것과 전체 빌드가 JDK 17에서 실행되는 것은 다르며, 원문의 JDK 17 조건과 차이가 남습니다([SPEC](SPEC.md) 2절 "JDK 기준").
+앱의 `sourceCompatibility`·`targetCompatibility`·`jvmTarget`과 Gradle daemon은 17입니다. 수동 DI·Robolectric SDK 35 구성에서 daemon Oracle JDK 17.0.10과 테스트 작업 9개의 JVM 17을 확인했고, APK 빌드·149개 테스트를 모두 새 실행해 통과했습니다. 별도 `./gradlew assembleDebug`도 성공했습니다. compileSdk·targetSdk는 37을 유지합니다.
+
+main의 Metro·JDK 21·SDK 36 테스트와 Galaxy·Studio·ZIP 결과는 참고 자료입니다. 이 브랜치의 API 36·37 기기 동작, 새 ZIP의 Studio 가져오기, 새 PC 환경과 동적 재구성·skip 측정은 미실행입니다.
 
 검증 범위·재현 절차·남은 확인은 [QA](QA.md)와 [요구사항 검증 상태](REQUIREMENTS.md)에 정리합니다. Android 모듈과 순수 JVM 모듈을 모두 확인하려면 `./gradlew assembleDebug testDebugUnitTest test --continue`로 실행합니다.

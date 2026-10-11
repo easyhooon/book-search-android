@@ -13,7 +13,7 @@
 | applicationId / namespace 접두 | `io.github.easyhooon.booksearch` | 회사명을 넣지 않고, 참고 저장소의 `com.easyhooon.booksearch`와 구분 |
 | compileSdk / targetSdk | 37 / 37 | compileSdk는 원문 지정. targetSdk는 같은 값으로 맞춤 |
 | minSdk | 26 | `java.time`을 desugaring 없이 사용 |
-| JDK | 컴파일 대상 Java 17, Gradle daemon JVM 21 | 아래 "JDK 기준" |
+| JDK | 컴파일 대상 Java 17, Gradle daemon JVM 17 | 수동 DI 비교안, 아래 "JDK 기준" |
 | UI 언어 | 한국어 문자열 리소스 | 사용자 대상과 UI 가이드에 맞춤 |
 | 화면 방향 | 고정하지 않음 | 태블릿·폴더블·회전 대응 |
 
@@ -23,7 +23,7 @@
 
 | 모듈 | 책임 | 의존 |
 | --- | --- | --- |
-| `app` | Application, Metro 앱 그래프, NavDisplay·탭·백스택 조립 | 모든 feature, core |
+| `app` | Application, 수동 AppGraph 조립, NavDisplay·탭·백스택 조립 | 모든 feature, core |
 | `core:model` | 도서·검색 조건·정렬·가격 필터 모델, ID·가격·필터·정렬 순수 규칙 | 없음 |
 | `core:network` | Retrofit 서비스·DTO, OkHttp(이미지 기본 클라이언트, 인증 interceptor를 더한 API 클라이언트) | core:model |
 | `core:database` | Room DB·Entity·DAO, 스키마 export(KSP는 이 모듈에서만 실행) | core:model |
@@ -42,13 +42,12 @@ feature끼리는 서로 참조하지 않습니다. feature는 `onBookClick(book)
 
 ### 의존성 버전
 
-빌드 조합은 Gradle 9.4.1, AGP 9.2.1, Kotlin 2.4.0, KSP 2.3.10, compileSdk 37로 고정합니다. daemon JDK 21에서 APK 빌드와 자동 테스트 통과([QA](QA.md)). 참고 조합은 DroidKaigi 2026이며, Android 전용 AndroidX 아티팩트를 사용합니다. 참고 코드의 고정 버전은 [ARCHITECTURE](ARCHITECTURE.md) 9절에 있습니다.
+지정 빌드 조합(Gradle 9.4.1, AGP 9.2.1, Kotlin 2.4.0, KSP 2.3.10, compileSdk 37)을 유지하며 수동 DI·JDK 17에서 APK 빌드와 자동 테스트 149개를 통과했습니다. 참고 조합은 DroidKaigi 2026(`300a81bc`)이며, Android 전용이므로 JetBrains Compose Multiplatform 대신 AndroidX 아티팩트를 씁니다.
 
 | 라이브러리 | 고정 버전 |
 | --- | --- |
 | Kotlin | 2.4.0 (원문 지정) |
 | KSP | 2.3.10 (원문 지정) |
-| Metro | 1.4.5 |
 | Soil | 1.0.0-alpha15 |
 | Compose BOM / runtime retain | 2026.09.00 / 1.12.1 |
 | material3-adaptive-navigation-suite | 1.4.0 |
@@ -64,15 +63,15 @@ feature끼리는 서로 참조하지 않습니다. feature는 `onBookClick(book)
 
 ### JDK 기준
 
-원문은 JDK 17을 지정합니다. [AGP 9.2 공식 호환표](https://developer.android.com/build/releases/agp-9-2-0-release-notes)는 JDK 17·Gradle 9.4.1·API 37을 지원하지만, [Metro의 플러그인·컴파일러](https://zacsweers.github.io/metro/latest/changelog/#0120)는 실행 JVM 21 이상을 요구합니다. 현재 Metro 1.4.5를 엄격한 JVM 17로 실행하면 의존성 해석 단계에서 실패하므로, 원문의 JDK 17 실행 조건은 미충족입니다. Java 컴파일 대상 17과 빌드 실행 JVM 21은 별개입니다.
+원문은 JDK 17을 지정합니다. [AGP 9.2 공식 호환표](https://developer.android.com/build/releases/agp-9-2-0-release-notes)는 JDK 17·Gradle 9.4.1·API 37을 지원합니다. 이 비교 브랜치는 JVM 21을 요구하는 Metro 플러그인·컴파일러를 제거하고 `ManualAppGraph`로 객체를 조립합니다. AppGraph·화면 Graph·Factory 인터페이스와 retain 수명은 유지합니다.
 
-- `gradle/gradle-daemon-jvm.properties`에 `toolchainVersion=21`을 둡니다. JDK 17로 `./gradlew`를 실행해도 Gradle이 JDK 21 daemon을 찾거나 내려받아 실행합니다(`./gradlew --version`: `Launcher JVM: 17.0.10`, `Daemon JVM: Compatible with Java 21`).
+- `gradle/gradle-daemon-jvm.properties`의 `toolchainVersion=17`로 Gradle 실행 JVM을 지정합니다. 외부 검증 init script로 daemon Oracle JDK 17.0.10과 테스트 작업 9개의 JVM 17을 확인했습니다. 일반 빌드에는 이 검증 스크립트가 필요하지 않습니다.
 - 앱과 라이브러리 모듈의 `sourceCompatibility`·`targetCompatibility`와 Kotlin `jvmTarget`은 17입니다. 순수 Kotlin 모듈은 `jvmToolchain(17)`으로 컴파일합니다.
-- Android 단위 테스트는 daemon과 같은 JDK 21에서 실행됩니다(11절).
+- Robolectric SDK는 35로 낮추고 compileSdk·targetSdk는 37을 유지합니다. JVM의 SDK 35 검증을 API 36·37 실제 기기 검증으로 간주하지 않습니다.
 
 ## 3. API 키와 빌드 구성
 
-- Android SDK Platform 37을 설치하고 `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`로 SDK 위치를 설정해야 합니다. ZIP에는 개인 기기의 SDK 경로를 포함하지 않습니다. SDK 위치가 없는 명령줄 환경에서는 빌드가 실패합니다. 설치된 SDK 37·JDK 21과 캐시가 있는 환경에서 ZIP을 새 폴더에 풀어 Android Studio의 `sdk.dir` 자동 생성·Sync·APK 빌드 확인 완료. 새 PC의 JDK 자동 설치와 캐시 없는 빌드는 미검증입니다.
+- Android SDK Platform 37을 설치하고 `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`로 SDK 위치를 설정해야 합니다. 이 환경에서 별도 옵션 없는 `./gradlew assembleDebug`가 성공했습니다. ZIP에는 개인 기기의 SDK 경로를 포함하지 않으므로 SDK 위치가 없는 명령줄 환경에서는 빌드가 실패합니다. 이 브랜치 ZIP의 Studio 가져오기·자동 SDK 설정은 미실행이며, main의 성공 결과와 구분합니다.
 - 키 이름은 `local.properties`의 `KAKAO_REST_API_KEY`입니다.
 - `app/build.gradle.kts`가 `local.properties`를 읽어 `BuildConfig.KAKAO_REST_API_KEY`로 주입합니다(`buildFeatures.buildConfig = true`).
 - 키가 없어도 빌드는 성공합니다. 빈 문자열을 주입하고, 검색 시 "API 키가 설정되지 않았습니다" 상태를 보여 줍니다. 즐겨찾기는 키 없이 동작합니다.
@@ -304,7 +303,7 @@ Room Entity는 `id`(PK), 분리된 `isbn10`·`isbn13`, 그 밖의 도서 필드,
 - 카드 선택: 다른 도서를 누르면 상세를 교체하고(7절 표), 교체된 상세의 retain 값은 은퇴합니다. 선택된 카드는 2-pane에서만 강조합니다.
 - 뒤로 가기: `[목록, 상세]` 장면의 `previousEntries`는 `[목록]`입니다. 뒤로 가기는 상세를 닫고 안내 칸을 보여 주며, 그다음은 1-pane과 같습니다.
 - 크기 변경: 백스택은 그대로이고 장면만 다시 계산합니다. 상세가 열린 채 좁아지면 상세가 전체 화면이 되고 탐색 UI가 숨겨지며, 넓어지면 목록과 나란히 보입니다.
-- 테스트: `BookSearchBackStackTest`(교체 규칙), `BookSearchNavHostTest`(넓은 창 qualifier에서 두 칸·레일·retain 은퇴·안내 칸·크기 변경) 통과. 태블릿 수동 QA는 이전 빌드의 참고 결과이며 현재 APK 재검증은 미실행.
+- 테스트: `BookSearchBackStackTest`(교체 규칙), `BookSearchNavHostTest`(넓은 창 qualifier에서 두 칸·레일·retain 은퇴·안내 칸·크기 변경). 태블릿 기기 결과는 main·이전 빌드 참고이며 이 브랜치는 미실행입니다.
 
 ## 11. 테스트 환경
 
@@ -315,10 +314,11 @@ Room Entity는 `id`(PK), 분리된 `isbn10`·`isbn13`, 그 밖의 도서 필드,
 | Soil key와 페이징 | soil-query-test(`TestSwrClientPlus`, Fake key) + coroutines-test | JVM 단위 테스트 |
 | Presenter | Molecule + Turbine + coroutines-test | JVM 단위 테스트 |
 | Room | Robolectric + in-memory DB | JVM 단위 테스트 |
+| 수동 DI 조립 | `ManualAppGraphTest`: 실제 그래프·Room, 공개 key 계약 | Robolectric SDK 35 |
 | Compose 내비게이션·적응형·retain 수명 | Robolectric Compose UI 테스트 | JVM 단위 테스트 |
 | 프로세스 재생성·폴더블·실제 API | 실기기 QA | 기기·절차·확인 한계를 기록 |
 
-Robolectric을 쓰는 7개 모듈의 `robolectric.properties`는 현재 `sdk=36`을 사용합니다. SDK 36 테스트는 JDK 21을 요구합니다. convention plugin의 `unitTests.all`에서 테스트 JVM에 `--add-exports=java.base/jdk.internal.access=ALL-UNNAMED`를 전달합니다.
+Robolectric을 쓰는 7개 모듈의 `robolectric.properties`는 `sdk=35`를 사용합니다. 앱의 compileSdk·targetSdk 37은 유지합니다. 이 브랜치에서 main의 145개와 DI 4개, 총 149개를 JVM 17로 새 실행해 실패·오류·건너뜀 0을 확인했습니다. main의 SDK 36·JDK 21 결과와 구분하며, API 36·37 실기기·동적 재구성 측정은 미실행입니다.
 
 실행 명령은 `./gradlew testDebugUnitTest test`(Android 모듈과 순수 Kotlin `core:model`)입니다.
 
