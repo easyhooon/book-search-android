@@ -27,12 +27,12 @@
 | `core:model` | 도서·검색 조건·정렬·가격 필터 모델, ID·가격·필터·정렬 순수 규칙 | 없음 |
 | `core:network` | Retrofit 서비스·DTO, OkHttp(이미지 기본 클라이언트, 인증 interceptor를 더한 API 클라이언트) | core:model |
 | `core:database` | Room DB·Entity·DAO, 스키마 export(KSP는 이 모듈에서만 실행) | core:model |
-| `core:data` | Soil key(InfiniteQuery·Subscription·Mutation), DTO·Entity→`Book` 변환, FavoriteWriter, 오류 분류 | core:model, core:network·core:database(`implementation`) |
+| `core:data` | Soil key(InfiniteQuery·Subscription·Mutation), DTO·Entity→`Book` 변환, 오류 분류 | core:model, core:network·core:database(`implementation`) |
 | `core:ui` | 공통 도서 카드, 표지(Coil), 가격·날짜 표시, 상태 UI, 테마 | core:model |
 | `feature:search` | 검색 탭 Root·Presenter·Screen | core:model, core:data, core:ui |
 | `feature:favorites` | 즐겨찾기 탭 Root·Presenter·Screen | core:model, core:data, core:ui |
 | `feature:detail` | 상세 Root·Presenter·Screen | core:model, core:data, core:ui |
-| `core:testing` | Presenter 테스트 실행 도구(Molecule·Turbine 연결, Main dispatcher 규칙), Fake `FavoriteWriter`, 테스트 도서 | 테스트 의존성으로만 사용 |
+| `core:testing` | Presenter 테스트 실행 도구(Molecule·Turbine 연결, Main dispatcher 규칙), Fake Mutation key, 테스트 도서 | 테스트 의존성으로만 사용 |
 
 앱 코드 모듈 9개와 테스트 전용 `core:testing`을 합쳐 10개입니다. `core:data`가 원격·로컬 모듈을 `implementation`으로 감싸 feature는 Soil key만 보며, Room KSP는 `core:database`에서만 돕니다. `core:designsystem`, `core:common`은 만들지 않습니다.
 
@@ -42,7 +42,7 @@ feature끼리는 서로 참조하지 않습니다. feature는 `onBookClick(book)
 
 ### 의존성 버전
 
-지정 빌드 조합(Gradle 9.4.1, AGP 9.2.1, Kotlin 2.4.0, KSP 2.3.10, compileSdk 37)을 유지하며 수동 DI·JDK 17에서 APK 빌드와 자동 테스트 144개를 통과했습니다. 참고 조합은 DroidKaigi 2026(`300a81bc`)이며, Android 전용이므로 JetBrains Compose Multiplatform 대신 AndroidX 아티팩트를 씁니다.
+지정 빌드 조합(Gradle 9.4.1, AGP 9.2.1, Kotlin 2.4.0, KSP 2.3.10, compileSdk 37)을 유지하며 수동 DI·JDK 17에서 APK 빌드와 자동 테스트 149개를 통과했습니다. 참고 조합은 DroidKaigi 2026(`300a81bc`)이며, Android 전용이므로 JetBrains Compose Multiplatform 대신 AndroidX 아티팩트를 씁니다.
 
 | 라이브러리 | 고정 버전 |
 | --- | --- |
@@ -159,7 +159,7 @@ UI 가이드를 기준으로 Material 3 기본 컴포넌트로 구성합니다.
 - 정렬 규칙: 제목을 앞뒤 공백 제거 후 `java.text.Collator(Locale.KOREAN)`으로 비교합니다. 제목이 같으면 ID로 비교해 순서를 고정합니다. SQLite 기본 정렬은 쓰지 않습니다.
 - 가격 필터는 바텀시트에서 최소·최대 정가를 입력하고 "적용"으로 확정합니다. 세부 규칙은 [REQUIREMENTS](REQUIREMENTS.md)의 제품 정책 2번을 따릅니다. 입력은 숫자 키패드·숫자만·최대 9자리(Int 범위)입니다. 적용 중이면 필터 버튼에 표시하고 "초기화"를 제공합니다.
 - 이 탭에서 해제한 카드는 Room 반영과 동시에 목록에서 사라집니다. 실행 취소는 없습니다.
-- 검색·정렬·필터는 Room에서 읽은 전체 즐겨찾기 목록을 메모리에서 순수 함수로 처리합니다. 즐겨찾기는 많아야 수백 건이라고 보고 한국어 정렬과 테스트 용이성을 우선했습니다. 수천 건 이상이면 DB 질의로 옮겨야 하며 README 한계에 적습니다.
+- 검색·정렬·필터는 Room에서 읽은 전체 즐겨찾기 목록을 메모리에서 순수 함수로 처리합니다. 수백 건을 가정한 구성으로 한국어 정렬과 테스트 용이성을 우선합니다. 대량 데이터 성능은 미측정이며, 규모가 커지면 DB 질의 전환을 검토합니다.
 - 빈 상태: 즐겨찾기가 없으면 "즐겨찾기한 도서가 없습니다", 조건에 맞는 도서가 없으면 "조건에 맞는 도서가 없습니다".
 
 ### 상세 화면
@@ -244,17 +244,18 @@ Soil 1.0.0-alpha15 소스 기준입니다.
 
 - `MutationRef.mutate`는 랑데부 채널로 명령을 보냅니다. actor가 앞 명령을 처리 중이면 send가 대기하고, 그동안 호출 코루틴이 취소되면 명령은 전달되지 않습니다.
 - actor는 명령을 하나씩 처리하므로 같은 Mutation key 안에서는 순서가 보장됩니다.
-- 마지막 구독자가 사라지면 `keepAliveTime`(기본 5초) 뒤 Mutation의 scope가 취소됩니다. Mutation 안에서 직접 DB에 쓰면 화면 pop 후 완료 보장은 약 5초뿐입니다.
+- 마지막 구독자가 사라지면 `keepAliveTime`(기본 5초) 뒤 Mutation의 scope가 취소됩니다. 참조를 pop과 함께 놓으면 직접 DB 쓰기의 수명도 이 제한을 받습니다. 현재 Toggler는 접수한 요청 완료까지 참조를 유지하므로 정상 pop은 마지막 구독 해제가 아닙니다.
 - Subscription의 Flow는 replay 없이 `shareIn(WhileSubscribed(keepAliveTime))`으로 공유됩니다. 구독자가 없는 keepAliveTime 동안에도 Flow를 수집하지만 그 사이 값은 버리고, 그 안에 다시 구독하면 이미 도는 Flow에 붙어 새 값이 오지 않습니다.
 
 ### 최종 쓰기 동작
 
 - 살아 있는 화면의 `FavoriteToggler`가 도서 ID를 pending에 추가한 시점을 접수로 봅니다. 같은 화면에서 같은 도서의 쓰기가 진행 중이면 연타를 무시합니다. Mutation 전송은 즉시 시작합니다.
-- 모든 화면은 `MutationId("favorite")`를 공유합니다. 하나의 actor가 앞선 writer 결과를 기다린 뒤 다음 명령을 처리해 실제 UI 경로의 저장·해제 접수 순서를 유지합니다. 진행·오류 표시는 각 화면의 Toggler가 소유합니다.
-- 엔트리가 pop되면 신규 요청을 차단하고 요청 Job에 `complete()`를 호출합니다. 이미 접수한 요청이 Mutation 전달·쓰기 결과 수신까지 끝나면 마지막 완료 콜백에서 참조를 닫습니다. 요청 scope는 `FavoriteWriter`의 앱 scope와 별개입니다.
-- `FavoriteWriter.write(FavoriteCommand)`는 `ApplicationCoroutineScope`(`SupervisorJob` + `Dispatchers.Default`)의 `async`와 하나의 Mutex로 Room 쓰기를 실행합니다. writer의 임의 동시 호출까지 전역 FIFO를 보장하는 API는 아닙니다.
+- 모든 화면은 `MutationId("favorite")`를 공유합니다. 하나의 actor가 앞선 DAO 결과를 기다린 뒤 다음 명령을 처리해 실제 UI 경로의 저장·해제 접수 순서를 유지합니다. 진행·오류 표시는 각 화면의 Toggler가 소유합니다.
+- 엔트리가 pop되면 신규 요청을 차단하고 요청 Job에 `complete()`를 호출합니다. 이미 접수한 요청이 Mutation 전달·쓰기 결과 수신까지 끝나면 마지막 완료 콜백에서 참조를 닫습니다. 이 수명 유지는 진행 중 DAO와 actor 전달 대기 명령 모두에 적용됩니다.
+- Mutation key는 `FavoriteBookDao`를 직접 호출합니다. 공통 actor가 Room 쓰기를 직렬 실행하므로 별도 Writer·앱 쓰기 scope·Mutex를 두지 않습니다. 이 actor를 통하지 않는 DAO 직접 호출의 UI 접수 순서는 보장하지 않습니다.
+- 정상 화면 pop은 요청·참조를 취소하지 않습니다. Soil 클라이언트/actor 자체를 취소하면 진행 중 DAO도 취소될 수 있으며, 취소된 actor와 독립적으로 쓰기를 끝내는 이전 앱 scope 보장은 제공하지 않습니다.
 - 실패하면 pending을 정리하고 로그를 남깁니다. 화면이 열려 있으면 스낵바용 실패 상태를 표시하며, 닫힌 화면의 실패를 새 화면에 전달하지 않습니다. 취소 예외는 일반 실패로 바꾸지 않고 재전파합니다.
-- `FavoriteMutationLifecycleTest`는 실제 retain 저장소·Soil·writer와 Fake DAO를 연결해 화면 종료 중 대기 명령 완료, 같은 도서 명령 순서, 연타·종료 후 신규 요청 차단, 현재·닫힌 화면의 실패 처리를 확인합니다. 프로세스 종료 시 미완료 쓰기 보장은 범위 밖입니다.
+- `FavoriteMutationLifecycleTest`는 실제 retain 저장소·Soil·Mutation key와 Fake DAO를 연결해 화면 종료 중 대기 명령 완료, 같은 도서 명령 순서, 연타·종료 후 신규 요청 차단, 현재·닫힌 화면의 실패 처리를 확인합니다. 프로세스 종료 시 미완료 쓰기 보장은 범위 밖입니다.
 
 ### 읽기 경로
 
@@ -317,13 +318,13 @@ Room Entity는 `id`(PK), 분리된 `isbn10`·`isbn13`, 그 밖의 도서 필드,
 | Compose 내비게이션·적응형·retain 수명 | Robolectric Compose UI 테스트 | JVM 단위 테스트 |
 | 프로세스 재생성·폴더블·실제 API | 실기기 QA | 기기·절차·확인 한계를 기록 |
 
-Robolectric을 쓰는 7개 모듈의 `robolectric.properties`는 `sdk=35`를 사용합니다. 앱의 compileSdk·targetSdk 37은 유지합니다. 이 브랜치에서 기존 140개와 DI 4개, 총 144개를 JVM 17로 새 실행해 실패·오류·건너뜀 0을 확인했습니다. main의 SDK 36·JDK 21 결과와 구분하며, API 36·37 실기기·동적 재구성 측정은 미실행입니다.
+Robolectric을 쓰는 7개 모듈의 `robolectric.properties`는 `sdk=35`를 사용합니다. 앱의 compileSdk·targetSdk 37은 유지합니다. 이 브랜치에서 main의 145개와 DI 4개, 총 149개를 JVM 17로 새 실행해 실패·오류·건너뜀 0을 확인했습니다. main의 SDK 36·JDK 21 결과와 구분하며, API 36·37 실기기·동적 재구성 측정은 미실행입니다.
 
 실행 명령은 `./gradlew testDebugUnitTest test`(Android 모듈과 순수 Kotlin `core:model`)입니다.
 
 ## 12. 제출 패키지
 
-- ZIP 기본 파일명은 `book-search-android.zip`이며, 내부 APK 이름은 `app-debug.apk`입니다.
-- ZIP에는 `.git`과 `local.properties`를 포함하고, 모든 `build/`, `.gradle/`, `.idea/`, `.kotlin/` 디렉터리를 제외합니다. 생성 스크립트는 `scripts/make-submission-zip.sh`입니다.
-- APK는 사용자 키로 빌드한 `./gradlew assembleDebug` 산출물입니다. ZIP을 새 디렉터리에 풀어 `assembleDebug`가 다시 성공하는지 확인합니다.
+- 현재 제출 ZIP 이름은 `book-search-android-submission.zip`이며, 내부 APK 이름은 `app-debug.apk`입니다. 생성 스크립트의 기본 출력 이름은 `book-search-android.zip`입니다.
+- ZIP에는 `.git`과 `local.properties`를 포함하고, 모든 `build/`, `.gradle/`, `.idea/`, `.kotlin/` 디렉터리를 제외합니다. `scripts/make-submission-zip.sh`는 패키지 생성 도구이며, 실행 전 포함할 APK·영상이 제출 대상 파일인지 별도로 확인해야 합니다.
+- APK는 Kakao API 키가 설정된 debug 빌드의 `./gradlew assembleDebug` 산출물입니다. 압축 해제본의 Studio APK 빌드와 포함 APK의 Galaxy 설치·실행을 확인했으며, 환경과 범위는 [QA](QA.md)에 기록합니다.
 - 메일 발송, 실제 키 확인, 최종 첨부는 사용자가 합니다.

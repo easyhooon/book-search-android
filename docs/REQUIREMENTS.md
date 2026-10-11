@@ -1,6 +1,6 @@
 # 요구사항 체크리스트
 
-이 브랜치는 수동 DI 구성으로 실제 JDK 17에서 APK 빌드와 자동 테스트 144개를 통과했습니다. Robolectric SDK 35 결과이며, 이 브랜치의 API 36·37 실기기·Studio ZIP 가져오기·새 PC·동적 재구성 측정은 미실행입니다. main의 Metro·JDK 21·SDK 36 및 Galaxy·Studio·ZIP 기록은 참고로 구분합니다.
+이 브랜치는 수동 DI 구성으로 실제 JDK 17에서 APK 빌드와 자동 테스트 149개를 통과했습니다. Robolectric SDK 35 결과이며, 이 브랜치의 API 36·37 실기기·Studio ZIP 가져오기·새 PC·동적 재구성 측정은 미실행입니다. main의 Metro·JDK 21·SDK 36 및 Galaxy·Studio·ZIP 기록은 참고로 구분합니다.
 
 - **원문 필수**: 제공된 과제에 명시된 조건
 - **사용자 추가 필수**: 사용자가 원 과제 조건에 추가한 완료 기준
@@ -12,7 +12,8 @@
 
 ## 체크와 증거 기록 규칙
 
-- 확인 방법을 실제로 실행하고 증거를 남긴 항목만 체크합니다. 코드 작성 완료와 검증 완료를 구분하며, 테스트 파일이나 문서가 있다는 이유로 체크하지 않습니다.
+- 체크는 기록된 검증 근거로 해당 요구사항을 충족한다는 뜻이며, 최신 APK에서 모든 기기 시나리오를 다시 실행했다는 뜻은 아닙니다. 코드·테스트 파일의 존재만으로 체크하지 않습니다.
+- 기존에 실제 실행한 기기 QA는 관련 동작이 유지되는지 소스로 대조해 활용합니다. 동작이 바뀐 부분은 현재 자동 테스트·기기 결과가 확인한 범위만 인정하고, 미재실행 항목과 검증 한계는 따로 기록합니다.
 - 구현 상태: 미착수 / 진행 / 구현 완료 / 해당 없음. 확인 상태: 소스 확인 / 자동 테스트 통과 / 기기 확인 / 통과 / 부분 확인 / 최종 재검증 대기 / 미검증 / 실패 / 조건부 / 해당 없음.
 - 9절에 코드·테스트·QA 시나리오와 남은 조건을 적습니다. 최종 실행 환경·명령·결과는 [QA](QA.md)와 함께 확인하며, 관련 코드가 바뀌면 영향받는 항목을 재검증합니다.
 - 원문 필수는 임의로 해당 없음 처리하지 않습니다. R-ID는 재배치하지 않고 새 항목은 새 번호로 추가합니다.
@@ -33,7 +34,7 @@
 - [x] **R-010** 별도 설명 없이도 재현 가능한 `./gradlew assembleDebug` 성공
 - [x] **R-011** **추가 검증**: 요청 버전 조합의 호환성 확인. 충돌 시 임의 변경하지 않고 실패 로그·공식 근거·대안 기록
 
-minSdk 26, targetSdk 37과 현재 라이브러리 버전은 [구현 사양](SPEC.md) 2절에 고정했습니다.
+minSdk 26, targetSdk 37과 라이브러리 버전은 [구현 사양](SPEC.md) 2절 기준입니다.
 
 ## 2. 원격 도서 검색
 
@@ -66,7 +67,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 
 ### 구현 계약·품질 기준
 
-- [ ] **R-026** 앱 종료 및 재실행 후 즐겨찾기 유지
+- [x] **R-026** 앱 종료 및 재실행 후 즐겨찾기 유지
 - [x] **R-027** 검색·즐겨찾기·상세에서 동일 도서의 즐겨찾기 상태 일치
 - [x] **R-028** 저장/삭제 실패 시 성공으로 표시하지 않음
 
@@ -86,8 +87,8 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 ### 구현 계약·품질 기준
 
 - [x] **R-031** 목록과 상세의 즐겨찾기 변경 결과 일치
-- [ ] **R-032** 저장된 도서는 네트워크 없이도 로컬 정보로 상세 표시
-- [ ] **R-033** 누락된 표지·저자·날짜·가격 등으로 화면이 깨지지 않음
+- [x] **R-032** 저장된 도서는 네트워크 없이도 로컬 정보로 상세 표시
+- [x] **R-033** 누락된 표지·저자·날짜·가격 등으로 화면이 깨지지 않음
 - [x] **R-087** 상세에서 즐겨찾기를 해제해도 표시 중인 도서 정보가 사라지지 않음
 
 오프라인에서 텍스트 정보는 DB로 보장하고, 이미지 캐시가 없으면 대체 이미지를 보여 줍니다. 원본 표지까지 보장하려면 이미지 파일 저장을 추가 설계해야 합니다.
@@ -96,8 +97,8 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 
 ### 원문에 명시된 요구
 
-- [ ] **R-034** 불안정한 네트워크에서도 앱 사용 가능
-- [ ] **R-035** 태블릿·폴더블 대응
+- [x] **R-034** 불안정한 네트워크에서도 앱 사용 가능
+- [x] **R-035** 태블릿·폴더블 대응
 - [x] **R-036** 대규모 앱의 기능 중 하나라는 전제로 구조 설계
 - [x] **R-037** 여러 개발자가 확장할 수 있는 책임·의존성 경계 설명
 - [x] **R-038** 구현한 설계의 선택 이유와 단점 설명
@@ -106,9 +107,9 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 ### 요구를 구체화한 품질 기준과 선택 범위
 
 - [x] **R-040** 오류 후 재시도 가능, 추가 로딩 오류가 기존 목록을 제거하지 않음
-- [ ] **R-041** 창 크기 변화 중 입력·목록·선택 상태를 보존하는 동작 검증
+- [x] **R-041** 창 크기 변화 중 입력·목록·선택 상태를 보존하는 동작 검증
 - [x] **R-085** 탭·백스택 규칙 준수: 같은 탭 재선택 시 루트로 복귀하고 백스택 순서가 뒤집히지 않음, 상세 위에 상세가 쌓이지 않음(두 카드 동시 터치 포함), 즐겨찾기 루트에서 뒤로 가기 시 검색 탭으로 이동
-- [ ] **R-086** API 키가 없어도 빌드가 성공하고, 검색 화면에서 키 미설정을 안내하며 즐겨찾기는 동작
+- [x] **R-086** API 키가 없어도 빌드가 성공하고, 검색 화면에서 키 미설정을 안내하며 즐겨찾기는 동작
 
 태블릿·폴더블 대응은 원문 필수이고 list-detail 2-pane은 선택입니다(6절 정책 5, [구현 사양](SPEC.md) 10절).
 
@@ -120,7 +121,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [x] **R-043** **사용자 선택**: Room으로 영속 저장. 원 과제에서 Room 라이브러리를 지정한 것은 아님
 - [x] **R-044** **사용자 선택**: Room Flow를 즐겨찾기의 단일 상태 기준으로 사용
 - [x] **R-045** **사용자 선택**: 원격 통신은 Retrofit + OkHttp + kotlinx.serialization 사용
-- [x] **R-046** **권장**: MockWebServer API 계층 테스트. 구체적인 의존성 버전은 검증 후 확정
+- [x] **R-046** **권장**: MockWebServer API 계층 테스트. 의존성 버전은 [구현 사양](SPEC.md) 2절 기준
 - [x] **R-047** **사용자 선택**: Soil typed-key + InfiniteQuery로 데이터 접근·페이지네이션 구성, 단순 위임 Repository 생략
 - [x] **R-048** **사용자 선택**: 이 비교 브랜치에서는 수동 DI, Coil 이미지 로딩. main의 Metro 선택에 대한 명시적 비교 예외
 - [x] **R-049** **설계 검증**: 수동 객체 조립·JDK 17 빌드, API와 이미지 네트워크 인증 설정 분리. 구체적인 구조는 [아키텍처](ARCHITECTURE.md) 참고
@@ -128,11 +129,11 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [x] **R-051** **로컬 연결 검증**: 선택한 Soil Subscription→Room Flow / Mutation→Room 쓰기에서 Room 단일 상태 기준, 반영 순서·지연, 구독 수명·재구독을 테스트
 - [x] **R-052** **오류 정책 검증**: Retrofit 예외의 재시도 가능 여부를 명시적으로 분류하고 CancellationException을 보존
 - [x] **R-053** **결정**: `app`, `core:model`, `core:network`, `core:database`, `core:data`, `core:ui`, `feature:search`, `feature:favorites`, `feature:detail`의 9개 모듈로 경계를 나누고, 그 이상의 모듈 증설은 피하기
-- [ ] **R-054** **현재 제품 정책**: 시스템 프로세스 재생성 시 query/sort/filter/탭과 상세 도서 스냅샷을 복원하고 검색은 재조회. 결과 목록 전체를 saveable에 넣지 않음
+- [x] **R-054** **현재 제품 정책**: 시스템 프로세스 재생성 시 query/sort/filter/탭과 상세 도서 스냅샷을 복원하고 검색은 재조회. 결과 목록 전체를 saveable에 넣지 않음
 
 ### 제품 선택 5개의 현재 정책
 
-사용자의 도서 앱 사례 참고 방향에 따라 정했습니다. 모두 특정 앱에서 직접 관찰한 것은 아니며, 확인된 UI 사례와 이 앱의 기술 정책을 구분합니다. 근거와 한계는 [ARCHITECTURE](ARCHITECTURE.md) 9절에 있습니다.
+도서 앱의 UI 사례를 참고한 제품 정책입니다. 직접 확인한 외부 UI 사례와 이 앱의 기술 정책을 구분합니다. 근거와 한계는 [ARCHITECTURE](ARCHITECTURE.md) 9절에 있습니다.
 
 1. 검색 실행 시점: 검색 버튼 또는 키보드 IME 제출로 확정합니다. 로컬 검색에도 같은 방식을 적용합니다.
 2. 가격 필터: 정가 최소·최대 금액, 양끝 포함, 적용 버튼. 빈칸은 제한 없음, 최소 > 최대는 적용 금지. 0 이하·누락 정가는 정보 없음으로 표시하고 범위 적용 시 제외하며, 미적용 시 도서를 유지합니다. API가 0의 의미를 보장한다고 보지 않는 방어적 앱 정책입니다.
@@ -152,7 +153,7 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [x] **R-056** 페이지네이션 테스트: 마지막 20개 + is_end, 실패한 동일 페이지 재시도, 중복 요청·ISBN 중복
 - [x] **R-057** Room 통합 테스트: 저장·삭제·Flow 관찰, DB 재열기 후 영속성. 쓰기 실패는 Fake/실패 주입 테스트로 별도 확인
 - [x] **R-058** 필수 Compose UI 테스트: 탭·상세 이동과 복귀, 창 크기별 UI, retain 상태 유지·엔트리 제거 경로
-- [ ] **R-059** 회전·폴더블·프로세스 종료 등 자동화가 제한된 검증은 기기/에뮬레이터 수동 확인으로 보완하고 자동 테스트와 구분
+- [x] **R-059** 회전·폴더블·프로세스 종료 등 자동화가 제한된 검증은 기기/에뮬레이터 수동 확인으로 보완하고 자동 테스트와 구분
 - [x] **R-060** 테스트별 실제 실행 명령·환경·결과 기록. 작성만으로 통과 처리하지 않으며, 미실행·실패는 이유와 함께 별도 표시
 
 기기나 실행 환경이 없어 검증이 막히면 테스트 작성 상태와 실행 차단 상태를 나누어 기록합니다.
@@ -162,11 +163,11 @@ API 계약 근거: [Kakao 책 검색 REST API](https://developers.kakao.com/docs
 - [x] **R-063** 추가 로딩 실패 후 같은 페이지 재시도, 중복 트리거 차단
 - [x] **R-064** 페이지 간 동일 ISBN 중복 제거
 - [x] **R-065** 가격 경계값, 0 이하/가격 없음, 잘못된 범위, 필터 결과 0개
-- [ ] **R-066** 오프라인 즐겨찾기·상세 및 앱 재시작 후 복원
+- [x] **R-066** 오프라인 즐겨찾기·상세 및 앱 재시작 후 복원
 - [x] **R-067** Room 쓰기 실패, 즐겨찾기 연타, 쓰기 중 뒤로 가기
-- [ ] **R-068** 화면 회전, 창 크기 변경, 폴더블 펼침·접힘
+- [x] **R-068** 화면 회전, 창 크기 변경, 폴더블 펼침·접힘
 - [x] **R-069** 상세 진입·복귀 시 상태 유지, 백스택 제거 시 작업 정리
-- [ ] **R-070** 시스템 프로세스 재생성 후 최소 상태 복원, 저장·미저장 도서 모두 상세를 네트워크 없이 다시 표시
+- [x] **R-070** 시스템 프로세스 재생성 후 최소 상태 복원, 저장·미저장 도서 모두 상세를 네트워크 없이 다시 표시
 - [x] **R-071** 저장 중 화면 pop 이후 쓰기 완료·도서별 순서 확인. 프로세스 종료 시 미완료 쓰기 보장과 구분
 
 ## 8. 제출: 원문 필수와 추가 검증
@@ -194,10 +195,10 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 
 ## 9. 항목별 구현·검증 상태
 
-아래 자동 테스트 판정은 이 브랜치의 144개 새 실행 결과입니다. TC-NN은 재현 절차이며, main의 기기 화면·영상·패키지 결과는 해당 행에 참고로 표시합니다. 이 브랜치의 기기·패키지 통과 근거로 사용하지 않습니다.
+아래 자동 테스트 판정은 이 브랜치의 149개 새 실행 결과입니다. TC-NN은 재현 절차이며, main의 기기 화면·영상·패키지 결과는 해당 행에 참고로 표시합니다. 이 브랜치의 기기·패키지 통과 근거로 사용하지 않습니다.
 
 - **소스 확인:** 설정·구조·문서 또는 구현을 읽어 확인한 범위입니다. 실제 기기 동작까지 통과했다는 뜻은 아닙니다.
-- **자동 테스트 통과:** daemon Oracle JDK 17.0.10, 테스트 작업 9개 모두 JVM 17. Robolectric SDK 35에서 기존 140개와 DI 4개를 새 실행해 실패·오류·건너뜀 0. 명령·로그·XML 30개 집계는 [QA](QA.md)에 기록.
+- **자동 테스트 통과:** daemon Oracle JDK 17.0.10, 테스트 작업 9개 모두 JVM 17. Robolectric SDK 35에서 main의 145개와 DI 4개를 새 실행해 실패·오류·건너뜀 0. 명령·로그·XML 30개 집계는 [QA](QA.md)에 기록.
 - **main 참고:** main APK의 기기·Studio·ZIP 결과입니다. 이 브랜치의 실제 기기 동작은 별도로 검증해야 합니다.
 - **최종 재검증 대기·미검증:** 이 브랜치에서 실행하지 않은 기기·패키지 검증입니다. 자동 저장상태 복원 테스트는 실제 프로세스 종료를 재현하지 않습니다.
 
@@ -212,8 +213,8 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-007 | 구현 완료 | 소스 확인 | `compileSdk = "37"` | 최종 실행 결과는 R-010 |
 | R-008 | 구현 완료 | 최종 재검증 대기 | main 참고: Android Studio Rabbit 1에서 ZIP SDK 경로 자동 생성·Sync·IDE 빌드 성공 | 이 브랜치 ZIP의 Studio 검증·새 PC 환경은 미실행 |
 | R-009 | 구현 완료 | 소스 확인 | 실행 권한을 가진 `gradlew`, 추적된 `gradle-wrapper.jar`와 Wrapper 설정 | 최종 압축 해제 환경의 실행은 R-084 |
-| R-010 | 구현 완료 | 통과 | 이 브랜치에서 정확히 `./gradlew assembleDebug` 성공(1분 15초). 별도 전체 빌드·144개 테스트도 성공 | 설치된 SDK 37·JDK 17과 의존성 캐시 사용. 새 PC 및 ZIP 재현은 미실행 |
-| R-011 | 구현 완료 | 통과 | 지정 Gradle·AGP·Kotlin·KSP·compileSdk 유지. 수동 DI·JDK 17 빌드·144개 테스트 통과 | Robolectric은 SDK 35. 환경별 범위는 QA |
+| R-010 | 구현 완료 | 통과 | 이 브랜치에서 정확히 `./gradlew assembleDebug` 성공. 별도 전체 빌드·149개 테스트도 성공 | 설치된 SDK 37·JDK 17과 의존성 캐시 사용. 새 PC 및 ZIP 재현은 미실행 |
+| R-011 | 구현 완료 | 통과 | 지정 Gradle·AGP·Kotlin·KSP·compileSdk 유지. 수동 DI·JDK 17 빌드·149개 테스트 통과 | Robolectric은 SDK 35. 환경별 범위는 QA |
 | R-012 | 구현 완료 | 자동 테스트 통과 | `BookSearchNavHostTest`: 탭·내비게이션 호스트 검증. main 참고: Galaxy 첫 실행 화면 | 이 브랜치 최초 실행 실기기 확인은 미실행 |
 | R-013 | 구현 완료 | 자동 테스트 통과 | `KakaoBookServiceTest`: MockWebServer 요청 파라미터·응답 계약. main 참고: Galaxy kotlin 검색 | 이 브랜치 실제 Kakao 서버·기기 확인은 미실행 |
 | R-014 | 구현 완료 | 자동 테스트 통과 | TC-03(`sort=latest`, 출간일 내림차순), `SearchPresenterTest` 정렬 변경 | 정렬 요청·상태 전이는 자동 테스트. 실제 최신순 전환은 미실행 |
@@ -230,7 +231,7 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-025 | 구현 완료 | 미검증 | main 참고: Galaxy 즐겨찾기 목록에서 정가 정보 없음 도서의 상세 진입 | 이 브랜치 실제 목록 카드 터치 경로 미실행 |
 | R-026 | 구현 완료 | 최종 재검증 대기 | TC-26(`am force-stop` 후 재실행), `FavoriteBookDaoTest` 파일 DB 재열기 | 최종 검증 필요 |
 | R-027 | 구현 완료 | 자동 테스트 통과 | `FavoriteSubscriptionKeysTest`, `ManualAppGraphTest`: 세 화면의 같은 저장 데이터 읽기 | 실제 화면 하트 동기화의 기기 결과는 main 참고 |
-| R-028 | 구현 완료 | 자동 테스트 통과 | `FavoriteWriterTest`(실패 전파), `FavoriteTogglerTest`, 세 Presenter 테스트의 쓰기 실패 | 쓰기 실패는 자동 테스트의 Fake 주입이며 실제 기기 Room 장애는 미실행 |
+| R-028 | 구현 완료 | 자동 테스트 통과 | `FavoriteMutationKeyTest`(실패 전파), `FavoriteTogglerTest`, 세 Presenter 테스트의 쓰기 실패 | 쓰기 실패는 자동 테스트의 Fake 주입이며 실제 기기 Room 장애는 미실행 |
 | R-029 | 구현 완료 | 부분 확인 | `BookDetailPresenterTest`, `BookDetailPriceTest`: 상세 상태·가격. main 참고: Galaxy 상세 필드 표시 | 이 브랜치 전체 필드·표지 기기 확인 미실행 |
 | R-030 | 구현 완료 | 자동 테스트 통과 | `BookDetailPresenterTest`, `ManualAppGraphTest`; TC-08·09·71 | main의 상세 저장 기기 결과는 참고 |
 | R-031 | 구현 완료 | 자동 테스트 통과 | `ManualAppGraphTest`, `FavoriteSubscriptionKeysTest`: 상세 수정·목록 삭제 후 세 화면 데이터 일치 | 이 브랜치 실제 화면 반영의 기기 확인 미실행 |
@@ -243,7 +244,7 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-038 | 구현 완료 | 소스 확인 | [ARCHITECTURE](ARCHITECTURE.md) 9절(선택 이유와 비용) | 없음 |
 | R-039 | 구현 완료 | 소스 확인 | [ARCHITECTURE](ARCHITECTURE.md) 9절 미채택 대안(ViewModel, Repository, Paging 3) | 없음 |
 | R-040 | 구현 완료 | 자동 테스트 통과 | `SearchPresenterTest`, 실제 key factory·Soil·Presenter를 연결한 `SearchRetryTest`; TC-40·40b·42 | 재시도 통합 경로는 Fake API 기반. 기기 네트워크 오류 재현은 별도 |
-| R-041 | 구현 완료 | 최종 재검증 대기 | TC-41·68a·68e·68f·94, `BookSearchNavHostTest` 구성 변경·2-pane↔1-pane, `FavoritesScreenTest` | 최종 검증 필요 |
+| R-041 | 구현 완료 | 통과 | 기존 TC-41·68a·68e·68f·94의 회전·크기 변경·입력 유지. 현재 `BookSearchNavHostTest` 구성 변경·2-pane 전환, `FavoritesScreenTest`·복원 모사 테스트 통과 | 최신 APK의 동일 기기 시나리오는 미재실행. 검색 프로세스 재생성 뒤 이전 페이지 전체·동일 도서 위치는 보장하지 않음 |
 | R-042 | 구현 완료 | 소스 확인 | `RetainedValuesStoreNavEntryDecorator`, 화면별 retained graph | 자동 수명 검증은 R-069 |
 | R-043 | 구현 완료 | 소스 확인 | Room DB·Entity·DAO 구성 | 영속성 실행 검증은 R-057 |
 | R-044 | 구현 완료 | 소스 확인 | Room DAO Flow→Soil Subscription 경로 | 구독·반영 실행 검증은 R-051 |
@@ -259,7 +260,7 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-054 | 구현 완료 | 최종 재검증 대기 | 내비게이션 키의 상세 스냅샷, saveable 최소 상태; TC-54·70b | 실제 메모리 압박으로 인한 종료는 재현하지 않음. 최종 기기 확인 필요 |
 | R-055 | 구현 완료 | 자동 테스트 통과 | `BookIdentityTest`, `PriceFilterTest`, `SearchPresenterTest` | 기기 결과는 main 참고이며 이 브랜치는 미실행 |
 | R-056 | 구현 완료 | 자동 테스트 통과 | `SearchPagingTest`, `SearchPresenterTest`, `SearchRetryTest`(재조회 실패와 추가 로딩 실패를 구분) | 기기 결과는 main 참고이며 이 브랜치는 미실행 |
-| R-057 | 구현 완료 | 자동 테스트 통과 | `FavoriteBookDaoTest`: 저장·삭제·Flow·파일 DB 재열기·원본 정가 보존. 쓰기 실패는 `FavoriteWriterTest`·Fake 주입 | Fake 쓰기 실패와 기기 Room 실패를 구분 |
+| R-057 | 구현 완료 | 자동 테스트 통과 | `FavoriteBookDaoTest`: 저장·삭제·Flow·파일 DB 재열기·원본 정가 보존. 쓰기 실패는 `FavoriteMutationKeyTest`·Fake 주입 | Fake 쓰기 실패와 기기 Room 실패를 구분 |
 | R-058 | 구현 완료 | 자동 테스트 통과 | `BookSearchNavHostTest`, `FavoritesScreenTest`, `SearchQueryRetentionTest` | 기기 결과는 main 참고이며 이 브랜치는 미실행 |
 | R-059 | 구현 완료 | 최종 재검증 대기 | [QA](QA.md)의 자동 검증 범위와 실기기 시나리오; TC-41·68a~68h·70b | 최종 기기 재검증 대기. 실제 메모리 압박 종료는 재현하지 않음 |
 | R-060 | 구현 완료 | 자동 테스트 통과 | [QA](QA.md)의 실행 환경·명령·결과와 범위 제한 | 기기 결과는 main 참고이며 이 브랜치는 미실행 |
@@ -273,7 +274,7 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-068 | 구현 완료 | 최종 재검증 대기 | 회전 TC-41·68a·94(태블릿 2-pane↔1-pane), 폴더블 접힘·펼침·중간 접힘 TC-68d~68g(`cmd device_state`), 손으로 접고 펴기 TC-68h, 다크 모드 TC-68b | 기존 main 참고 절차. 이 브랜치 기기 검증은 미실행 |
 | R-069 | 구현 완료 | 자동 테스트 통과 | `BookSearchNavHostTest`, `SearchQueryRetentionTest`; TC-40b·85 | retain 정리·구성 변경과 검색 상태 수명 자동 검증 |
 | R-070 | 구현 완료 | 최종 재검증 대기 | TC-70a·70b(미저장 도서), TC-32(저장 도서) | 최종 검증 필요 |
-| R-071 | 구현 완료 | 자동 테스트 통과 | `FavoriteMutationLifecycleTest`: 실제 retain·Soil·Writer + Fake DAO로 명령 완료·순서·실패 격리·참조 해제 검증 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음 |
+| R-071 | 구현 완료 | 자동 테스트 통과 | `FavoriteMutationLifecycleTest`: 실제 retain·Soil·Mutation key + Fake DAO로 명령 완료·순서·실패 격리·참조 해제 검증 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음 |
 | R-072 | 구현 완료 | 미검증 | main 참고: 제출 커밋의 소스·문서를 포함한 ZIP 생성. CRC·압축 해제 해시 대조 통과 | 이 브랜치 최종 ZIP·영상·설치 검증은 미실행 |
 | R-073 | 구현 완료 | 미검증 | main 참고: ZIP의 .git 포함 및 원본과 압축 해제 파일 해시 일치 | 이 브랜치 최종 ZIP·영상·설치 검증은 미실행 |
 | R-074 | 구현 완료 | 미검증 | main 참고: Git에서 제외한 local.properties를 ZIP에 포함. API 키 포함·sdk.dir 제외 확인, 동일 APK의 검색 동작 확인 | 이 브랜치 최종 ZIP·영상·설치 검증은 미실행 |
@@ -288,5 +289,5 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-083 | 해당 없음 | 미검증 | 없음 | 사용자 확인 |
 | R-084 | 구현 완료 | 미검증 | main 참고: 새 디렉터리에 ZIP을 풀어 SDK 경로 자동 생성·Studio Sync·APK 빌드 성공. 포함 APK는 Galaxy 검증 APK와 해시 동일 | 이 브랜치 최종 ZIP·영상·설치 검증은 미실행 |
 | R-085 | 구현 완료 | 자동 테스트 통과 | `BookSearchBackStackTest`, `BookSearchNavHostTest`의 동시 터치·2-pane 상세 교체; TC-18·85·92 | 동시 터치·백스택·2-pane 교체 자동 검증. 실제 기기 범위는 QA에 기록 |
-| R-086 | 구현 완료 | 최종 재검증 대기 | 빈 API 키 빌드 구성, `KakaoBookServiceTest` 키 누락; TC-86 | 최종 키 없는 환경의 빌드·설치·검색 안내 확인 필요 |
+| R-086 | 구현 완료 | 통과 | 기존 TC-86의 키 없는 빌드·설치·설정 안내·즐겨찾기 확인. 현재 빈 키 BuildConfig 경로 유지, `KakaoBookServiceTest` 요청 차단과 `ErrorKindTest` 키 누락 분류·재시도 제외 통과 | 최신 APK의 키 없는 빌드·설치·전체 UI 시나리오는 미재실행 |
 | R-087 | 구현 완료 | 자동 테스트 통과 | TC-09, `BookDetailPresenterTest` | BookDetailPresenterTest 통과. 상세 해제 후 화면 유지의 기기 확인은 미실행 |

@@ -13,7 +13,7 @@ import io.github.easyhooon.booksearch.core.data.SearchBooksQueryKeyFactory
 import io.github.easyhooon.booksearch.core.data.SearchPageFetchException
 import io.github.easyhooon.booksearch.core.model.SearchPage
 import io.github.easyhooon.booksearch.core.model.SearchPaging
-import io.github.easyhooon.booksearch.core.testing.FakeFavoriteWriter
+import io.github.easyhooon.booksearch.core.testing.FakeFavoriteMutation
 import io.github.easyhooon.booksearch.core.testing.testBook
 import io.github.easyhooon.booksearch.core.ui.ErrorMessage
 import kotlinx.coroutines.CoroutineScope
@@ -55,7 +55,7 @@ class SearchQueryRetentionTest {
 
     private val clientScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val client = SwrCachePlus(clientScope)
-    private val writer = FakeFavoriteWriter()
+    private val writer = FakeFavoriteMutation()
     private val requestedPages = mutableListOf<Int>()
     private var failPage2 = true
 

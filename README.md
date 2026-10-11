@@ -2,7 +2,7 @@
 
 Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하는 Android 앱입니다.
 
-이 브랜치는 JDK 17 실행 조건을 맞추기 위한 수동 DI 비교안입니다. AppGraph·화면별 Factory 계약과 retain·Soil·기능 흐름을 유지하고 객체 조립만 직접 구현합니다. 실제 JDK 17에서 APK 빌드와 자동 테스트 144개를 통과했습니다.
+이 브랜치는 JDK 17 실행 조건을 맞추기 위한 수동 DI 비교안입니다. AppGraph·화면별 Factory 계약과 retain·Soil·기능 흐름을 유지하고 객체 조립만 직접 구현합니다. 실제 JDK 17에서 APK 빌드와 자동 테스트 149개를 통과했습니다.
 
 - **검색**: 검색어 확정, 정확도순·발간일순 정렬, 20개 단위 페이지네이션
 - **즐겨찾기**: 로컬 저장·검색, 제목 오름차순·내림차순, 정가 범위 필터
@@ -11,17 +11,19 @@ Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하�
 ## 주요 설계와 구현
 
 - **검색 상태**: Soil InfiniteQuery가 검색어·정렬별 캐시와 로딩·오류 상태를 맡습니다. 앱은 `is_end`·페이지 상한에 따른 종료와 중복 ID 제거를 맡고, 네트워크 오류·HTTP 5xx·429를 자동 재시도하도록 설정합니다. 실패 페이지를 보존해 기존 페이지 재조회 실패는 다시 조회하고, 추가 로딩 실패는 해당 페이지만 재시도합니다.
-- **즐겨찾기**: Room을 상태의 단일 기준으로 삼아 세 화면이 같은 저장 결과를 관찰합니다. 하나의 Mutation actor가 UI에서 접수한 명령을 순서대로 처리하고, `FavoriteWriter`가 앱 범위에서 Room에 씁니다. 화면을 닫으면 새 요청을 막고, 이미 접수한 요청의 완료 후 참조를 정리합니다. 진행·오류 표시는 화면별로 유지합니다.
+- **즐겨찾기**: Room을 상태의 단일 기준으로 삼아 세 화면이 같은 저장 결과를 관찰합니다. 하나의 Mutation actor가 UI에서 접수한 명령을 순서대로 처리하고, Mutation key가 Room DAO를 직접 호출합니다. 화면을 닫으면 새 요청을 막고, 이미 접수한 요청의 완료 후 참조를 정리합니다. 진행·오류 표시는 화면별로 유지합니다.
 - **화면 수명**: Navigation 3 엔트리에 retain 저장소를 연결해 화면 전환·구성 변경 중 객체를 유지하고 pop 시 정리합니다. 입력·정렬·필터와 상세 스냅샷은 별도로 저장해 시스템 프로세스 재생성에 대응합니다. 이 연결을 위한 decorator와 수명 테스트를 직접 관리합니다.
 - **협업 경계**: 화면은 Root·Presenter·Screen으로 나누고, 원격·로컬 구현은 `core:data` 뒤에 둡니다. `ManualAppGraph`가 객체를 조립하며 앱 싱글턴과 화면별 객체의 생성·공유 범위를 직접 관리합니다.
 - **화면·네트워크**: 창 크기·자세에 따라 하단 바·레일을 전환하고, 840dp 이상에서는 목록과 상세를 나란히 표시합니다. 저장한 도서의 텍스트는 오프라인에서도 열리며, 표지는 캐시가 없으면 대체 이미지를 표시합니다. API 인증 interceptor는 이미지 요청에 전달하지 않습니다.
+
+최신 main 반영과 JVM 17 재검증 결과는 [수동 DI 최신화 검증](docs/MANUAL_DI_UPDATE.md)에 기록합니다.
 
 선택 이유·비용과 데이터 흐름은 [아키텍처](docs/ARCHITECTURE.md), 세부 동작은 [구현 사양](docs/SPEC.md)에 있습니다.
 
 ## 검증 범위와 상태
 
-- **이 브랜치의 빌드·테스트**: Gradle daemon Oracle JDK 17.0.10과 테스트 작업 9개의 JVM 17을 확인했습니다. 기존 140개와 수동 DI 4개를 모두 새로 실행해 144개 통과, 실패·오류·건너뜀 0입니다. APK 빌드와 별도 `./gradlew assembleDebug`도 성공했습니다.
-- **검증 경계**: Robolectric SDK 35, compileSdk·targetSdk 37입니다. 수동 DI 테스트는 객체 공유 범위와 실제 Room 쓰기·읽기 연결을 확인합니다. 검색은 실제 Soil·key factory·Presenter와 Fake API, 저장 수명·경합은 실제 retain·Soil·Writer와 Fake DAO로 확인했습니다.
+- **이 브랜치의 빌드·테스트**: Gradle daemon Oracle JDK 17.0.10과 테스트 작업 9개의 JVM 17을 확인했습니다. main의 145개와 수동 DI 4개를 모두 새로 실행해 149개 통과, 실패·오류·건너뜀 0입니다. APK 빌드와 별도 `./gradlew assembleDebug`도 성공했습니다.
+- **검증 경계**: Robolectric SDK 35, compileSdk·targetSdk 37입니다. 수동 DI 테스트는 객체 공유 범위와 실제 Room 쓰기·읽기 연결을 확인합니다. 검색은 실제 Soil·key factory·Presenter와 Fake API, 저장 수명·경합은 실제 retain·Soil·Mutation key와 Fake DAO로 확인했습니다.
 - **미실행**: 이 브랜치 APK의 API 36·37 실기기, 새 ZIP의 Studio 가져오기·설치, 새 PC 환경, 동적 재구성·skip 측정입니다. main의 Metro·JDK 21·Robolectric SDK 36 구성에서 확인한 Galaxy·Studio·ZIP 결과와 영상은 참고로만 구분합니다. 명령·증거·세부 범위는 [QA](docs/QA.md)에 있습니다.
 
 ## 빌드 방법
@@ -91,7 +93,7 @@ Soil은 비동기 데이터의 조회·캐싱·갱신과 로딩·오류 상태�
 - `core:model`·`network`·`database`·`data`·`ui`: 순수 규칙, 통신, 저장, 데이터 연결, 공통 UI
 - `core:testing`·`build-logic`: 테스트 도구와 공통 빌드 설정
 
-원격 검색 상태는 Soil, 로컬 즐겨찾기 데이터는 Room, 화면 전용 상태는 Presenter가 관리합니다. `core:data`의 key와 writer가 데이터 계층을 이루며, 호출을 전달만 하는 Repository·UseCase는 추가하지 않았습니다.
+원격 검색 상태는 Soil, 로컬 즐겨찾기 데이터는 Room, 화면 전용 상태는 Presenter가 관리합니다. `core:data`의 key가 데이터 계층을 이루며, 호출을 전달만 하는 Repository·UseCase는 추가하지 않았습니다.
 
 ## 알려진 제한
 

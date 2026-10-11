@@ -14,7 +14,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import io.github.easyhooon.booksearch.core.model.FavoriteCommand
 import io.github.easyhooon.booksearch.core.model.FavoriteSort
 import io.github.easyhooon.booksearch.core.model.PriceFilter
-import io.github.easyhooon.booksearch.core.testing.FakeFavoriteWriter
+import io.github.easyhooon.booksearch.core.testing.FakeFavoriteMutation
 import io.github.easyhooon.booksearch.core.testing.testBook
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -49,7 +49,7 @@ class FavoritesStateLifecycleTest {
 
     private val clientScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val client = SwrCachePlus(clientScope)
-    private val writer = FakeFavoriteWriter()
+    private val writer = FakeFavoriteMutation()
     private val book = testBook("k", price = 30_000)
 
     private var shown by mutableStateOf(true)

@@ -15,7 +15,7 @@ import io.github.easyhooon.booksearch.core.network.KakaoBookService
 import io.github.easyhooon.booksearch.core.network.model.DocumentResponse
 import io.github.easyhooon.booksearch.core.network.model.MetaResponse
 import io.github.easyhooon.booksearch.core.network.model.SearchBookResponse
-import io.github.easyhooon.booksearch.core.testing.FakeFavoriteWriter
+import io.github.easyhooon.booksearch.core.testing.FakeFavoriteMutation
 import io.github.easyhooon.booksearch.core.ui.ErrorMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +46,7 @@ class SearchRetryTest {
 
     private val clientScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val client = SwrCachePlus(clientScope)
-    private val writer = FakeFavoriteWriter()
+    private val writer = FakeFavoriteMutation()
     private val requestedPages = mutableListOf<Int>()
     private var failedPage: Int? = null
     private var shown by mutableStateOf(true)

@@ -1,5 +1,7 @@
 package io.github.easyhooon.booksearch.core.data
 
+import io.github.easyhooon.booksearch.core.database.FavoriteBookDao
+import io.github.easyhooon.booksearch.core.database.toFavoriteEntity
 import io.github.easyhooon.booksearch.core.model.FavoriteCommand
 import soil.query.MutationId
 import soil.query.MutationKey
@@ -14,10 +16,16 @@ fun interface FavoriteMutationKeyFactory {
 }
 
 class DefaultFavoriteMutationKeyFactory(
-    private val writer: FavoriteWriter,
+    private val dao: FavoriteBookDao,
 ) : FavoriteMutationKeyFactory {
     override fun create(): MutationKey<Unit, FavoriteCommand> = buildMutationKey(
         id = MutationId("favorite"),
-        mutate = { command -> writer.write(command) },
+        mutate = { command ->
+            if (command.favorite) {
+                dao.upsert(command.book.toFavoriteEntity(savedAt = System.currentTimeMillis()))
+            } else {
+                dao.deleteById(command.book.id)
+            }
+        },
     )
 }

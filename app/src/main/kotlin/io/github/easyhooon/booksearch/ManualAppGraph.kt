@@ -5,13 +5,11 @@ import androidx.room.Room
 import coil3.ImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
 import coil3.request.crossfade
-import io.github.easyhooon.booksearch.core.data.ApplicationCoroutineScope
 import io.github.easyhooon.booksearch.core.data.DefaultFavoriteBookSubscriptionKeyFactory
 import io.github.easyhooon.booksearch.core.data.DefaultFavoriteBooksSubscriptionKey
 import io.github.easyhooon.booksearch.core.data.DefaultFavoriteIdsSubscriptionKey
 import io.github.easyhooon.booksearch.core.data.DefaultFavoriteMutationKeyFactory
 import io.github.easyhooon.booksearch.core.data.DefaultSearchBooksQueryKeyFactory
-import io.github.easyhooon.booksearch.core.data.FavoriteWriter
 import io.github.easyhooon.booksearch.core.database.BookSearchDatabase
 import io.github.easyhooon.booksearch.core.network.NetworkConfig
 import io.github.easyhooon.booksearch.core.network.createBaseOkHttpClient
@@ -22,9 +20,6 @@ import io.github.easyhooon.booksearch.feature.favorites.FavoritesScreenContext
 import io.github.easyhooon.booksearch.feature.favorites.FavoritesScreenGraph
 import io.github.easyhooon.booksearch.feature.search.SearchScreenContext
 import io.github.easyhooon.booksearch.feature.search.SearchScreenGraph
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import soil.query.AndroidMemoryPressure
 import soil.query.AndroidNetworkConnectivity
 import soil.query.SwrCachePlus
@@ -45,10 +40,6 @@ internal class ManualAppGraph private constructor(
         Room.databaseBuilder(applicationContext, BookSearchDatabase::class.java, BookSearchDatabase.NAME).build()
     }
     private val favoriteBookDao get() = database.favoriteBookDao()
-    private val applicationScope by lazy {
-        ApplicationCoroutineScope(CoroutineScope(SupervisorJob() + Dispatchers.Default))
-    }
-    private val favoriteWriter by lazy { FavoriteWriter(favoriteBookDao, applicationScope) }
 
     @OptIn(ExperimentalSoilQueryApi::class)
     override val swrClient: SwrClientPlus by lazy {
@@ -74,7 +65,7 @@ internal class ManualAppGraph private constructor(
             SearchScreenContext(
                 searchBooksQueryKeyFactory = DefaultSearchBooksQueryKeyFactory(bookService),
                 favoriteIdsSubscriptionKey = DefaultFavoriteIdsSubscriptionKey(favoriteBookDao),
-                favoriteMutationKeyFactory = DefaultFavoriteMutationKeyFactory(favoriteWriter),
+                favoriteMutationKeyFactory = DefaultFavoriteMutationKeyFactory(favoriteBookDao),
             )
         }
     }
@@ -83,7 +74,7 @@ internal class ManualAppGraph private constructor(
         override val favoritesScreenContext by lazy {
             FavoritesScreenContext(
                 favoriteBooksSubscriptionKey = DefaultFavoriteBooksSubscriptionKey(favoriteBookDao),
-                favoriteMutationKeyFactory = DefaultFavoriteMutationKeyFactory(favoriteWriter),
+                favoriteMutationKeyFactory = DefaultFavoriteMutationKeyFactory(favoriteBookDao),
             )
         }
     }
@@ -92,7 +83,7 @@ internal class ManualAppGraph private constructor(
         override val bookDetailScreenContext by lazy {
             BookDetailScreenContext(
                 favoriteBookSubscriptionKeyFactory = DefaultFavoriteBookSubscriptionKeyFactory(favoriteBookDao),
-                favoriteMutationKeyFactory = DefaultFavoriteMutationKeyFactory(favoriteWriter),
+                favoriteMutationKeyFactory = DefaultFavoriteMutationKeyFactory(favoriteBookDao),
             )
         }
     }

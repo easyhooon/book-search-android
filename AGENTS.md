@@ -6,12 +6,14 @@
 - 작업 전 [요구사항](docs/REQUIREMENTS.md), [구현 사양](docs/SPEC.md), [아키텍처](docs/ARCHITECTURE.md), 현재 코드를 확인합니다. 필수 요구사항, 사용자 선택, 권장안, 미정 사항을 구분합니다.
 - 도서 서비스에서 확인한 UI 사례와 이 앱의 정책을 구분합니다. 공개 자료로 확인하지 못한 DB 쓰기·pop·프로세스 복원을 유명 앱의 관행이라고 주장하지 않습니다.
 - 원문 요구와 설계 구체화를 구분합니다. 사용자의 도서 앱 사례 참고 방향에 따라 정한 현재 제품 정책은 REQUIREMENTS의 다섯 항목으로 관리하며, 페이징·ID·쓰기 순서·크기 변경 상태 보존 같은 구현 계약을 사용자 재승인 사항으로 늘리지 않습니다. 태블릿·폴더블은 필수이고 2-pane만 선택입니다.
-- 역할은 설계·문서화·조사·리뷰와 앱 구현입니다. 2026-10-07 사용자의 명시적 요청으로 구현도 맡게 되었습니다. 원문이 재량에 맡긴 세부 동작은 [구현 사양](docs/SPEC.md)의 기본안을 따르며, 구현 중 바뀌면 SPEC을 먼저 갱신합니다. 역할 변경은 사용자의 명시적 요청이 있을 때만 반영합니다.
+- 역할은 사용자가 승인한 설계·문서화·조사·리뷰와 앱 구현입니다. 원문이 재량에 맡긴 세부 동작은 [구현 사양](docs/SPEC.md)의 기본안을 따르며, 구현 중 바뀌면 SPEC을 먼저 갱신합니다. 역할 변경은 사용자의 명시적 요청이 있을 때만 반영합니다.
 - retain + Navigation 3는 사용자 선택이며 Circuit 라이브러리는 도입하지 않습니다. 임의로 ViewModel 중심 구조로 전환하지 않습니다. 현재 권장안은 DroidKaigi 방식의 얇은 @Composable Presenter이며, 변경 불가능한 결정은 아닙니다. 순수 Kotlin 테스트만을 위해 별도의 전체 StateFlow 상태 소유자를 중복 도입하지 않습니다. 원격 통신은 Retrofit + OkHttp + kotlinx.serialization, 로컬 저장은 Room으로 선택했습니다. Soil typed-key + InfiniteQuery도 선택했으며 단순 위임 Repository는 추가하지 않습니다. Query/InfiniteQuery는 Retrofit에 연결합니다. 로컬은 Subscription→Room Flow / Mutation→Room 쓰기로 진행하며, 즐겨찾기의 단일 상태 기준은 Room입니다. DroidKaigi 2026을 참고해 과거 우려를 해소한다는 사용자 판단을 따릅니다. 과거 롤백 경험은 수명·반영 순서 테스트에 활용하고, 이를 이유로 직접 Flow 비교를 필수화하거나 Repository를 재도입하지 않습니다.
-- Metro, Coil, Timber는 사용자 선택입니다. Timber Tree는 debug 빌드에서만 심습니다. Coil 3는 현재 권장 세대이며 버전은 미고정입니다. 최소 Metro 그래프를 사용하고, 이미지 클라이언트에는 Kakao API 인증 interceptor를 전달하지 않습니다. Kotlin 2.4.0과 Metro 컴파일러 호환성을 먼저 확인합니다.
+- Metro, Coil, Timber는 사용자 선택입니다. Timber Tree는 debug 빌드에서만 심습니다. Coil은 3.6.3을 사용합니다. 최소 Metro 그래프를 사용하고, 이미지 클라이언트에는 Kakao API 인증 interceptor를 전달하지 않습니다. Kotlin 2.4.0과 Metro 컴파일러 호환성을 먼저 확인합니다.
 - Metro의 선언형 factory와 retain/Nav3 연결을 최소 구성으로 사용합니다. 자체 KSP 편의 함수 생성기나 자체 컴파일러 플러그인을 추가하지 않습니다. Metro가 생성하는 factory 구현과 Room용 KSP는 구분합니다.
 - Android 전용으로 구성합니다. KMP source set, expect/actual, 플랫폼 추상화를 추가하지 않습니다. DroidKaigi에서는 retain/Navigation 3 소유권과 Presenter·테스트 패턴만 필요한 범위에서 참고합니다.
 - 지정 빌드 버전은 구현 시작 시 호환성을 먼저 검증합니다. 충돌을 숨기거나 요청 버전을 임의로 바꾸지 않습니다.
+
+이 수동 DI 비교 브랜치에서는 사용자 승인에 따라 Metro 대신 `ManualAppGraph`를 사용하고 daemon JVM 17·Robolectric SDK 35를 유지합니다. main의 Metro 선택에 대한 브랜치 한정 예외이며, retain·Navigation 3·Soil 경계는 유지합니다.
 
 ## 작업과 변경 기록
 
