@@ -40,7 +40,7 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * Room → Subscription key → Soil 클라이언트 연결을 확인합니다.
  *
- * 화면과 같은 경로를 쓰도록 쓰기는 [FavoriteWriter]로 하고, 구독은 rememberSubscription처럼
+ * 화면과 같은 경로를 쓰도록 쓰기는 실제 Mutation key로 하고, 구독은 rememberSubscription처럼
  * SubscriptionRef의 resume과 join으로 시작합니다. Presenter 테스트는 이 결과를 상태 값으로 받습니다.
  */
 @RunWith(AndroidJUnit4::class)
@@ -84,7 +84,8 @@ class FavoriteSubscriptionKeysTest {
         status = "정상판매",
     )
 
-    private fun TestScope.writer() = FavoriteWriter(dao, ApplicationCoroutineScope(backgroundScope))
+    private fun TestScope.mutation() = SwrCachePlus(backgroundScope)
+        .getMutation(DefaultFavoriteMutationKeyFactory(dao).create(), Marker.None)
 
     /** rememberSubscription과 같이 resume·join으로 구독을 시작하고, 값을 받은 상태만 내보냅니다. */
     private fun <T> TestScope.subscribe(key: SubscriptionKey<T>): Flow<T> {
@@ -102,15 +103,15 @@ class FavoriteSubscriptionKeysTest {
 
     @Test
     fun `ID 구독은 빈 집합에서 시작해 추가와 해제를 반영한다`() = runTest {
-        val writer = writer()
+        val mutation = mutation()
         subscribe(DefaultFavoriteIdsSubscriptionKey(dao)).test(timeout = ROOM_TIMEOUT) {
             assertEquals(emptySet<String>(), awaitItem())
 
-            writer.write(FavoriteCommand(book("a"), favorite = true))
+            mutation.mutate(FavoriteCommand(book("a"), favorite = true))
             awaitValue(setOf("a"))
-            writer.write(FavoriteCommand(book("b"), favorite = true))
+            mutation.mutate(FavoriteCommand(book("b"), favorite = true))
             awaitValue(setOf("a", "b"))
-            writer.write(FavoriteCommand(book("a"), favorite = false))
+            mutation.mutate(FavoriteCommand(book("a"), favorite = false))
             awaitValue(setOf("b"))
             cancelAndIgnoreRemainingEvents()
         }
@@ -118,14 +119,14 @@ class FavoriteSubscriptionKeysTest {
 
     @Test
     fun `목록 구독은 저장한 도서를 같은 값으로 돌려준다`() = runTest {
-        val writer = writer()
+        val mutation = mutation()
         val saved = book("a", title = "코틀린 인 액션")
         subscribe(DefaultFavoriteBooksSubscriptionKey(dao)).test(timeout = ROOM_TIMEOUT) {
             assertEquals(emptyList<Book>(), awaitItem())
 
-            writer.write(FavoriteCommand(saved, favorite = true))
+            mutation.mutate(FavoriteCommand(saved, favorite = true))
             awaitValue(listOf(saved))
-            writer.write(FavoriteCommand(saved, favorite = false))
+            mutation.mutate(FavoriteCommand(saved, favorite = false))
             awaitValue(emptyList())
             cancelAndIgnoreRemainingEvents()
         }
@@ -133,15 +134,15 @@ class FavoriteSubscriptionKeysTest {
 
     @Test
     fun `상세 구독은 해당 도서만 따라가고 해제하면 null이 된다`() = runTest {
-        val writer = writer()
+        val mutation = mutation()
         val target = book("a")
         subscribe(DefaultFavoriteBookSubscriptionKeyFactory(dao).create("a")).test(timeout = ROOM_TIMEOUT) {
             assertNull(awaitItem())
 
-            writer.write(FavoriteCommand(book("b"), favorite = true))
-            writer.write(FavoriteCommand(target, favorite = true))
+            mutation.mutate(FavoriteCommand(book("b"), favorite = true))
+            mutation.mutate(FavoriteCommand(target, favorite = true))
             awaitValue(target)
-            writer.write(FavoriteCommand(target, favorite = false))
+            mutation.mutate(FavoriteCommand(target, favorite = false))
             awaitValue(null)
             cancelAndIgnoreRemainingEvents()
         }
@@ -149,7 +150,7 @@ class FavoriteSubscriptionKeysTest {
 
     @Test
     fun `같은 key를 두 화면이 구독하면 하나의 상태를 함께 본다`() = runTest {
-        val writer = writer()
+        val mutation = mutation()
         val client = SwrCachePlus(backgroundScope)
         val key = DefaultFavoriteIdsSubscriptionKey(dao)
         val first = client.getSubscription(key, Marker.None)
@@ -161,7 +162,7 @@ class FavoriteSubscriptionKeysTest {
 
         second.state.filterNot { it.reply.isNone }.map { it.reply.getOrThrow() }.test(timeout = ROOM_TIMEOUT) {
             assertEquals(emptySet<String>(), awaitItem())
-            writer.write(FavoriteCommand(book("a"), favorite = true))
+            mutation.mutate(FavoriteCommand(book("a"), favorite = true))
             awaitValue(setOf("a"))
             assertEquals(setOf("a"), first.state.value.reply.getOrThrow())
             cancelAndIgnoreRemainingEvents()
@@ -175,7 +176,7 @@ class FavoriteSubscriptionKeysTest {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         try {
             val client = SwrCachePlus(scope)
-            val writer = FavoriteWriter(dao, ApplicationCoroutineScope(scope))
+            val mutation = client.getMutation(DefaultFavoriteMutationKeyFactory(dao).create(), Marker.None)
             val key = DefaultFavoriteIdsSubscriptionKey(dao)
 
             // 검색 화면이 구독하다가 상세로 이동하며 구독을 놓습니다.
@@ -186,7 +187,7 @@ class FavoriteSubscriptionKeysTest {
             leaving.close()
 
             // 상세에서 저장한 뒤 곧바로 돌아와 다시 구독합니다.
-            writer.write(FavoriteCommand(book("a"), favorite = true))
+            mutation.mutate(FavoriteCommand(book("a"), favorite = true))
             val returning = client.getSubscription(key, Marker.None)
             scope.launch { returning.resume() }
             withTimeout(2.seconds) {

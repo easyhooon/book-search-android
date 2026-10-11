@@ -8,7 +8,7 @@ import io.github.easyhooon.booksearch.core.data.SearchBooksQueryKeyFactory
 import io.github.easyhooon.booksearch.core.model.SearchPage
 import io.github.easyhooon.booksearch.core.model.SearchPaging
 import io.github.easyhooon.booksearch.core.model.SearchSort
-import io.github.easyhooon.booksearch.core.testing.FakeFavoriteWriter
+import io.github.easyhooon.booksearch.core.testing.FakeFavoriteMutation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,7 +35,7 @@ class SearchStateRestorationTest {
 
     private val clientScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val client = SwrCachePlus(clientScope)
-    private val writer = FakeFavoriteWriter()
+    private val writer = FakeFavoriteMutation()
     private lateinit var latest: SearchUiState
 
     private val factory = SearchBooksQueryKeyFactory { query, sort ->

@@ -14,7 +14,7 @@ import io.github.easyhooon.booksearch.core.model.FavoriteCommand
 import io.github.easyhooon.booksearch.core.model.SearchPage
 import io.github.easyhooon.booksearch.core.model.SearchPaging
 import io.github.easyhooon.booksearch.core.model.SearchSort
-import io.github.easyhooon.booksearch.core.testing.FakeFavoriteWriter
+import io.github.easyhooon.booksearch.core.testing.FakeFavoriteMutation
 import io.github.easyhooon.booksearch.core.testing.MainDispatcherRule
 import io.github.easyhooon.booksearch.core.testing.awaitItemMatching
 import io.github.easyhooon.booksearch.core.testing.presenterFlow
@@ -88,7 +88,7 @@ class SearchPresenterTest {
     }
 
     private val api = FakeSearchApi()
-    private val writer = FakeFavoriteWriter()
+    private val writer = FakeFavoriteMutation()
     private var favoriteIds by mutableStateOf(emptySet<String>())
     private lateinit var testScope: TestScope
     private lateinit var latest: SearchUiState

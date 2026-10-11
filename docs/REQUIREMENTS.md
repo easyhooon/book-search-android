@@ -1,5 +1,7 @@
 # 요구사항 체크리스트
 
+Writer 제거 브랜치의 변경 전·후 자동 검증과 취소 보장 범위는 [별도 결과](WRITER_REMOVAL.md)에 기록합니다. 아래 제출 당시 기기·APK·패키지 결과를 새 브랜치의 실기기 검증으로 해석하지 않습니다.
+
 요구사항 충족 여부와 검증 시점·방법을 구분합니다. APK 빌드·자동 테스트 140개 새 실행, ZIP 구성·무결성·압축 해제본의 Android Studio 빌드 통과. 기존 기기 QA는 현재 구현과 대조하고 변경된 동작의 자동 테스트를 함께 근거로 사용합니다. 최신 APK에서 다시 실행한 기기 범위와 미재실행 한계는 각 행에 별도 표시합니다.
 
 - **원문 필수**: 제공된 과제에 명시된 조건
@@ -230,7 +232,7 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-025 | 구현 완료 | 기기 확인 | Galaxy 즐겨찾기 목록에서 정가 정보 없음 도서의 상세 진입 | 없음 |
 | R-026 | 구현 완료 | 통과 | 기존 TC-26의 강제 종료 후 저장 도서 유지. 현재 `FavoriteBookDaoTest` 파일 DB 재열기 통과, Room 영속 경로 유지 확인. 최신 Galaxy는 복원 DB 재실행 표시 확인 | 최신 APK의 새 저장→강제 종료→재실행은 미재실행. 진행 중 쓰기의 프로세스 종료 보장은 제외 |
 | R-027 | 구현 완료 | 기기 확인 | Galaxy 검색·상세에서 추가, 즐겨찾기에서 해제 후 검색 카드 하트 동기화. FavoriteSubscriptionKeysTest | 상세 해제 경로의 기기 확인은 미실행 |
-| R-028 | 구현 완료 | 자동 테스트 통과 | `FavoriteWriterTest`(실패 전파), `FavoriteTogglerTest`, 세 Presenter 테스트의 쓰기 실패 | 실제 기기의 Room 쓰기 실패는 미재현. 실패 주입 자동 테스트로 확인 |
+| R-028 | 구현 완료 | 자동 테스트 통과 | `FavoriteMutationKeyTest`(실패 전파), `FavoriteTogglerTest`, 세 Presenter 테스트의 쓰기 실패 | 실제 기기의 Room 쓰기 실패는 미재현. 실패 주입 자동 테스트로 확인 |
 | R-029 | 구현 완료 | 기기 확인 | Galaxy 상세의 제목·저자·출판사·날짜·ISBN·정가·할인가 표시 | 없음 |
 | R-030 | 구현 완료 | 자동 테스트 통과 | TC-08·09·71, `BookDetailPresenterTest` | 상세 저장은 기기 확인, 상세 해제는 Presenter 자동 테스트 |
 | R-031 | 구현 완료 | 기기 확인 | Galaxy 상세에서 저장 후 즐겨찾기 목록 반영, 즐겨찾기 해제 후 검색 카드 반영 | 상세에서 해제한 뒤의 기기 확인은 미실행 |
@@ -253,13 +255,13 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-048 | 구현 완료 | 소스 확인 | Metro 1.4.5 그래프와 Coil 3.6.3 이미지 로더 구성 | Metro의 JDK 조건은 R-006. 표지 표시는 Galaxy 확인, 이미지 인증 분리는 소스 확인 |
 | R-049 | 구현 완료 | 자동 테스트 통과 | Metro/Kotlin 구성. `AppGraph.provideImageLoader`는 인증 interceptor 없는 클라이언트, `NetworkFactory`는 API 인증 설정 | 최종 APK 빌드 및 API 테스트 통과, 이미지 인증 분리는 소스 확인. JDK 조건은 R-006 |
 | R-050 | 구현 완료 | 자동 테스트 통과 | `SearchBooksQueryKeyTest`, `SearchPagingTest`, `SearchPresenterTest`, `SearchRetryTest` | 기기 결과는 QA의 현재 검증 범위와 구분 |
-| R-051 | 구현 완료 | 자동 테스트 통과 | `FavoriteSubscriptionKeysTest`, `FavoriteWriterTest`, `FavoriteMutationLifecycleTest`(대기 명령 완료·순서·실패 격리·참조 정리), Presenter 테스트 | Room→Soil 구독은 in-memory Room 통합 테스트. 지연·실패·pop 경합은 Fake DAO 기반 |
+| R-051 | 구현 완료 | 자동 테스트 통과 | `FavoriteSubscriptionKeysTest`, `FavoriteMutationKeyTest`, `FavoriteMutationLifecycleTest`(대기 명령 완료·순서·실패 격리·참조 정리), Presenter 테스트 | Room→Soil 구독은 in-memory Room 통합 테스트. 지연·실패·pop 경합은 Fake DAO 기반 |
 | R-052 | 구현 완료 | 자동 테스트 통과 | `ErrorKindTest`, `SearchBooksQueryKeyTest`(실패 페이지·원인 보존, 취소 예외 동일 인스턴스), `FavoriteTogglerTest`(취소 전파) | 기기 결과는 QA의 현재 검증 범위와 구분 |
 | R-053 | 구현 완료 | 소스 확인 | `settings.gradle.kts`의 9개 모듈 + 테스트 전용 `core:testing` | 없음 |
 | R-054 | 구현 완료 | 통과 | 기존 TC-54·70b에서 am kill 후 새 프로세스의 조건·상세 복원 및 검색 재조회 확인. 현재 saveable·NavKey 스냅샷 계약 유지, `SearchStateRestorationTest`·`FavoritesStateLifecycleTest` 복원 모사 통과 | 최신 APK의 am kill은 미재실행. 자동 테스트는 프로세스 종료가 아닌 저장 상태 복원 모사. 실제 메모리 압박 종료는 미재현 |
 | R-055 | 구현 완료 | 자동 테스트 통과 | `BookIdentityTest`, `PriceFilterTest`, `SearchPresenterTest` | 기기 결과는 QA의 현재 검증 범위와 구분 |
 | R-056 | 구현 완료 | 자동 테스트 통과 | `SearchPagingTest`, `SearchPresenterTest`, `SearchRetryTest`(재조회 실패와 추가 로딩 실패를 구분) | 기기 결과는 QA의 현재 검증 범위와 구분 |
-| R-057 | 구현 완료 | 자동 테스트 통과 | `FavoriteBookDaoTest`: 저장·삭제·Flow·파일 DB 재열기·원본 정가 보존. 쓰기 실패는 `FavoriteWriterTest`·Fake 주입 | Fake 쓰기 실패와 기기 Room 실패를 구분 |
+| R-057 | 구현 완료 | 자동 테스트 통과 | `FavoriteBookDaoTest`: 저장·삭제·Flow·파일 DB 재열기·원본 정가 보존. 쓰기 실패는 `FavoriteMutationKeyTest`·Fake 주입 | Fake 쓰기 실패와 기기 Room 실패를 구분 |
 | R-058 | 구현 완료 | 자동 테스트 통과 | `BookSearchNavHostTest`, `FavoritesScreenTest`, `SearchQueryRetentionTest` | 기기 결과는 QA의 현재 검증 범위와 구분 |
 | R-059 | 구현 완료 | 통과 | 기존 TC-41·68a·68d~68h·70b의 회전·폴더블·am kill 수동 확인과 자동 테스트 범위를 [QA](QA.md)에 구분. 현재 관련 코드·테스트 및 기존 기기 증거 대조 | 최신 APK에서 모든 수동 시나리오를 재실행한 것은 아님. 실제 메모리 압박 종료는 미재현 |
 | R-060 | 구현 완료 | 자동 테스트 통과 | [QA](QA.md)의 실행 환경·명령·결과와 범위 제한 | 기기 결과는 QA의 현재 검증 범위와 구분 |
@@ -273,7 +275,7 @@ local.properties는 Git에서 제외하고 제출 ZIP에만 넣습니다. `git a
 | R-068 | 구현 완료 | 통과 | 기존 TC-41·68a·94의 회전과 TC-68d~68h의 접힘·펼침·중간 접힘 확인. 현재 `BookSearchNavHostTest`의 구성 변경·창 너비 전환 통과, 배치·상태 소유 계약 대조 | 최신 APK의 회전·폴더블 QA는 미재실행. 기존 중간 접힘 관찰은 adb 기반 |
 | R-069 | 구현 완료 | 자동 테스트 통과 | `BookSearchNavHostTest`, `SearchQueryRetentionTest`; TC-40b·85 | retain 정리·구성 변경과 검색 상태 수명 자동 검증 |
 | R-070 | 구현 완료 | 통과 | 기존 TC-32·70a의 저장·미저장 도서 오프라인 상세, TC-70b의 미저장 도서 상세 am kill 복원 확인. 현재 NavKey 도서 스냅샷·Room 경로 유지, Presenter·saveable 복원 모사 테스트 통과 | 최신 APK의 am kill·오프라인 기기 재실행은 없음. 실제 메모리 압박·종료 중 미완료 쓰기 보장은 범위 밖 |
-| R-071 | 구현 완료 | 자동 테스트 통과 | `FavoriteMutationLifecycleTest`: 실제 retain·Soil·Writer + Fake DAO로 명령 완료·순서·실패 격리·참조 해제 검증 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음 |
+| R-071 | 구현 완료 | 자동 테스트 통과 | `FavoriteMutationLifecycleTest`: 실제 retain·Soil·Mutation key·DAO + Fake DAO로 명령 완료·순서·실패 격리·참조 해제 검증 | 프로세스 종료 시 미완료 쓰기는 보장하지 않음 |
 | R-072 | 구현 완료 | 통과 | 제출 커밋의 소스·문서를 포함한 ZIP 생성. CRC·압축 해제 해시 대조 통과 | 없음 |
 | R-073 | 구현 완료 | 통과 | ZIP의 .git 포함, 압축 해제본의 main HEAD·추적 파일 일치 | 제출 커밋까지의 Git 이력과 소스 포함 |
 | R-074 | 구현 완료 | 통과 | Git에서 제외한 local.properties를 ZIP에 포함. API 키 포함·sdk.dir 제외 확인, 동일 APK의 검색 동작 확인 | 키 값은 기록하지 않음. 키 유지 기간은 R-075 |

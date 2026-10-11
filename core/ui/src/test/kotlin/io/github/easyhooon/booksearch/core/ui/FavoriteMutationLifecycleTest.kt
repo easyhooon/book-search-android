@@ -8,9 +8,7 @@ import androidx.compose.runtime.retain.RetainedValuesStoreRegistry
 import androidx.compose.runtime.retain.retainRetainedValuesStoreRegistry
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.createComposeRule
-import io.github.easyhooon.booksearch.core.data.ApplicationCoroutineScope
 import io.github.easyhooon.booksearch.core.data.DefaultFavoriteMutationKeyFactory
-import io.github.easyhooon.booksearch.core.data.FavoriteWriter
 import io.github.easyhooon.booksearch.core.database.FavoriteBookDao
 import io.github.easyhooon.booksearch.core.database.FavoriteBookEntity
 import io.github.easyhooon.booksearch.core.model.Book
@@ -25,6 +23,7 @@ import kotlinx.coroutines.flow.map
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -39,7 +38,7 @@ import timber.log.Timber
 import java.io.IOException
 import java.time.Duration
 
-/** 실제 retain·Soil Mutation·Writer 사이에서 화면 종료 전후의 명령 수명을 검증합니다. */
+/** 실제 retain·Soil Mutation·DAO 사이에서 화면 종료 전후의 명령 수명을 검증합니다. */
 @RunWith(RobolectricTestRunner::class)
 @OptIn(ExperimentalSoilQueryApi::class, InternalSoilQueryApi::class)
 class FavoriteMutationLifecycleTest {
@@ -52,6 +51,7 @@ class FavoriteMutationLifecycleTest {
         val writes = mutableListOf<String>()
         val gate = CompletableDeferred<Unit>()
         val failingIds = mutableSetOf<String>()
+        var delayDeletes = true
 
         override fun observeAll(): Flow<List<FavoriteBookEntity>> = rows.map { it.values.toList() }
         override fun observeIds(): Flow<List<String>> = rows.map { it.keys.toList() }
@@ -67,18 +67,17 @@ class FavoriteMutationLifecycleTest {
 
         override suspend fun deleteById(id: String) {
             started += "delete:$id"
-            gate.await()
+            if (delayDeletes) gate.await()
             if (id in failingIds) throw IOException("disk full")
             writes += "delete:$id"
             rows.value = rows.value - id
         }
     }
 
-    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val clientScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val client = SwrCachePlus(clientScope)
     private val dao = DelayedDao()
-    private val factory = DefaultFavoriteMutationKeyFactory(FavoriteWriter(dao, ApplicationCoroutineScope(appScope)))
+    private val factory = DefaultFavoriteMutationKeyFactory(dao)
     private var entry by mutableStateOf<String?>(null)
     private lateinit var registry: RetainedValuesStoreRegistry
     private lateinit var latest: FavoriteToggler
@@ -88,7 +87,6 @@ class FavoriteMutationLifecycleTest {
         dao.gate.complete(Unit)
         settle()
         clientScope.cancel()
-        appScope.cancel()
     }
 
     private fun setContent() {
@@ -234,6 +232,68 @@ class FavoriteMutationLifecycleTest {
         } finally {
             Timber.uproot(tree)
         }
+    }
+
+    @Test
+    fun `접수와 pop이 같은 프레임이어도 대기 명령을 완료한다`() {
+        setContent()
+        show("detail")
+        val retired = latest
+        composeRule.runOnIdle {
+            retired.setFavorite(book("a"), true)
+            retired.setFavorite(book("b"), true)
+            entry = null
+        }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { registry.clearChild("detail") }
+        settle()
+        assertEquals(listOf("save:a"), dao.started)
+        assertEquals(setOf("a", "b"), retired.pendingIds)
+
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(10))
+        dao.gate.complete(Unit)
+        settle()
+
+        assertEquals(listOf("save:a", "save:b"), dao.writes)
+        assertEquals(emptySet<String>(), retired.pendingIds)
+        assertTrue(client.mutationStoreView.values.none { it.hasAttachedInstances() })
+    }
+
+    @Test
+    fun `컴포지션 이탈과 복귀에도 같은 객체와 대기 명령을 유지한다`() {
+        setContent()
+        show("search")
+        submit("a", true)
+        val retained = latest
+        composeRule.runOnIdle { entry = null }
+        composeRule.waitForIdle()
+        show("search")
+        assertSame(retained, latest)
+        assertEquals(setOf("a"), latest.pendingIds)
+        dao.gate.complete(Unit)
+        settle()
+        submit("a", false)
+        assertEquals(listOf("save:a", "delete:a"), dao.writes)
+        assertEquals(emptySet<String>(), dao.rows.value.keys)
+    }
+
+    @Test
+    fun `느린 저장 뒤 다른 화면의 빠른 해제도 최종 미저장 상태를 유지한다`() {
+        dao.delayDeletes = false
+        setContent()
+        show("search")
+        submit("a", true)
+        retire()
+        show("detail")
+        submit("a", false)
+        retire()
+
+        dao.gate.complete(Unit)
+        settle()
+
+        // DAO 작업 시간에 관계없이 마지막 사용자 의도인 해제가 최종 상태여야 합니다.
+        assertEquals(emptySet<String>(), dao.rows.value.keys)
+        assertEquals(listOf("save:a", "delete:a"), dao.writes)
     }
 
     private fun book(id: String) = Book(

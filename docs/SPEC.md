@@ -27,12 +27,12 @@
 | `core:model` | 도서·검색 조건·정렬·가격 필터 모델, ID·가격·필터·정렬 순수 규칙 | 없음 |
 | `core:network` | Retrofit 서비스·DTO, OkHttp(이미지 기본 클라이언트, 인증 interceptor를 더한 API 클라이언트) | core:model |
 | `core:database` | Room DB·Entity·DAO, 스키마 export(KSP는 이 모듈에서만 실행) | core:model |
-| `core:data` | Soil key(InfiniteQuery·Subscription·Mutation), DTO·Entity→`Book` 변환, FavoriteWriter, 오류 분류 | core:model, core:network·core:database(`implementation`) |
+| `core:data` | Soil key(InfiniteQuery·Subscription·Mutation), DTO·Entity→`Book` 변환, 오류 분류 | core:model, core:network·core:database(`implementation`) |
 | `core:ui` | 공통 도서 카드, 표지(Coil), 가격·날짜 표시, 상태 UI, 테마 | core:model |
 | `feature:search` | 검색 탭 Root·Presenter·Screen | core:model, core:data, core:ui |
 | `feature:favorites` | 즐겨찾기 탭 Root·Presenter·Screen | core:model, core:data, core:ui |
 | `feature:detail` | 상세 Root·Presenter·Screen | core:model, core:data, core:ui |
-| `core:testing` | Presenter 테스트 실행 도구(Molecule·Turbine 연결, Main dispatcher 규칙), Fake `FavoriteWriter`, 테스트 도서 | 테스트 의존성으로만 사용 |
+| `core:testing` | Presenter 테스트 실행 도구(Molecule·Turbine 연결, Main dispatcher 규칙), Fake Mutation key, 테스트 도서 | 테스트 의존성으로만 사용 |
 
 앱 코드 모듈 9개와 테스트 전용 `core:testing`을 합쳐 10개입니다. `core:data`가 원격·로컬 모듈을 `implementation`으로 감싸 feature는 Soil key만 보며, Room KSP는 `core:database`에서만 돕니다. `core:designsystem`, `core:common`은 만들지 않습니다.
 
@@ -245,17 +245,18 @@ Soil 1.0.0-alpha15 소스 기준입니다.
 
 - `MutationRef.mutate`는 랑데부 채널로 명령을 보냅니다. actor가 앞 명령을 처리 중이면 send가 대기하고, 그동안 호출 코루틴이 취소되면 명령은 전달되지 않습니다.
 - actor는 명령을 하나씩 처리하므로 같은 Mutation key 안에서는 순서가 보장됩니다.
-- 마지막 구독자가 사라지면 `keepAliveTime`(기본 5초) 뒤 Mutation의 scope가 취소됩니다. Mutation 안에서 직접 DB에 쓰면 화면 pop 후 완료 보장은 약 5초뿐입니다.
+- 마지막 구독자가 사라지면 `keepAliveTime`(기본 5초) 뒤 Mutation의 scope가 취소됩니다. 참조를 pop과 함께 놓으면 직접 DB 쓰기의 수명도 이 제한을 받습니다. 현재 Toggler는 접수한 요청 완료까지 참조를 유지하므로 정상 pop은 마지막 구독 해제가 아닙니다.
 - Subscription의 Flow는 replay 없이 `shareIn(WhileSubscribed(keepAliveTime))`으로 공유됩니다. 구독자가 없는 keepAliveTime 동안에도 Flow를 수집하지만 그 사이 값은 버리고, 그 안에 다시 구독하면 이미 도는 Flow에 붙어 새 값이 오지 않습니다.
 
 ### 최종 쓰기 동작
 
 - 살아 있는 화면의 `FavoriteToggler`가 도서 ID를 pending에 추가한 시점을 접수로 봅니다. 같은 화면에서 같은 도서의 쓰기가 진행 중이면 연타를 무시합니다. Mutation 전송은 즉시 시작합니다.
-- 모든 화면은 `MutationId("favorite")`를 공유합니다. 하나의 actor가 앞선 writer 결과를 기다린 뒤 다음 명령을 처리해 실제 UI 경로의 저장·해제 접수 순서를 유지합니다. 진행·오류 표시는 각 화면의 Toggler가 소유합니다.
-- 엔트리가 pop되면 신규 요청을 차단하고 요청 Job에 `complete()`를 호출합니다. 이미 접수한 요청이 Mutation 전달·쓰기 결과 수신까지 끝나면 마지막 완료 콜백에서 참조를 닫습니다. 요청 scope는 `FavoriteWriter`의 앱 scope와 별개입니다.
-- `FavoriteWriter.write(FavoriteCommand)`는 `ApplicationCoroutineScope`(`SupervisorJob` + `Dispatchers.Default`)의 `async`와 하나의 Mutex로 Room 쓰기를 실행합니다. writer의 임의 동시 호출까지 전역 FIFO를 보장하는 API는 아닙니다.
+- 모든 화면은 `MutationId("favorite")`를 공유합니다. 하나의 actor가 앞선 DAO 결과를 기다린 뒤 다음 명령을 처리해 실제 UI 경로의 저장·해제 접수 순서를 유지합니다. 진행·오류 표시는 각 화면의 Toggler가 소유합니다.
+- 엔트리가 pop되면 신규 요청을 차단하고 요청 Job에 `complete()`를 호출합니다. 이미 접수한 요청이 Mutation 전달·쓰기 결과 수신까지 끝나면 마지막 완료 콜백에서 참조를 닫습니다. 이 수명 유지는 진행 중 DAO와 actor 전달 대기 명령 모두에 적용됩니다.
+- Mutation key는 `FavoriteBookDao`를 직접 호출합니다. 공통 actor가 Room 쓰기를 직렬 실행하므로 별도 Writer·앱 쓰기 scope·Mutex를 두지 않습니다. 이 actor를 통하지 않는 DAO 직접 호출의 UI 접수 순서는 보장하지 않습니다.
+- 정상 화면 pop은 요청·참조를 취소하지 않습니다. Soil 클라이언트/actor 자체를 취소하면 진행 중 DAO도 취소될 수 있으며, 취소된 actor와 독립적으로 쓰기를 끝내는 이전 앱 scope 보장은 제공하지 않습니다.
 - 실패하면 pending을 정리하고 로그를 남깁니다. 화면이 열려 있으면 스낵바용 실패 상태를 표시하며, 닫힌 화면의 실패를 새 화면에 전달하지 않습니다. 취소 예외는 일반 실패로 바꾸지 않고 재전파합니다.
-- `FavoriteMutationLifecycleTest`는 실제 retain 저장소·Soil·writer와 Fake DAO를 연결해 화면 종료 중 대기 명령 완료, 같은 도서 명령 순서, 연타·종료 후 신규 요청 차단, 현재·닫힌 화면의 실패 처리를 확인합니다. 프로세스 종료 시 미완료 쓰기 보장은 범위 밖입니다.
+- `FavoriteMutationLifecycleTest`는 실제 retain 저장소·Soil·Mutation key와 Fake DAO를 연결해 화면 종료 중 대기 명령 완료, 같은 도서 명령 순서, 연타·종료 후 신규 요청 차단, 현재·닫힌 화면의 실패 처리를 확인합니다. 프로세스 종료 시 미완료 쓰기 보장은 범위 밖입니다.
 
 ### 읽기 경로
 

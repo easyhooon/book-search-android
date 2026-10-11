@@ -28,7 +28,7 @@ import timber.log.Timber
  * [retainFavoriteToggler]가 엔트리 범위로 유지하므로 회전이나 상세 진입처럼 컴포지션만 사라질 때는
  * 진행 중인 ID와 실패 알림이 유지됩니다. 엔트리가 pop되면 신규 요청을 막고 이미 접수한 명령은
  * Mutation 전달과 DB 쓰기 완료까지 기다린 뒤 요청 scope와 구독을 정리합니다.
- * DB 쓰기 자체는 앱 범위의 FavoriteWriter가 수행하며 화면이 닫힌 뒤 실패해도 로그를 남깁니다.
+ * DB 쓰기는 공통 Mutation actor에서 직접 수행하며 화면이 닫힌 뒤 실패해도 로그를 남깁니다.
  */
 @Stable
 class FavoriteToggler(
