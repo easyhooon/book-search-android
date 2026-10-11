@@ -7,7 +7,7 @@ import app.cash.turbine.ReceiveTurbine
 import app.cash.turbine.test
 import io.github.easyhooon.booksearch.core.model.Book
 import io.github.easyhooon.booksearch.core.model.FavoriteCommand
-import io.github.easyhooon.booksearch.core.testing.FakeFavoriteWriter
+import io.github.easyhooon.booksearch.core.testing.FakeFavoriteMutation
 import io.github.easyhooon.booksearch.core.testing.MainDispatcherRule
 import io.github.easyhooon.booksearch.core.testing.awaitItemMatching
 import io.github.easyhooon.booksearch.core.testing.presenterFlow
@@ -35,7 +35,7 @@ class BookDetailPresenterTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val writer = FakeFavoriteWriter()
+    private val writer = FakeFavoriteMutation()
     private val snapshot = testBook("k", title = "코틀린 인 액션", price = 36_000)
 
     /** Root가 Room Subscription에서 읽어 넘기는 값입니다. */
@@ -96,7 +96,7 @@ class BookDetailPresenterTest {
         send(BookDetailEvent.ToggleFavorite)
         awaitItemMatching { !it.isFavoriteEnabled }
         awaitItemMatching { it.isFavoriteEnabled }
-        // Room 쓰기는 FakeFavoriteWriter가 대신하므로 반영은 테스트가 직접 흉내 냅니다.
+        // Room 쓰기는 FakeFavoriteMutation가 대신하므로 반영은 테스트가 직접 흉내 냅니다.
         loadRoom(snapshot)
         awaitItemMatching { it.isFavorite }
 

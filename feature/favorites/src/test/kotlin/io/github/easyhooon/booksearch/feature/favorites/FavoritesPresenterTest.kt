@@ -9,7 +9,7 @@ import io.github.easyhooon.booksearch.core.model.Book
 import io.github.easyhooon.booksearch.core.model.FavoriteCommand
 import io.github.easyhooon.booksearch.core.model.FavoriteSort
 import io.github.easyhooon.booksearch.core.model.PriceFilter
-import io.github.easyhooon.booksearch.core.testing.FakeFavoriteWriter
+import io.github.easyhooon.booksearch.core.testing.FakeFavoriteMutation
 import io.github.easyhooon.booksearch.core.testing.MainDispatcherRule
 import io.github.easyhooon.booksearch.core.testing.awaitItemMatching
 import io.github.easyhooon.booksearch.core.testing.presenterFlow
@@ -35,7 +35,7 @@ class FavoritesPresenterTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val writer = FakeFavoriteWriter()
+    private val writer = FakeFavoriteMutation()
 
     /** Root가 Room Subscription에서 읽어 넘기는 값입니다. null은 아직 받지 못한 상태입니다. */
     private var favoriteBooks by mutableStateOf<List<Book>?>(null)

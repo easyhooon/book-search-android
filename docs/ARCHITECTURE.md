@@ -23,21 +23,81 @@ Android 전용이며 KMP 구성과 Circuit은 도입하지 않습니다(사용�
 
 모듈의 주요 의존 방향입니다. 화살표는 참조하는 모듈에서 참조 대상 모듈로 향합니다. 화면 모듈은 서로 참조하지 않으며, 네트워크·DB 접근은 `core:data` 뒤로 숨깁니다.
 
-![모듈 의존 구조: app에서 화면 모듈, 공통 UI·데이터·모델로 이어지는 참조 관계](diagrams/module-dependencies.png)
+```mermaid
+flowchart TB
+    app["app
+내비게이션 · AppGraph 조립"]
+    features["feature:search · favorites · detail
+화면 모듈 간 참조 없음"]
+    data["core:data
+Soil key"]
+    ui["core:ui
+공통 컴포넌트 · FavoriteToggler"]
+    model["core:model
+순수 Kotlin 모델 · 규칙"]
+    network["core:network
+Retrofit · OkHttp"]
+    database["core:database
+Room"]
+    app --> features
+    features --> data
+    features --> ui
+    features --> model
+    data --> network
+    data --> database
+    data -->|api로 노출| model
+```
 
 [Mermaid 소스](diagrams/module-dependencies.mmd)
 
-`app`은 Metro 조립을 위해 `core:model`·`network`·`database`·`data`·`ui`도 직접 참조합니다. `core:testing`은 Fake FavoriteWriter와 Presenter 테스트 도구를 제공하는 테스트 전용 모듈입니다.
+`app`은 Metro 조립을 위해 `core:model`·`network`·`database`·`data`·`ui`도 직접 참조합니다. `core:testing`은 FakeFavoriteMutation와 Presenter 테스트 도구를 제공하는 테스트 전용 모듈입니다.
 
 화면 하나의 연결 구조입니다. 화살표는 구성 요소의 연결·호출 관계이며, Room Flow 값은 Subscription을 거쳐 Root와 Presenter로 전달됩니다.
 
-![화면 연결 구조: Root의 Room 관찰, Presenter의 검색·저장 상태·쓰기 처리, Screen 표시와 앱 공통 구성](diagrams/screen-data-flow.png)
+```mermaid
+flowchart LR
+    root["ScreenRoot
+엔트리 등록 · Room 값을 Presenter에 전달"]
+    subscription["Soil Subscription
+즐겨찾기 목록 · ID, 값 수신 전 로딩"]
+    roomRead["Room DAO Flow
+즐겨찾기의 단일 상태 기준"]
+    presenter["Presenter · @Composable
+화면 상태 · 이벤트 처리"]
+    query["Soil InfiniteQuery
+확정 검색어 · 정렬로 key 변경"]
+    remote["Retrofit → OkHttp → Kakao API"]
+    saved["rememberSerializable
+입력 · 확정 검색어 · 정렬 · 가격 범위"]
+    toggler["retainFavoriteToggler
+쓰기 진행 상태 유지"]
+    write["Soil Mutation
+→ Room DAO 쓰기"]
+    screen["Screen
+UiState 표시 · eventSink로 이벤트 전달"]
+    root --> subscription --> roomRead
+    root --> presenter
+    presenter --> query --> remote
+    presenter --> saved
+    presenter --> toggler --> write
+    presenter --> screen
+    app["app"]
+    navigation["Navigation 3 + retain decorator
+엔트리 상태 유지 · 제거"]
+    metro["Metro AppGraph
+API · DB · key · 이미지 로더 조립"]
+    coil["Coil ImageLoader
+표지 요청 · 인증 없는 전용 클라이언트"]
+    app --> navigation
+    app --> metro
+    app --> coil
+```
 
 [Mermaid 소스](diagrams/screen-data-flow.mmd)
 
 DroidKaigi 2026의 패턴을 얇게 적용합니다. Root가 Room subscription을 연결하고, Presenter는 UI 모델을 만들고 이벤트를 데이터 명령으로 연결합니다. 검색 InfiniteQuery는 확정 검색어에 따라 key가 바뀌므로 Presenter가 연결합니다. 화면은 DTO나 Room Entity를 직접 다루지 않습니다. typed-key가 이미 맡은 호출을 전달만 하는 Repository는 두지 않습니다. 이는 이 프로젝트의 책임 분리이며 Soil이 Repository를 금지한다는 뜻은 아닙니다. ID 정규화·가격 정책 같은 독립 규칙은 일반 Kotlin 함수로 둡니다.
 
-Metro는 의존성을 연결할 뿐 화면 상태나 데이터의 기준을 대신하지 않습니다. 그래프는 앱 그래프 하나(`AppGraph`, `AppScope`)와 화면별 `GraphExtension` 세 개(`SearchScreenGraph`, `FavoritesScreenGraph`, `BookDetailScreenGraph`)입니다. `AppGraph`가 화면 그래프의 `Factory`를 구현하고, Retrofit·OkHttp·Room·`SwrCachePlus`·Coil `ImageLoader`·`FavoriteWriter`·`ApplicationCoroutineScope`를 싱글턴으로 둡니다.
+Metro는 의존성을 연결할 뿐 화면 상태나 데이터의 기준을 대신하지 않습니다. 그래프는 앱 그래프 하나(`AppGraph`, `AppScope`)와 화면별 `GraphExtension` 세 개(`SearchScreenGraph`, `FavoritesScreenGraph`, `BookDetailScreenGraph`)입니다. `AppGraph`가 화면 그래프의 `Factory`를 구현하고, Retrofit·OkHttp·Room·`SwrCachePlus`·Coil `ImageLoader`를 싱글턴으로 둡니다.
 
 ### Metro factory와 retain 연결
 
@@ -89,7 +149,7 @@ Navigation 3 1.2.0의 엔트리에 retain을 연결하기 위해 `RetainedValues
 - InfiniteQuery 객체와 Room 즐겨찾기 ID처럼 컴포지션마다 바뀌는 값은 `eventSink` 람다가 그 컴포지션의 값을 읽고, retain 값에는 보관하지 않습니다.
 - 별도 Store 클래스는 두지 않습니다. 재시도·다음 페이지처럼 이벤트가 쿼리를 다시 부르는 흐름을 Presenter 한 파일에서 읽을 수 있게 하기 위한 개발자 결정입니다.
 
-엔트리가 은퇴하면 `FavoriteToggler`는 신규 요청부터 차단합니다. 요청 scope의 Job은 이미 접수한 자식 작업이 완료될 때까지 유지되며, 마지막 요청 완료 후 Mutation 참조를 닫습니다. 실제 DB 쓰기는 별도의 앱 범위 `FavoriteWriter`가 맡습니다. 닫힌 화면의 실패는 로그만 남기고 새 화면의 오류로 전달하지 않습니다(`FavoriteMutationLifecycleTest`).
+엔트리가 은퇴하면 `FavoriteToggler`는 신규 요청부터 차단합니다. 요청 scope의 Job은 이미 접수한 자식 작업이 완료될 때까지 유지되며, 마지막 요청 완료 후 Mutation 참조를 닫습니다. 실제 DB 쓰기는 공통 Mutation actor에서 DAO를 직접 호출합니다. 닫힌 화면의 실패는 로그만 남기고 새 화면의 오류로 전달하지 않습니다(`FavoriteMutationLifecycleTest`).
 
 ### 구성 변경과 프로세스 재생성 대응
 
@@ -105,7 +165,7 @@ retain은 구성 변경(회전, 다크 모드, 창 크기 변경)에서 객체�
 | 화면 그래프, `FavoriteToggler`, `SearchQueryHolder` | `retain` + `RetainedValuesStoreNavEntryDecorator` | 같은 객체 유지. 쓰기 진행 상태 유지(`FavoritesStateLifecycleTest`) | 새로 만듦 |
 | 검색 결과 페이지 | 앱 싱글턴 Soil `SwrCachePlus` 메모리 캐시(`staleTime` 5분) | 기존 결과 유지. 재구독 시 stale 등 조건에 따라 재조회 | 조건으로 재요청 |
 | 즐겨찾기 | Room, Subscription으로 관찰 | 유지 | 디스크에서 읽음 |
-| 진행 중인 즐겨찾기 쓰기 | 접수한 Mutation 요청의 수명 유지 + 앱 범위 `FavoriteWriter` | 화면 종료 후에도 접수한 요청 완료, 이후 참조 정리 | 보장하지 않음 |
+| 진행 중인 즐겨찾기 쓰기 | 접수한 Mutation 요청·참조의 수명 유지 | 화면 종료 후에도 접수한 요청 완료, 이후 참조 정리 | 보장하지 않음 |
 | 하단 바/레일, 그리드 열 수, 1-pane/2-pane | `currentWindowAdaptiveInfo()`·`GridCells.Adaptive`를 매번 계산. 2-pane은 장면 전략만 바꾸고 백스택은 유지 | 새 크기에 맞춤. 열린 상세 유지 | 같음 |
 | 키보드 표시 중 레이아웃 | `windowSoftInputMode="adjustResize"` | 해당 없음 | 해당 없음 |
 
@@ -158,11 +218,11 @@ Presenter는 `rememberInfiniteQuery`를 `key(queryKey.id)` 그룹 안에서 호�
 ### 즐겨찾기 쓰기와 관찰
 
 1. 화면이 `setFavorite(book, favorite)`로 도서와 목표 상태를 전달합니다. upsert에 도서 정보 전체가 필요하므로 ID만 넘기지 않습니다.
-2. Mutation이 앱 싱글턴 `FavoriteWriter`를 호출해 Room에 저장/삭제합니다. 해당 화면에서 그 도서의 버튼을 비활성화하고 Room 쓰기를 직렬 실행합니다.
+2. Mutation key가 Room DAO를 직접 호출해 저장/삭제합니다. 해당 화면에서 그 도서의 버튼을 비활성화하고 Room 쓰기를 직렬 실행합니다.
 3. Subscription이 Room Flow를 관찰해 검색·즐겨찾기·상세가 같은 확정 상태를 반영합니다. Soil은 구독자가 없는 keepAliveTime 동안 받은 값을 버리므로 즐겨찾기 Subscription key는 keepAliveTime을 기본 5초에서 0초로 바꿔, 화면에 돌아올 때 Room이 현재 값부터 다시 내보내게 합니다([SPEC](SPEC.md) 8절). 이는 관찰 수명 설정이며 캐시 비활성화가 아닙니다. 성공 상태는 별도 메모리 캐시(기본 `gcTime` 5분·20개 key 제한)에 남을 수 있고, 재구독 시 캐시 초기값 뒤 Room의 현재 값을 받습니다.
 4. 실패하면 성공 안내 없이 기존 확정 상태를 유지합니다.
 
-모든 화면의 즐겨찾기 명령은 공통 Mutation actor에서 접수 순서대로 실행합니다. `FavoriteToggler`는 pop 이후에도 접수한 요청의 전송·실행 완료까지 요청 scope와 Mutation 참조를 유지하므로, 대기 중인 명령도 처리됩니다. `FavoriteWriter`의 앱 scope와 Mutex는 Room 쓰기를 직렬 실행합니다. UI 요청 순서는 공통 actor가 보장하며, writer API를 임의로 동시에 직접 호출하는 경우까지 FIFO를 보장하지는 않습니다([SPEC](SPEC.md) 8절).
+모든 화면의 즐겨찾기 명령은 공통 Mutation actor에서 접수 순서대로 실행합니다. `FavoriteToggler`는 pop 이후에도 접수한 요청의 전송·실행 완료까지 요청 scope와 Mutation 참조를 유지하므로, 대기 중인 명령도 처리됩니다. 별도 Writer·앱 쓰기 scope·Mutex 없이 공통 actor가 UI 경로의 순서와 직렬 실행을 맡습니다. 이 actor를 거치지 않는 DAO 직접 호출의 접수 순서는 보장하지 않습니다([SPEC](SPEC.md) 8절).
 
 ### Retrofit 연결과 재시도 경계
 
@@ -211,7 +271,7 @@ Soil에는 Retrofit 전용 모듈이 없지만, 범용 key의 suspend fetch에�
 | Presenter | Molecule + Turbine + coroutines-test(`core:testing`) | 상태 방출·이벤트·경합 |
 | 실제 호스트와 UI | Compose/내비게이션·기기 검증 | retain 수명, pop 정리, 회전·크기 변화·프로세스 복원 |
 
-Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행합니다. `MainDispatcherRule`로 Main 디스패처를 교체하고 Fake `FavoriteWriter`와 테스트용 Soil key를 `SwrClientPlus`에 연결합니다. ViewModel과 SavedStateHandle은 사용하지 않습니다. Molecule 테스트는 호스트의 retained store나 백스택 수명을 증명하지 않으므로, retain 수명은 `BookSearchNavHostTest`가 Robolectric `ActivityScenario`로 앱 NavHost를 띄워 확인합니다. Activity 재생성·saveable 복원과 실제 프로세스 종료를 구분합니다. `am kill`을 사용하는 기기 복원 절차는 [QA](QA.md)에 있으며 현재 APK 재검증은 미실행입니다.
+Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행합니다. `MainDispatcherRule`로 Main 디스패처를 교체하고 Fake Mutation key와 테스트용 Soil key를 `SwrClientPlus`에 연결합니다. ViewModel과 SavedStateHandle은 사용하지 않습니다. Molecule 테스트는 호스트의 retained store나 백스택 수명을 증명하지 않으므로, retain 수명은 `BookSearchNavHostTest`가 Robolectric `ActivityScenario`로 앱 NavHost를 띄워 확인합니다. Activity 재생성·saveable 복원과 실제 프로세스 종료를 구분합니다. `am kill`을 사용하는 기기 복원 절차는 [QA](QA.md)에 있으며 현재 APK 재검증은 미실행입니다.
 
 ## 8. 코드 경계와 확장
 
@@ -242,7 +302,7 @@ Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행
 | --- | --- |
 | AAC ViewModel | 엔트리별 객체 수명은 retain, 저장 상태는 saveable로 구현하는 구성을 선택. 현재 구성에도 Main 교체와 수명·복원 테스트가 필요 |
 | Circuit 라이브러리 | 사용자 선택으로 미도입. `eventSink` 형태만 빌림 |
-| 단순 위임 Repository·UseCase | `core:data`의 key와 writer가 데이터 계층을 구성하므로 같은 호출만 전달하는 계층은 추가하지 않음 |
+| 단순 위임 Repository·UseCase | `core:data`의 key가 데이터 계층을 구성하므로 같은 호출만 전달하는 계층은 추가하지 않음 |
 | 전체 상태 StateFlow 소유자 | 순수 Kotlin 테스트만을 위한 중복 |
 | Paging 3 | InfiniteQuery를 페이징 상태의 단일 소유자로 선택해 함께 도입하지 않음. Paging 3로 같은 요구를 구현하는 것도 가능 |
 | 커스텀 페이지네이션 | 경합과 종료 판정을 모두 직접 책임져야 함 |
@@ -256,6 +316,7 @@ Presenter 테스트는 로컬 JVM의 Robolectric·Molecule·Turbine에서 실행
 
 ### 알려진 한계
 
+- 정상 화면 pop은 접수한 명령과 Mutation 참조를 완료까지 유지합니다. Soil 클라이언트/actor 자체 취소 시에는 진행 중 DAO도 취소될 수 있으며, actor와 독립된 앱 scope 쓰기 보장은 없습니다.
 - 프로세스가 죽으면 진행 중인 즐겨찾기 쓰기의 완료를 보장하지 않습니다.
 - 강제 종료 뒤 콜드 스타트는 복원하지 않습니다. 시스템 프로세스 재생성만 복원합니다.
 - 검색 결과는 메모리 캐시뿐이며, 저장한 표지 URL만으로 오프라인 표지 표시를 보장하지 않습니다.
