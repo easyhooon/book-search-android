@@ -18,14 +18,14 @@ Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하�
 
 ## 검증 범위와 상태
 
-- **제출 시점 검증**: 자동 테스트 140개·APK 빌드 통과. 기기·제출 패키지 범위는 [QA](docs/QA.md), 현재 Writer 제거 브랜치의 새 검증은 [별도 결과](docs/WRITER_REMOVAL.md) 참고.
-- **Android Studio**: ZIP을 새 폴더에 풀어 수동 SDK·JDK 설정 없이 SDK 경로 자동 생성, Sync·APK 빌드 성공. 설치된 SDK 37·JDK 21과 캐시를 사용한 환경이며 새 PC의 JDK 자동 설치는 미검증.
-- **실기기 QA**: Galaxy SM-S936N에 최종 APK 설치 후 검색·상세, 즐겨찾기 추가·해제·동기화, 제목 정렬·로컬 검색·가격 필터 확인. API 정가 0의 정보 없음 표시와 필터 제외 확인. 네트워크 오류·페이지네이션·태블릿·폴더블은 현재 APK로 재실행하지 않음.
+- **자동 검증**: 최신 코드의 145개 테스트·APK 빌드·lint 통과. Lint 오류 0개, 경고 2개. 실행 명령과 범위는 [Writer 제거 검증](docs/WRITER_REMOVAL.md) 참고.
+- **개발 환경**: 설치된 SDK 37·JDK 21과 의존성 캐시를 사용해 확인했습니다. 새 PC의 JDK 자동 설치·캐시 없는 빌드는 미검증입니다.
+- **기존 실기기 QA**: Galaxy SM-S936N에서 검색·상세, 즐겨찾기 추가·해제·동기화, 제목 정렬·로컬 검색·가격 필터를 확인했습니다. API 정가 0의 정보 없음 표시와 필터 제외도 확인했습니다. 최신 코드로 실기기 QA를 재실행하지는 않았습니다.
 - **검증 경계**: 검색은 실제 Soil·key factory·Presenter와 Fake API, 저장은 실제 retain·Soil·Mutation key·DAO와 Fake DAO로 경합·수명 확인. 절차·판정 기준·미실행 항목은 [QA](docs/QA.md)에 정리.
 
 ## 빌드 방법
 
-Android SDK Platform 37이 설치되어 있어야 합니다. 명령줄 빌드는 `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`로 SDK를 찾습니다. 제출 ZIP에는 개인 기기의 `sdk.dir`를 넣지 않으므로, SDK 환경이 설정된 머신에서 실행해야 합니다.
+Android SDK Platform 37이 설치되어 있어야 합니다. 명령줄 빌드는 `ANDROID_HOME` 또는 `local.properties`의 `sdk.dir`로 SDK를 찾습니다. `local.properties`는 Git에서 제외되므로 클론한 머신의 SDK 경로를 직접 설정하거나 Android Studio에서 프로젝트를 열어 설정합니다.
 
 | 항목 | 버전 |
 | --- | --- |
@@ -36,9 +36,9 @@ Android SDK Platform 37이 설치되어 있어야 합니다. 명령줄 빌드는
 | 순수 JVM 모듈(`core:model`) toolchain | 17 |
 | Android Java·Kotlin 컴파일 대상 | 17 |
 
-**JDK 조건 차이:** Metro 1.4.5의 플러그인·컴파일러가 JVM 21을 요구해 원문의 JDK 17 실행 조건은 미충족입니다. `gradle/gradle-daemon-jvm.properties`가 daemon 21을 선택하며, 컴파일 대상 17과 빌드 실행 JDK는 별개입니다. 근거는 [구현 사양](docs/SPEC.md) 2절에 있습니다.
+**JDK 구성:** Metro 1.4.5의 플러그인·컴파일러는 JVM 21을 요구합니다. `gradle/gradle-daemon-jvm.properties`가 daemon 21을 선택하며, 컴파일 대상 17과 빌드 실행 JDK는 별개입니다. 근거는 [구현 사양](docs/SPEC.md) 2절에 있습니다.
 
-1. 프로젝트 루트의 `local.properties`에 Kakao REST API 키를 설정합니다. 제출 ZIP에는 이 파일이 포함되며 Git에서는 제외됩니다.
+1. 프로젝트 루트의 `local.properties`에 Kakao REST API 키를 설정합니다. 이 파일은 Git에서 제외됩니다.
 
    ```properties
    KAKAO_REST_API_KEY=발급받은_REST_API_키
@@ -58,12 +58,6 @@ Android SDK Platform 37이 설치되어 있어야 합니다. 명령줄 빌드는
    ```
 
 키가 없어도 빌드할 수 있습니다. 검색은 키 설정 안내를 표시하고 요청을 보내지 않으며, 로컬 즐겨찾기는 사용할 수 있습니다.
-
-### 제출 파일
-
-ZIP에는 제출 커밋의 소스·문서, `.git`, 개인 SDK 경로를 제외한 `local.properties`, `app-debug.apk`, 시연 영상 2개를 포함하고 `build/`·`.gradle/` 등은 제외합니다. 구성·CRC·압축 해제 파일 해시와 Studio 빌드 확인 완료. 포함 APK는 Galaxy에서 검증한 APK와 동일합니다.
-
-`app-debug.apk`는 `adb install app-debug.apk`로 설치할 수 있습니다. 제출 영상은 최종 APK의 휴대폰 시연 `demo.mp4`(47.5초)와 기존 빌드의 태블릿 2-pane 시연 `demo-tablet.mp4`(30.675초)입니다. 합계 78.175초이며, 태블릿 영상은 현재 코드의 검증 근거로 사용하지 않습니다.
 
 ## 사용 기술 및 라이브러리
 
@@ -107,7 +101,7 @@ Soil은 비동기 데이터의 조회·캐싱·갱신과 로딩·오류 상태�
 | 도구 | 맡은 작업 |
 | --- | --- |
 | Codex | 요구사항·자료 조사, 설계 초안, 코드·문서 검토. 개발자 승인에 따른 앱 코드·회귀 테스트 구현 및 실행, 빌드·문서 정리 |
-| Claude Code(Claude Opus 5.5) | 사양 구체화, 빌드 설정, 초기 앱 코드·테스트, adb 실기기 QA, 시연 영상·제출 스크립트 |
+| Claude Code(Claude Opus 5.5) | 사양 구체화, 빌드 설정, 초기 앱 코드·테스트, adb 실기기 QA, 시연 영상·패키징 스크립트 |
 
 ### 검증 방법
 
@@ -118,7 +112,7 @@ Soil은 비동기 데이터의 조회·캐싱·갱신과 로딩·오류 상태�
 | AI 제안·참고 구현 | 개발자 판단 |
 | --- | --- |
 | ViewModel 중심 구조 | retain + Navigation 3 선택, 엔트리 수명·정리·복원 검증 추가 |
-| 참고 코드의 Ktor | Android 전용 과제의 HTTP 통신·테스트를 Retrofit·OkHttp로 충족하므로 Ktor 추가 이점이 없다고 판단. 더 익숙한 Retrofit 선택, Soil key에 서비스 주입 |
+| 참고 코드의 Ktor | Android 전용 앱의 HTTP 통신·테스트를 Retrofit·OkHttp로 충족하므로 Ktor 추가 이점이 없다고 판단. 더 익숙한 Retrofit 선택, Soil key에 서비스 주입 |
 | 원격·로컬 연결 구조 | 통신·저장 구현을 별도 모듈로 분리 |
 | 화면·기기 검증 범위 | 동시 탭 대응과 태블릿·실제 폴더블 검증 포함 |
 | 가격 정보 처리 | 0 이하 정가는 정보 없음, 금액 필터 적용 시 제외·미적용 시 도서 유지 |
