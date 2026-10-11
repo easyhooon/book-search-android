@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import io.github.easyhooon.booksearch.core.ui.R
 
@@ -54,11 +55,11 @@ fun QueryField(
         trailingIcon = {
             Row {
                 if (value.isNotEmpty()) {
-                    IconButton(onClick = { onValueChange("") }) {
+                    IconButton(onClick = { onValueChange("") }, modifier = Modifier.testTag("query-clear")) {
                         Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.query_clear))
                     }
                 }
-                IconButton(onClick = submit) {
+                IconButton(onClick = submit, modifier = Modifier.testTag("query-submit")) {
                     Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.query_submit))
                 }
             }

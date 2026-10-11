@@ -1,0 +1,15 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 키 없는 앱 전환 전 Room 저장
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search-field"
+- inputText: "fixture"
+- tapOn:
+    id: "query-submit"
+- tapOn:
+    id: "book-favorite-isbn13:9780000000001"
+- tapOn:
+    id: "tab-Favorites"
+- assertVisible: "Fixture Book 01"

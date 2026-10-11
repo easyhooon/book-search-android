@@ -1,0 +1,19 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 실제 Kakao 검색 1회·상세
+---
+- tapOn:
+    id: "search-field"
+- inputText: "kotlin"
+- tapOn:
+    id: "query-submit"
+- assertVisible:
+    id: "search-result-grid"
+- tapOn:
+    id: "book-card-.*"
+    index: 0
+- assertVisible:
+    id: "detail-favorite-button"
+- takeScreenshot: "real-api-detail"
+- back
+- assertVisible:
+    id: "search-result-grid"

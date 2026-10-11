@@ -1,0 +1,53 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 즐겨찾기·동기화·로컬 검색·가격 필터
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search-field"
+- inputText: "fixture"
+- tapOn:
+    id: "query-submit"
+- tapOn:
+    id: "book-favorite-isbn13:9780000000001"
+- tapOn:
+    id: "book-favorite-isbn13:9780000000002"
+- tapOn:
+    id: "tab-Favorites"
+- assertVisible: "Fixture Book 01"
+- assertVisible: "Fixture Book 02"
+- tapOn: "정렬 변경"
+- tapOn: "제목 내림차순"
+- tapOn:
+    id: "favorites-query-field"
+- inputText: "01"
+- tapOn:
+    id: "query-submit"
+- assertVisible: "Fixture Book 01"
+- assertNotVisible: "Fixture Book 02"
+- tapOn:
+    id: "query-clear"
+- tapOn:
+    id: "query-submit"
+- tapOn:
+    id: "favorites-price-filter-chip"
+- tapOn:
+    id: "favorites-price-max"
+- inputText: "10000"
+- hideKeyboard
+- tapOn: "적용"
+- assertVisible: "Fixture Book 01"
+- assertNotVisible: "Fixture Book 02"
+- tapOn:
+    id: "book-card-isbn13:9780000000001"
+- tapOn:
+    id: "detail-favorite-button"
+- assertVisible: "Fixture description"
+- assertVisible: "즐겨찾기 추가"
+- back
+- assertVisible: "조건에 맞는 도서가 없습니다"
+- tapOn:
+    id: "favorites-price-filter-chip"
+- tapOn: "초기화"
+- assertVisible: "Fixture Book 02"
+- takeScreenshot: "favorites-filter-reset"

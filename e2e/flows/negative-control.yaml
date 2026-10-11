@@ -1,0 +1,4 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 판정기의 의도적 실패
+---
+- assertVisible: "THIS_TEXT_MUST_NEVER_EXIST_7dc229"

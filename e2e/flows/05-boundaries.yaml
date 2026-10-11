@@ -1,0 +1,82 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 저자 검색·가격 경계·잘못된 범위·가격 없음
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search-field"
+- inputText: "fixture"
+- tapOn:
+    id: "query-submit"
+- tapOn:
+    id: "book-favorite-isbn13:9780000000001"
+- tapOn:
+    id: "book-favorite-isbn13:9780000000002"
+- tapOn:
+    id: "book-favorite-isbn13:9780000000003"
+- tapOn:
+    id: "tab-Favorites"
+- tapOn:
+    id: "favorites-query-field"
+- inputText: "Author"
+- tapOn:
+    id: "query-submit"
+- assertVisible: "Fixture Book 01"
+- assertVisible: "Fixture Book 02"
+- tapOn:
+    id: "query-clear"
+- tapOn:
+    id: "favorites-query-field"
+- inputText: "no-match-7dc229"
+- tapOn:
+    id: "query-submit"
+- assertVisible: "조건에 맞는 도서가 없습니다"
+- tapOn:
+    id: "query-clear"
+- tapOn:
+    id: "query-submit"
+- tapOn:
+    id: "favorites-price-filter-chip"
+- tapOn:
+    id: "favorites-price-min"
+- inputText: "10000"
+- tapOn:
+    id: "favorites-price-max"
+- inputText: "20000"
+- hideKeyboard
+- tapOn: "적용"
+- assertVisible: "Fixture Book 01"
+- assertVisible: "Fixture Book 02"
+- assertNotVisible: "Fixture Book 03"
+- tapOn:
+    id: "favorites-price-filter-chip"
+- tapOn:
+    id: "favorites-price-min"
+- eraseText
+- inputText: "30000"
+- hideKeyboard
+- assertVisible: "최소 금액이 최대 금액보다 클 수 없습니다"
+- assertVisible:
+    id: "favorites-price-apply"
+    enabled: false
+- back
+- assertVisible: "Fixture Book 01"
+- tapOn:
+    id: "favorites-price-filter-chip"
+- tapOn:
+    id: "favorites-price-min"
+- eraseText
+- inputText: "70000"
+- tapOn:
+    id: "favorites-price-max"
+- eraseText
+- hideKeyboard
+- tapOn: "적용"
+- assertVisible: "조건에 맞는 도서가 없습니다"
+- tapOn:
+    id: "favorites-price-filter-chip"
+- tapOn: "초기화"
+- tapOn:
+    id: "book-card-isbn13:9780000000003"
+- assertVisible: "가격 정보 없음"
+- takeScreenshot: "missing-price-detail"

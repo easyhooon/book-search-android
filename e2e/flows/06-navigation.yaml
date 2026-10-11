@@ -1,0 +1,35 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 카드 연타·탭 뒤로·상세 저장 직후 이탈
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search-field"
+- inputText: "fixture"
+- tapOn:
+    id: "query-submit"
+- repeat:
+    times: 3
+    commands:
+      - tapOn:
+          id: "book-favorite-isbn13:9780000000001"
+- tapOn:
+    id: "tab-Favorites"
+- assertVisible: "Fixture Book 01"
+- tapOn:
+    id: "book-card-isbn13:9780000000001"
+- back
+- assertVisible:
+    id: "favorites-result-grid"
+- back
+- assertVisible:
+    id: "search-result-grid"
+- tapOn:
+    id: "book-card-isbn13:9780000000002"
+- tapOn:
+    id: "detail-favorite-button"
+- back
+- tapOn:
+    id: "tab-Favorites"
+- assertVisible: "Fixture Book 02"
+- takeScreenshot: "save-then-leave"

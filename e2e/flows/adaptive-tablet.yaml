@@ -1,0 +1,15 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 태블릿 크기 모사에서 목록·상세
+---
+- hideKeyboard
+- back
+- tapOn:
+    id: "tab-Search"
+- tapOn:
+    id: "book-card-isbn13:9780000000002"
+- assertVisible:
+    id: "list-pane"
+- assertVisible:
+    id: "detail-pane"
+- assertVisible: "Fixture description"
+- takeScreenshot: "tablet-size-detail"

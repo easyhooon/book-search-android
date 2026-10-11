@@ -1,0 +1,16 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 가상 폴더블 상태 준비
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search-field"
+- inputText: "fixture"
+- tapOn:
+    id: "query-submit"
+- tapOn:
+    id: "book-favorite-isbn13:9780000000001"
+- tapOn:
+    id: "book-card-isbn13:9780000000002"
+- assertVisible:
+    id: "detail-favorite-button"

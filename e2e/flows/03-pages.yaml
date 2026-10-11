@@ -1,0 +1,24 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 20개 페이지와 마지막 페이지 종료
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search-field"
+- inputText: "pages"
+- tapOn:
+    id: "query-submit"
+- assertVisible: "Page Book 01"
+- scrollUntilVisible:
+    element:
+      text: "Page Book 40"
+    direction: DOWN
+    timeout: 60000
+- assertVisible: "Page Book 40"
+- repeat:
+    times: 3
+    commands:
+      - swipe:
+          direction: UP
+- assertVisible: "Page Book 40"
+- takeScreenshot: "last-page"

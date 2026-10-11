@@ -1,0 +1,39 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 검색·정렬·상세·빈 검색
+---
+- launchApp:
+    clearState: true
+- assertVisible: "도서를 검색해 보세요"
+- assertVisible:
+    id: "tab-Search"
+- assertVisible:
+    id: "tab-Favorites"
+- tapOn:
+    id: "search-field"
+- inputText: "fixture"
+- tapOn:
+    id: "query-submit"
+- assertVisible: "Fixture Book 01"
+- assertVisible: "Fixture Author"
+- tapOn: "정렬 변경"
+- tapOn: "발간일순"
+- assertVisible: "Fixture Book 03"
+- tapOn:
+    id: "book-card-isbn13:9780000000001"
+- assertVisible: "Fixture description"
+- assertVisible:
+    id: "detail-favorite-button"
+- back
+- tapOn:
+    id: "query-clear"
+- assertVisible: "Fixture Book 01"
+- tapOn:
+    id: "query-submit"
+- assertVisible: "도서를 검색해 보세요"
+- tapOn:
+    id: "search-field"
+- inputText: "empty"
+- tapOn:
+    id: "query-submit"
+- assertVisible: "검색 결과가 없습니다"
+- takeScreenshot: "search-empty"

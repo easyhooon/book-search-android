@@ -1,0 +1,11 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 실제 연결 복구 뒤 명시적 재시도
+---
+- runFlow:
+    when:
+      visible: "다시 시도"
+    commands:
+      - tapOn: "다시 시도"
+- assertVisible:
+    id: "search-result-grid"
+- takeScreenshot: "real-api-retry"

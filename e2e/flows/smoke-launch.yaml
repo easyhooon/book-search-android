@@ -1,0 +1,7 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 실제 smoke 독립 앱 초기 실행
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: "search-field"

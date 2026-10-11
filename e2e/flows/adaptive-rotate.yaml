@@ -1,0 +1,11 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 가상 기기 회전 후 검색·상세 유지
+---
+- setOrientation: LANDSCAPE_LEFT
+- assertVisible: "Fixture description"
+- assertVisible:
+    id: "search-field"
+    text: ".*fixture.*"
+- setOrientation: PORTRAIT
+- assertVisible: "Fixture description"
+- takeScreenshot: "rotated-detail"

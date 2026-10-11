@@ -1,0 +1,19 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 최초 서버 오류·재시도
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search-field"
+- inputText: "servererror"
+- tapOn:
+    id: "query-submit"
+- extendedWaitUntil:
+    visible: "다시 시도"
+    timeout: 30000
+- assertVisible: "서버가 일시적으로 응답하지 않습니다.*"
+- tapOn: "다시 시도"
+- extendedWaitUntil:
+    visible: "다시 시도"
+    timeout: 30000
+- takeScreenshot: "server-error-retry"

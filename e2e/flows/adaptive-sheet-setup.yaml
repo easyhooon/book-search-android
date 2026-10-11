@@ -1,0 +1,13 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 가격 시트 입력 중 접힘 준비
+---
+- tapOn:
+    id: "tab-Favorites"
+- tapOn:
+    id: "favorites-price-filter-chip"
+- tapOn:
+    id: "favorites-price-min"
+- inputText: "300"
+- assertVisible:
+    id: "favorites-price-min"
+    text: ".*300.*"

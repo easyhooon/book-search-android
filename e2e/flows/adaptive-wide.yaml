@@ -1,0 +1,12 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: expanded 목록·상세 동시 표시
+---
+- assertVisible:
+    id: "list-pane"
+- assertVisible:
+    id: "detail-pane"
+- assertVisible: "Fixture description"
+- assertVisible:
+    id: "search-field"
+    text: ".*fixture.*"
+- takeScreenshot: "wide-detail"

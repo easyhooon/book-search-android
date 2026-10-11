@@ -1,0 +1,8 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 가상 HALF_OPENED 상세 보존
+---
+- assertVisible: "Fixture Book 02"
+- assertVisible: "Fixture description"
+- assertVisible:
+    id: "detail-favorite-button"
+- takeScreenshot: "half-opened-detail"

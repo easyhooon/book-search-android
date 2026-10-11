@@ -24,6 +24,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -52,7 +54,11 @@ internal fun PriceFilterSheet(
         scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        modifier = Modifier.semantics { testTagsAsResourceId = true },
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -99,6 +105,7 @@ internal fun PriceFilterSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
             ) {
                 TextButton(
+                    modifier = Modifier.testTag(FavoritesTestTags.PRICE_CLEAR_BUTTON),
                     onClick = {
                         onClear()
                         close()
@@ -108,6 +115,7 @@ internal fun PriceFilterSheet(
                     Text(stringResource(R.string.price_filter_clear))
                 }
                 Button(
+                    modifier = Modifier.testTag(FavoritesTestTags.PRICE_APPLY_BUTTON),
                     onClick = {
                         onApply(draft)
                         close()

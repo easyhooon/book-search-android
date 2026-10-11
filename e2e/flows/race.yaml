@@ -1,0 +1,11 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 지연 검색 경합 전 입력 준비
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search-field"
+    waitToSettleTimeoutMs: 100
+- inputText: "slow"
+- assertVisible: "slow"
+- hideKeyboard

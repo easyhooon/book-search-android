@@ -1,0 +1,22 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 추가 로딩 실패 목록·탭 상태 보존
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search-field"
+- inputText: "pages"
+- tapOn:
+    id: "query-submit"
+- scrollUntilVisible:
+    element:
+      text: "다시 시도"
+    direction: DOWN
+    timeout: 40000
+- assertVisible: "Page Book 20"
+- tapOn:
+    id: "tab-Favorites"
+- tapOn:
+    id: "tab-Search"
+- assertVisible: "다시 시도"
+- assertVisible: "Page Book 20"

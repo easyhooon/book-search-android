@@ -1,0 +1,14 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 새 프로세스의 미저장 상세 스냅샷·Room 복원
+---
+- assertVisible: "Fixture Book 02"
+- assertVisible: "Fixture description"
+- assertVisible: "즐겨찾기 추가"
+- takeScreenshot: "restored-detail"
+- back
+- assertVisible:
+    id: "search-field"
+    text: ".*fixture.*"
+- tapOn:
+    id: "tab-Favorites"
+- assertVisible: "Fixture Book 01"

@@ -1,0 +1,10 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 가상 CLOSED 상세·상태 유지
+---
+- assertVisible: "Fixture Book 02"
+- assertVisible: "Fixture description"
+- assertVisible:
+    id: "detail-favorite-button"
+- assertNotVisible:
+    id: "list-pane"
+- takeScreenshot: "closed-detail"
