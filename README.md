@@ -1,5 +1,7 @@
 # book-search-android
 
+[![Architecture diagram](https://gitdiagram.com/diagram-badge.svg)](https://gitdiagram.com/easyhooon/book-search-android?utm_source=readme&amp;utm_medium=badge)
+
 Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하는 Android 앱입니다.
 
 - **검색**: 검색어 확정, 정확도순·발간일순 정렬, 20개 단위 페이지네이션
