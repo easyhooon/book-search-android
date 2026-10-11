@@ -15,6 +15,7 @@ class BookSearchApplication : Application(), SingletonImageLoader.Factory {
             networkConfig = NetworkConfig(
                 apiKey = BuildConfig.KAKAO_REST_API_KEY,
                 enableHttpLog = BuildConfig.DEBUG,
+                baseUrl = BuildConfig.KAKAO_API_BASE_URL,
             ),
         )
     }

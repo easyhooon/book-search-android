@@ -1,0 +1,22 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 키 미설정 안내·Room 목록과 상세·삭제
+---
+- launchApp
+- tapOn:
+    id: "search-field"
+- inputText: "fixture"
+- tapOn:
+    id: "query-submit"
+- assertVisible: "API 키가 설정되지 않았습니다.*"
+- tapOn:
+    id: "tab-Favorites"
+- assertVisible: "Fixture Book 01"
+- tapOn:
+    id: "book-card-isbn13:9780000000001"
+- assertVisible: "Fixture description"
+- tapOn:
+    id: "detail-favorite-button"
+- assertVisible: "Fixture description"
+- assertVisible: "즐겨찾기 추가"
+- back
+- assertVisible: "즐겨찾기한 도서가 없습니다"

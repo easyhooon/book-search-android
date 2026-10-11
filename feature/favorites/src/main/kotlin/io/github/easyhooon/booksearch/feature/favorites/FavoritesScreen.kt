@@ -200,4 +200,6 @@ object FavoritesTestTags {
     const val PRICE_MIN_FIELD = "favorites-price-min"
     const val PRICE_MAX_FIELD = "favorites-price-max"
     const val RESULT_GRID = "favorites-result-grid"
+    const val PRICE_APPLY_BUTTON = "favorites-price-apply"
+    const val PRICE_CLEAR_BUTTON = "favorites-price-clear"
 }

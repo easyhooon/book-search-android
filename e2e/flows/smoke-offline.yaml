@@ -1,0 +1,15 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 실제 연결 단절 뒤 새 검색 오류
+---
+- tapOn:
+    id: "query-clear"
+- tapOn:
+    id: "search-field"
+- inputText: "android"
+- tapOn:
+    id: "query-submit"
+- extendedWaitUntil:
+    visible: "네트워크 연결을 확인한 뒤 다시 시도해 주세요."
+    timeout: 30000
+- assertVisible: "다시 시도"
+- takeScreenshot: "real-offline-error"

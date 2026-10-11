@@ -13,3 +13,4 @@ build/
 *.zip
 /demo.mp4
 /demo-tablet.mp4
+/e2e/results/

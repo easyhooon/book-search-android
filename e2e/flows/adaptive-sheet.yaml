@@ -1,0 +1,7 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 가상 접힘·펼침 후 가격 시트 입력 유지
+---
+- assertVisible:
+    id: "favorites-price-min"
+    text: ".*300.*"
+- takeScreenshot: "folded-price-draft"

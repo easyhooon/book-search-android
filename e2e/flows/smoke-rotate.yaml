@@ -1,0 +1,17 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 실제 도서 상세·검색 회전 유지
+---
+- tapOn:
+    id: "book-card-.*"
+    index: 0
+- setOrientation: LANDSCAPE_LEFT
+- assertVisible:
+    id: "detail-favorite-button"
+- takeScreenshot: "phone-landscape-detail"
+- back
+- assertVisible:
+    id: "search-field"
+    text: ".*kotlin.*"
+- setOrientation: PORTRAIT
+- assertVisible:
+    id: "search-result-grid"

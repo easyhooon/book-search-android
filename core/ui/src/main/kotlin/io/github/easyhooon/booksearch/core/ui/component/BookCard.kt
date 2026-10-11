@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -49,6 +50,7 @@ fun BookCard(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
+            .testTag("book-card-${book.id}")
             .semantics { this.selected = selected },
         colors = if (selected) {
             CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
@@ -79,6 +81,7 @@ fun BookCard(
                 PriceLine(book)
             }
             FavoriteButton(
+                modifier = Modifier.testTag("book-favorite-${book.id}"),
                 isFavorite = isFavorite,
                 enabled = !isFavoritePending,
                 onClick = onFavoriteClick,

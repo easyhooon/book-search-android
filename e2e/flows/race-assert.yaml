@@ -1,0 +1,5 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 지연 이전 응답 뒤에도 새 결과 유지
+---
+- assertVisible: "New Book 01"
+- assertNotVisible: "Old Book 01"

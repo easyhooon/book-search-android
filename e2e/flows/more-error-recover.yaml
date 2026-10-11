@@ -1,0 +1,11 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 실패한 같은 추가 페이지만 복구
+---
+- tapOn: "다시 시도"
+- scrollUntilVisible:
+    element:
+      text: "Page Book 40"
+    direction: DOWN
+    timeout: 30000
+- assertVisible: "Page Book 40"
+- takeScreenshot: "more-retry-recovered"

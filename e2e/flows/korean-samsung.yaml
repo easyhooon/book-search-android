@@ -1,0 +1,28 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 기존 삼성 한국어 IME로 코틀린 입력
+tags:
+  - samsung-ime
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search-field"
+- assertVisible: "ㅋ"
+- tapOn: "ㅋ"
+- tapOn: "ㅗ"
+- tapOn: "ㅌ"
+- tapOn: "ㅡ"
+- tapOn: "ㄹ"
+- tapOn: "ㄹ"
+- tapOn: "ㅣ"
+- tapOn: "ㄴ"
+- assertVisible:
+    id: "search-field"
+    text: ".*코틀린.*"
+- tapOn:
+    id: "query-submit"
+- assertVisible: "Fixture Book 01"
+- assertVisible:
+    id: "search-field"
+    text: ".*코틀린.*"
+- takeScreenshot: "native-korean-query"

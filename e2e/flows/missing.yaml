@@ -1,0 +1,18 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 누락된 API 정보의 목록·상세 대체 표시
+---
+- launchApp:
+    clearState: true
+- tapOn:
+    id: "search-field"
+- inputText: "missing"
+- tapOn:
+    id: "query-submit"
+- assertVisible: "Missing Book"
+- assertVisible: "정보 없음"
+- assertVisible: "가격 정보 없음"
+- tapOn:
+    id: "book-card-url:https://example.invalid/missing"
+- assertVisible: "Missing Book"
+- assertVisible: "가격 정보 없음"
+- takeScreenshot: "missing-fields-detail"

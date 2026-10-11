@@ -1,0 +1,5 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 최초 오류 버튼 복구
+---
+- tapOn: "다시 시도"
+- assertVisible: "Fixture Book 01"

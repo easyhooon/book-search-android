@@ -22,7 +22,7 @@ Kakao 책 검색 API로 도서를 찾고, 관심 도서를 기기에 저장하�
 
 - **자동 검증**: 최신 코드의 145개 테스트·APK 빌드·lint 통과. Lint 오류 0개, 경고 2개. 실행 명령과 범위는 [Writer 제거 검증](docs/WRITER_REMOVAL.md) 참고.
 - **개발 환경**: 설치된 SDK 37·JDK 21과 의존성 캐시를 사용해 확인했습니다. 새 PC의 JDK 자동 설치·캐시 없는 빌드는 미검증입니다.
-- **기존 실기기 QA**: Galaxy SM-S936N에서 검색·상세, 즐겨찾기 추가·해제·동기화, 제목 정렬·로컬 검색·가격 필터를 확인했습니다. API 정가 0의 정보 없음 표시와 필터 제외도 확인했습니다. 최신 코드로 실기기 QA를 재실행하지는 않았습니다.
+- **기존 실기기 QA**: Galaxy SM-S936N에서 검색·상세, 즐겨찾기 추가·해제·동기화, 제목 정렬·로컬 검색·가격 필터를 확인했습니다. API 정가 0의 정보 없음 표시와 필터 제외도 확인했습니다. 기존 제출 앱의 QA 전체를 재실행하지는 않았습니다. 이번 별도 `.e2e` 앱의 휴대폰 fixture·실 API·한글 입력과 AVD 자동 검증은 [Maestro 결과](docs/MAESTRO_E2E.md)에 구분해 기록했습니다.
 - **검증 경계**: 검색은 실제 Soil·key factory·Presenter와 Fake API, 저장은 실제 retain·Soil·Mutation key·DAO와 Fake DAO로 경합·수명 확인. 절차·판정 기준·미실행 항목은 [QA](docs/QA.md)에 정리.
 
 ## 빌드 방법
@@ -123,4 +123,4 @@ Metro 유지로 daemon JVM 21을 선택한 판단과 그 제약을 포함한 상
 
 ## 문서
 
-[요구사항과 검증 상태](docs/REQUIREMENTS.md) · [구현 사양](docs/SPEC.md) · [아키텍처와 선택 이유](docs/ARCHITECTURE.md) · [QA](docs/QA.md) · [AI 활용 기록](docs/AI_USAGE.md) · [작업 지침](AGENTS.md)
+[요구사항과 검증 상태](docs/REQUIREMENTS.md) · [구현 사양](docs/SPEC.md) · [아키텍처와 선택 이유](docs/ARCHITECTURE.md) · [QA](docs/QA.md) · [Maestro E2E와 adb QA 차이](docs/MAESTRO_E2E.md) · [AI 활용 기록](docs/AI_USAGE.md) · [작업 지침](AGENTS.md)

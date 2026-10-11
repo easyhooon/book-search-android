@@ -1,0 +1,9 @@
+appId: io.github.easyhooon.booksearch.e2e
+name: 폰 다크·라이트 전환 후 검색 상태 유지
+---
+- assertVisible:
+    id: "search-field"
+    text: ".*kotlin.*"
+- assertVisible:
+    id: "search-result-grid"
+- takeScreenshot: "phone-theme-search"
